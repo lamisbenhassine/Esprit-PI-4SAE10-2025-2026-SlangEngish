@@ -14,10 +14,17 @@ public class GatewayApplication {
     public static void main(String[] args) {
         SpringApplication.run(GatewayApplication.class, args);
     }
-    @Bean
-    public RouteLocator gatewayRoutes(RouteLocatorBuilder builder){
-        return builder.routes() .route("evaluation",r->r.path("/evaluation/**")
-                        .uri("http://localhost:8020/") ).build();
 
-         }
+    @Bean
+    public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
+        return builder.routes()
+
+                .route("evaluation", r -> r.path("/evaluation/**")
+                        .uri("http://localhost:8020"))
+
+                .route("user", r -> r.path("/user/**")
+                        .uri("http://localhost:8010"))
+
+                .build();
+    }
 }

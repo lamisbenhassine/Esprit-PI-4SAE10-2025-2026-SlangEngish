@@ -7,8 +7,8 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="notification" />
-        <module name="eureka" />
         <module name="canditature" />
+        <module name="eureka" />
         <module name="candidat" />
         <module name="job" />
         <module name="meeting" />
