@@ -111,10 +111,20 @@
       <mat-label>Instructions</mat-label>
       <input matInput [(ngModel)]="newReading.instructions">
     </mat-form-field>
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>PDF URL (optional)</mat-label>
-      <input matInput [(ngModel)]="newReading.pdfUrl">
-    </mat-form-field>
+    <div class="pdf-upload full-width">
+      <mat-label class="upload-label">Reading PDF (optional)</mat-label>
+      <input #pdfInput type="file" accept=".pdf,application/pdf" hidden (change)="onReadingPdfSelected($event)">
+      <div class="upload-row">
+        <button mat-stroked-button type="button" (click)="triggerPdfInput(pdfInput)" [disabled]="uploadingPdf">
+          <mat-icon>upload</mat-icon>
+          {{ uploadingPdf ? 'Uploading...' : 'Upload PDF' }}
+        </button>
+        <span class="file-name" *ngIf="readingPdfFileName">{{ readingPdfFileName }}</span>
+        <button mat-icon-button type="button" *ngIf="newReading.pdfUrl" (click)="clearReadingPdf()" matTooltip="Remove PDF">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
     <mat-form-field appearance="outline" class="short">
       <mat-label>Points</mat-label>
       <input matInput type="number" [(ngModel)]="newReading.points" min="0">

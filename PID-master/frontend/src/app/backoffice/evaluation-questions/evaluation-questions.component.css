@@ -116,6 +116,27 @@
   margin: 12px 0 8px 0;
 }
 
+.pdf-upload { margin-bottom: 16px; }
+.pdf-upload .upload-label {
+  display: block;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 8px;
+}
+.pdf-upload .upload-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pdf-upload .file-name {
+  font-size: 14px;
+  color: #666;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .option-row {
   display: flex;
   align-items: center;

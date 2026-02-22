@@ -21,6 +21,8 @@ export class EvaluationQuestionsComponent implements OnInit {
   newFillBlank = { questionText: '', paragraphText: '', points: 10, questionOrder: 1, blanks: [{ correctWord: '', positionIndex: 0 }] };
   newReading = { questionText: '', instructions: '', pdfUrl: '', points: 10, questionOrder: 1 };
   newWriting = { questionText: '', subject: '', maxWords: 500, points: 10, questionOrder: 1 };
+  uploadingPdf = false;
+  readingPdfFileName = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -56,6 +58,44 @@ export class EvaluationQuestionsComponent implements OnInit {
 
   setAdding(type: 'MCQ' | 'MSQ' | 'FILL_BLANK' | 'READING' | 'WRITING'): void {
     this.addingType = type;
+    if (type === 'READING') {
+      this.readingPdfFileName = '';
+    }
+  }
+
+  triggerPdfInput(input: HTMLInputElement): void {
+    input.click();
+  }
+
+  onReadingPdfSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      this.snackBar.open('Please select a PDF file', 'Close', { duration: 3000 });
+      input.value = '';
+      return;
+    }
+    this.uploadingPdf = true;
+    this.readingPdfFileName = file.name;
+    this.api.uploadReadingPdf(file).subscribe({
+      next: (res) => {
+        this.newReading.pdfUrl = res.url;
+        this.uploadingPdf = false;
+        this.snackBar.open('PDF uploaded', 'Close', { duration: 2000 });
+      },
+      error: () => {
+        this.uploadingPdf = false;
+        this.readingPdfFileName = '';
+        this.snackBar.open('PDF upload failed', 'Close', { duration: 3000 });
+      }
+    });
+    input.value = '';
+  }
+
+  clearReadingPdf(): void {
+    this.newReading.pdfUrl = '';
+    this.readingPdfFileName = '';
   }
 
   addOptionMCQ(): void {
@@ -156,6 +196,7 @@ export class EvaluationQuestionsComponent implements OnInit {
         this.snackBar.open('Reading question added', 'Close', { duration: 2000 });
         this.addingType = null;
         this.newReading = { questionText: '', instructions: '', pdfUrl: '', points: 10, questionOrder: 1 };
+        this.readingPdfFileName = '';
         this.load();
       },
       error: () => this.snackBar.open('Failed to add question', 'Close', { duration: 3000 })

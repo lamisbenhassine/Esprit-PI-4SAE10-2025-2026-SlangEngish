@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Evaluation, EvaluationAttempt, Question, Option, Blank } from '../../core/models';
 import { EvaluationApiService } from '../../core/services/evaluation-api.service';
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -40,8 +41,15 @@ export class TakeEvaluationComponent implements OnInit {
     private router: Router,
     private api: EvaluationApiService,
     private currentUser: CurrentUserService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private sanitizer: DomSanitizer
   ) {}
+
+  /** Safe URL for embedding PDF in iframe (Reading question). */
+  getSafePdfUrl(url: string | undefined): SafeResourceUrl | null {
+    if (!url?.trim()) return null;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
 
   ngOnInit(): void {
     this.evaluationId = +this.route.snapshot.paramMap.get('id')!;

@@ -25,6 +25,13 @@ export class EvaluationApiService {
     return this.http.post<{ url: string }>(`${API_URL}/evaluations/upload-image`, formData);
   }
 
+  /** Upload PDF for Reading question; file is saved in backend uploads folder, returns URL for database. */
+  uploadReadingPdf(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<{ url: string }>(`${API_URL}/evaluations/upload-pdf`, formData);
+  }
+
   createEvaluation(e: Partial<Evaluation>): Observable<Evaluation> {
     return this.http.post<Evaluation>(`${API_URL}/evaluations`, e);
   }

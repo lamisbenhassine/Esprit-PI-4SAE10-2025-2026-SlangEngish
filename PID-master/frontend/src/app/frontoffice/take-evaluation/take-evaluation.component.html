@@ -57,8 +57,24 @@
       </div>
     </div>
 
-    <!-- READING / WRITING -->
-    <div class="text-answer" *ngIf="currentQuestion.questionType === 'READING' || currentQuestion.questionType === 'WRITING'">
+    <!-- READING: show instructions, PDF viewer, then answer -->
+    <div class="reading-container" *ngIf="currentQuestion.questionType === 'READING'">
+      <p class="reading-instruction" *ngIf="currentQuestion.instructions">{{ currentQuestion.instructions }}</p>
+      <div class="reading-pdf-viewer" *ngIf="currentQuestion.pdfUrl">
+        <p class="pdf-label">Read the document below, then answer the question.</p>
+        <iframe [src]="getSafePdfUrl(currentQuestion.pdfUrl)!" class="pdf-iframe" title="Reading PDF"></iframe>
+        <a [href]="currentQuestion.pdfUrl" target="_blank" rel="noopener" class="pdf-open-link">
+          <mat-icon>open_in_new</mat-icon> Open PDF in new tab
+        </a>
+      </div>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Your answer</mat-label>
+        <textarea matInput rows="6" [ngModel]="getAnswerText()" (ngModelChange)="setAnswerText($event)" placeholder="Type your answer here..."></textarea>
+      </mat-form-field>
+    </div>
+
+    <!-- WRITING -->
+    <div class="text-answer" *ngIf="currentQuestion.questionType === 'WRITING'">
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Your answer</mat-label>
         <textarea matInput rows="6" [ngModel]="getAnswerText()" (ngModelChange)="setAnswerText($event)" placeholder="Type your answer here..."></textarea>
