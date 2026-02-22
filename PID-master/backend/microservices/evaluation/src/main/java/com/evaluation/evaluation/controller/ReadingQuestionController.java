@@ -1,5 +1,6 @@
 package com.evaluation.evaluation.controller;
 
+import com.evaluation.evaluation.dto.GenerateFromPdfRequest;
 import com.evaluation.evaluation.model.ReadingQuestion;
 import com.evaluation.evaluation.service.ReadingQuestionService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,21 @@ public class ReadingQuestionController {
     @PostMapping
     public ResponseEntity<ReadingQuestion> addQuestion(@RequestBody ReadingQuestion question) {
         ReadingQuestion created = readingQuestionService.addQuestionToEvaluation(question);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/generate-from-pdf")
+    public ResponseEntity<List<ReadingQuestion>> generateFromPdf(@RequestBody GenerateFromPdfRequest request) {
+        if (request.getEvaluationId() == null || request.getPdfUrl() == null || request.getPdfUrl().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        double points = request.getPointsPerQuestion() != null && request.getPointsPerQuestion() > 0
+                ? request.getPointsPerQuestion() : 10.0;
+        List<ReadingQuestion> created = readingQuestionService.generateFromPdf(
+                request.getEvaluationId(),
+                request.getPdfUrl(),
+                request.getInstructions(),
+                points);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 

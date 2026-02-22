@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface ReadingQuestionRepository extends JpaRepository<ReadingQuestion, Long> {
-    List<ReadingQuestion> findByEvaluationId(Long evaluationId);
+    /** Use evaluation.id (evaluationId is @Transient on Question). */
+    List<ReadingQuestion> findByEvaluation_Id(Long evaluationId);
 }

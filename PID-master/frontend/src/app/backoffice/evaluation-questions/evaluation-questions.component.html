@@ -124,6 +124,11 @@
           <mat-icon>close</mat-icon>
         </button>
       </div>
+      <p class="form-hint" *ngIf="newReading.pdfUrl">AI (Ollama, free): generate 10 questions from this PDF. Install from <a href="https://ollama.com" target="_blank">ollama.com</a> and run: <code>ollama pull llama3.2</code></p>
+      <button mat-stroked-button type="button" *ngIf="newReading.pdfUrl" (click)="generateReadingWithAi()" [disabled]="generatingAi" class="ai-btn">
+        <mat-icon>auto_awesome</mat-icon>
+        {{ generatingAi ? 'Generating...' : 'Generate 10 questions with AI' }}
+      </button>
     </div>
     <mat-form-field appearance="outline" class="short">
       <mat-label>Points</mat-label>

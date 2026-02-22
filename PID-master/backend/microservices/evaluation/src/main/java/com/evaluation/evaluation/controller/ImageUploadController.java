@@ -1,5 +1,6 @@
 package com.evaluation.evaluation.controller;
 
+import com.evaluation.evaluation.config.UploadPathConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -25,8 +25,11 @@ public class ImageUploadController {
     @Value("${server.port:8020}")
     private String serverPort;
 
-    @Value("${app.upload.dir:uploads}")
-    private String uploadDirConfig;
+    private final UploadPathConfig uploadPathConfig;
+
+    public ImageUploadController(UploadPathConfig uploadPathConfig) {
+        this.uploadPathConfig = uploadPathConfig;
+    }
 
     @PostMapping("/upload-image")
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {
@@ -42,10 +45,10 @@ public class ImageUploadController {
             return ResponseEntity.badRequest().body(Map.of("error", "Allowed types: JPG, PNG, GIF, WEBP"));
         }
         try {
-            Path uploadDir = Paths.get(uploadDirConfig).toAbsolutePath().normalize();
+            Path uploadDir = uploadPathConfig.getUploadDir();
             Files.createDirectories(uploadDir);
             String savedName = UUID.randomUUID() + ext;
-            Path target = uploadDir.resolve(savedName);
+            Path target = uploadPathConfig.resolve(savedName);
             Files.copy(file.getInputStream(), target);
 
             String url = "http://localhost:" + serverPort + "/uploads/" + savedName;
@@ -85,10 +88,10 @@ public class ImageUploadController {
             return ResponseEntity.badRequest().body(Map.of("error", "Only PDF files are allowed"));
         }
         try {
-            Path uploadDir = Paths.get(uploadDirConfig).toAbsolutePath().normalize();
+            Path uploadDir = uploadPathConfig.getUploadDir();
             Files.createDirectories(uploadDir);
             String savedName = UUID.randomUUID() + ext;
-            Path target = uploadDir.resolve(savedName);
+            Path target = uploadPathConfig.resolve(savedName);
             Files.copy(file.getInputStream(), target);
 
             String url = "http://localhost:" + serverPort + "/uploads/" + savedName;

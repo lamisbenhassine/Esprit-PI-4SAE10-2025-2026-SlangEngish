@@ -92,6 +92,16 @@ export class EvaluationApiService {
     return this.http.post<Question>(`${API_URL}/reading-questions`, { ...question, questionType: 'READING' });
   }
 
+  /** Generate 10 Reading questions from PDF using AI (Ollama, free). Requires PDF uploaded and Ollama running locally. */
+  generateReadingQuestionsFromPdf(params: { evaluationId: number; pdfUrl: string; instructions?: string; pointsPerQuestion?: number }): Observable<Question[]> {
+    return this.http.post<Question[]>(`${API_URL}/reading-questions/generate-from-pdf`, {
+      evaluationId: params.evaluationId,
+      pdfUrl: params.pdfUrl,
+      instructions: params.instructions ?? '',
+      pointsPerQuestion: params.pointsPerQuestion ?? 10
+    });
+  }
+
   addWritingQuestion(question: Partial<Question> & { evaluationId: number; subject?: string; maxWords?: number }): Observable<Question> {
     return this.http.post<Question>(`${API_URL}/writing-questions`, { ...question, questionType: 'WRITING' });
   }

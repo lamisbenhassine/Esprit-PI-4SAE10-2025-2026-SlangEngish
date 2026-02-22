@@ -23,6 +23,7 @@ export class EvaluationQuestionsComponent implements OnInit {
   newWriting = { questionText: '', subject: '', maxWords: 500, points: 10, questionOrder: 1 };
   uploadingPdf = false;
   readingPdfFileName = '';
+  generatingAi = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -179,6 +180,34 @@ export class EvaluationQuestionsComponent implements OnInit {
         this.load();
       },
       error: () => this.snackBar.open('Failed to add question', 'Close', { duration: 3000 })
+    });
+  }
+
+  generateReadingWithAi(): void {
+    if (!this.newReading.pdfUrl) {
+      this.snackBar.open('Upload a PDF first', 'Close', { duration: 3000 });
+      return;
+    }
+    this.generatingAi = true;
+    this.api.generateReadingQuestionsFromPdf({
+      evaluationId: this.evaluationId,
+      pdfUrl: this.newReading.pdfUrl,
+      instructions: this.newReading.instructions,
+      pointsPerQuestion: this.newReading.points
+    }).subscribe({
+      next: (created) => {
+        this.generatingAi = false;
+        this.snackBar.open(`Generated ${created.length} questions with AI (Ollama)`, 'Close', { duration: 3000 });
+        this.addingType = null;
+        this.newReading = { questionText: '', instructions: '', pdfUrl: '', points: 10, questionOrder: 1 };
+        this.readingPdfFileName = '';
+        this.load();
+      },
+      error: (err) => {
+        this.generatingAi = false;
+        const msg = err?.error?.message || err?.message || 'AI generation failed. Is Ollama running? Run: ollama pull llama3.2';
+        this.snackBar.open(msg, 'Close', { duration: 5000 });
+      }
     });
   }
 

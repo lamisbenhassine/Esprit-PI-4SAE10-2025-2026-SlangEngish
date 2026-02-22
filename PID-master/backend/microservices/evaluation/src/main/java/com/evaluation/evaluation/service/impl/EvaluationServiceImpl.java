@@ -30,7 +30,8 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     @Override
     public Evaluation getEvaluationById(Long id) {
-        return evaluationRepository.findById(id)
+        return evaluationRepository.findByIdWithQuestions(id)
+                .or(() -> evaluationRepository.findById(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + id));
     }
 

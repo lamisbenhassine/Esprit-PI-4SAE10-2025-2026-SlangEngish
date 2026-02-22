@@ -7,6 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -47,6 +48,7 @@ public class Evaluation {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("questionOrder ASC")
     private List<Question> questions = new ArrayList<>();
 
     @OneToMany(mappedBy = "evaluation")
