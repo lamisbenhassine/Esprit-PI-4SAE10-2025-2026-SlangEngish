@@ -1,0 +1,49 @@
+<div class="evaluations-management">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Evaluations</h1>
+      <p class="header-subtitle">Create and manage evaluations, add questions, and view student attempts</p>
+    </div>
+    <div class="header-actions">
+      <button mat-raised-button class="action-btn primary" (click)="addNew()">
+        <mat-icon>add</mat-icon>
+        <span>Add Evaluation</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="evaluations-grid" *ngIf="!loading">
+    <div class="eval-card" *ngFor="let e of evaluations">
+      <div class="eval-image" [style.backgroundImage]="getEvaluationImageStyle(e.imageUrl)">
+        <span class="eval-badge">{{ e.numberOfAttempts }} attempts</span>
+      </div>
+      <div class="eval-content">
+        <h3>{{ e.title }}</h3>
+        <div class="eval-meta">
+          <span><mat-icon>event</mat-icon> {{ formatDate(e.dateStart) }} – {{ formatDate(e.dateEnd) }}</span>
+          <span><mat-icon>schedule</mat-icon> {{ e.durationMinutes }} min</span>
+          <span><mat-icon>star</mat-icon> {{ e.totalScore }} pts</span>
+        </div>
+        <div class="eval-actions">
+          <button mat-stroked-button (click)="edit(e.id!)"><mat-icon>edit</mat-icon> Edit</button>
+          <button mat-stroked-button (click)="manageQuestions(e.id!)"><mat-icon>quiz</mat-icon> Questions</button>
+          <button mat-stroked-button (click)="viewAttempts(e.id!)"><mat-icon>assignment_turned_in</mat-icon> Attempts</button>
+          <button mat-icon-button color="warn" (click)="delete(e)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <mat-icon class="spin">refresh</mat-icon>
+    <p>Loading evaluations...</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && evaluations.length === 0">
+    <mat-icon>assignment</mat-icon>
+    <p>No evaluations yet</p>
+    <button mat-raised-button class="action-btn primary" (click)="addNew()">Add your first evaluation</button>
+  </div>
+</div>

@@ -1,0 +1,79 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="logo">
+        <mat-icon>school</mat-icon>
+        <h1>E-Learning Platform</h1>
+      </div>
+      <p class="subtitle">Welcome back! Please sign in to your account</p>
+    </div>
+
+    <form class="auth-form" (ngSubmit)="onSignIn()">
+      <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Email Address</mat-label>
+        <input 
+          matInput 
+          [(ngModel)]="signInData.email" 
+          name="email" 
+          type="email"
+          placeholder="Enter your email"
+          required>
+        <mat-icon matSuffix>email</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Password</mat-label>
+        <input 
+          matInput 
+          [(ngModel)]="signInData.password" 
+          name="password" 
+          [type]="hidePassword ? 'password' : 'text'"
+          placeholder="Enter your password"
+          required>
+        <button 
+          mat-icon-button 
+          matSuffix 
+          (click)="hidePassword = !hidePassword"
+          type="button">
+          <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+      </mat-form-field>
+
+      <div class="form-options">
+        <mat-checkbox [(ngModel)]="rememberMe" name="rememberMe">
+          Remember me
+        </mat-checkbox>
+        <a href="#" class="forgot-password">Forgot password?</a>
+      </div>
+
+      <button 
+        mat-raised-button 
+        color="primary" 
+        class="submit-btn"
+        type="submit"
+        [disabled]="!isFormValid()">
+        <mat-icon>login</mat-icon>
+        Sign In
+      </button>
+    </form>
+
+    <div class="auth-divider">
+      <span>OR</span>
+    </div>
+
+    <div class="social-login">
+      <button mat-stroked-button class="social-btn google-btn">
+        <mat-icon>google</mat-icon>
+        Sign in with Google
+      </button>
+      <button mat-stroked-button class="social-btn facebook-btn">
+        <mat-icon>facebook</mat-icon>
+        Sign in with Facebook
+      </button>
+    </div>
+
+    <div class="auth-footer">
+      <p>Don't have an account? <a routerLink="/auth/signup">Sign up</a></p>
+    </div>
+  </div>
+</div>

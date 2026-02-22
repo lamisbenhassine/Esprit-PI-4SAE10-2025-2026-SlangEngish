@@ -1,0 +1,99 @@
+<div class="evaluation-form">
+  <div class="page-header">
+    <div class="header-content">
+      <button mat-icon-button (click)="cancel()" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>{{ id ? 'Edit Evaluation' : 'New Evaluation' }}</h1>
+        <p class="header-subtitle">{{ id ? 'Update evaluation details' : 'Set title, dates, duration and attempts' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-card" *ngIf="!loading">
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Title</mat-label>
+        <input matInput formControlName="title" placeholder="e.g. Math Quiz 1">
+        <mat-error>Title is required</mat-error>
+      </mat-form-field>
+
+      <div class="image-upload full-width">
+        <mat-label class="upload-label">Evaluation image (optional)</mat-label>
+        <input #fileInput type="file" accept="image/*" hidden (change)="onImageSelected($event)">
+        <div class="upload-row">
+          <button mat-stroked-button type="button" (click)="triggerImageInput(fileInput)" [disabled]="uploadingImage">
+            <mat-icon>upload</mat-icon>
+            {{ uploadingImage ? 'Uploading...' : 'Upload photo' }}
+          </button>
+          <span class="file-name" *ngIf="selectedImageFile">{{ selectedImageFile.name }}</span>
+          <span class="file-name" *ngIf="imagePreviewUrl && !selectedImageFile">Image set</span>
+          <button mat-icon-button type="button" *ngIf="imagePreviewUrl" (click)="clearImage()" matTooltip="Remove image">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        <div class="image-preview" *ngIf="imagePreviewUrl">
+          <img [src]="imagePreviewUrl" alt="Preview">
+        </div>
+      </div>
+
+      <div class="row">
+        <mat-form-field appearance="outline" class="half">
+          <mat-label>Start date</mat-label>
+          <input matInput [matDatepicker]="startPicker" formControlName="dateStartDate" placeholder="Pick start date">
+          <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+          <mat-error>Required</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="half-time">
+          <mat-label>Start time</mat-label>
+          <input matInput type="time" formControlName="dateStartTime">
+        </mat-form-field>
+      </div>
+      <div class="row">
+        <mat-form-field appearance="outline" class="half">
+          <mat-label>End date (deadline)</mat-label>
+          <input matInput [matDatepicker]="endPicker" formControlName="dateEndDate" placeholder="Pick end date">
+          <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+          <mat-error>Required</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="half-time">
+          <mat-label>End time</mat-label>
+          <input matInput type="time" formControlName="dateEndTime">
+        </mat-form-field>
+      </div>
+
+      <div class="row">
+        <mat-form-field appearance="outline" class="third">
+          <mat-label>Duration (minutes)</mat-label>
+          <input matInput type="number" formControlName="durationMinutes" min="1">
+          <mat-error>Min 1</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="third">
+          <mat-label>Number of attempts</mat-label>
+          <input matInput type="number" formControlName="numberOfAttempts" min="1">
+          <mat-error>Min 1</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="third">
+          <mat-label>Total score</mat-label>
+          <input matInput type="number" formControlName="totalScore" min="0">
+          <mat-error>Min 0</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="cancel()">Cancel</button>
+        <button mat-raised-button class="primary-btn" type="submit" [disabled]="saving">
+          {{ saving ? 'Saving...' : (id ? 'Update' : 'Create & Add Questions') }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <mat-icon class="spin">refresh</mat-icon>
+    <p>Loading...</p>
+  </div>
+</div>

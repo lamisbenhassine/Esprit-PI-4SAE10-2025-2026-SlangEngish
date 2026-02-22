@@ -1,0 +1,181 @@
+.evaluations-list {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+.welcome-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  overflow: hidden;
+  position: relative;
+}
+
+.welcome-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-text h1 {
+  color: white;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.welcome-text p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  margin: 0;
+}
+
+.welcome-icon .icon-wrapper {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-icon mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: white;
+}
+
+.eval-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.eval-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.eval-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border-color: #667eea;
+}
+
+.eval-image {
+  height: 140px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.eval-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.eval-content {
+  padding: 20px;
+}
+
+.eval-content h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.eval-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+.eval-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.eval-meta mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.start-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.start-btn mat-icon {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: #666;
+}
+
+.loading-state .spin {
+  animation: spin 1s linear infinite;
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 16px;
+  color: #667eea;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.empty-state mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #ccc;
+  margin-bottom: 16px;
+}
+
+.empty-state .hint {
+  font-size: 14px;
+  color: #999;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .welcome-content { flex-direction: column; text-align: center; gap: 20px; }
+  .eval-grid { grid-template-columns: 1fr; }
+}

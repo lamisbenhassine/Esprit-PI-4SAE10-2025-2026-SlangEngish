@@ -1,0 +1,95 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import type { Evaluation, Question, Option, Blank, EvaluationAttempt, StudentAnswer, User } from '../models';
+
+const API_URL = 'http://localhost:8080/api';
+
+@Injectable({ providedIn: 'root' })
+export class EvaluationApiService {
+
+  constructor(private http: HttpClient) {}
+
+  getEvaluations(): Observable<Evaluation[]> {
+    return this.http.get<Evaluation[]>(`${API_URL}/evaluations`);
+  }
+
+  getEvaluation(id: number): Observable<Evaluation> {
+    return this.http.get<Evaluation>(`${API_URL}/evaluations/${id}`);
+  }
+
+  /** Upload evaluation image; file is saved in backend uploads folder, returns URL for database. */
+  uploadEvaluationImage(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<{ url: string }>(`${API_URL}/evaluations/upload-image`, formData);
+  }
+
+  createEvaluation(e: Partial<Evaluation>): Observable<Evaluation> {
+    return this.http.post<Evaluation>(`${API_URL}/evaluations`, e);
+  }
+
+  updateEvaluation(id: number, e: Partial<Evaluation>): Observable<Evaluation> {
+    return this.http.put<Evaluation>(`${API_URL}/evaluations/${id}`, e);
+  }
+
+  deleteEvaluation(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/evaluations/${id}`);
+  }
+
+  getAvailableForUser(userId: number): Observable<Evaluation[]> {
+    return this.http.get<Evaluation[]>(`${API_URL}/evaluations/available/user/${userId}`);
+  }
+
+  startAttempt(evaluationId: number, userId: number): Observable<EvaluationAttempt> {
+    return this.http.post<EvaluationAttempt>(`${API_URL}/attempts/start/${evaluationId}?userId=${userId}`, {});
+  }
+
+  submitAnswer(attemptId: number, questionId: number, body: { textAnswer?: string; selectedOptions?: { id: number }[] }): Observable<EvaluationAttempt> {
+    return this.http.post<EvaluationAttempt>(`${API_URL}/attempts/${attemptId}/submit-answer/${questionId}`, body);
+  }
+
+  finishAttempt(attemptId: number): Observable<EvaluationAttempt> {
+    return this.http.post<EvaluationAttempt>(`${API_URL}/attempts/${attemptId}/finish`, {});
+  }
+
+  getAttempt(attemptId: number): Observable<EvaluationAttempt> {
+    return this.http.get<EvaluationAttempt>(`${API_URL}/attempts/${attemptId}`);
+  }
+
+  getAttemptsByUserAndEvaluation(userId: number, evaluationId: number): Observable<EvaluationAttempt[]> {
+    return this.http.get<EvaluationAttempt[]>(`${API_URL}/attempts/user/${userId}/evaluation/${evaluationId}`);
+  }
+
+  getAttemptsByEvaluation(evaluationId: number): Observable<EvaluationAttempt[]> {
+    return this.http.get<EvaluationAttempt[]>(`${API_URL}/attempts/evaluation/${evaluationId}`);
+  }
+
+  updateAnswerScore(answerId: number, score: number): Observable<StudentAnswer> {
+    return this.http.put<StudentAnswer>(`${API_URL}/attempts/answer/${answerId}/score`, { score });
+  }
+
+  addMCQQuestion(question: Partial<Question> & { evaluationId: number; options: Option[] }): Observable<Question> {
+    return this.http.post<Question>(`${API_URL}/mcq-questions`, { ...question, questionType: 'MCQ' });
+  }
+
+  addMSQQuestion(question: Partial<Question> & { evaluationId: number; options: Option[] }): Observable<Question> {
+    return this.http.post<Question>(`${API_URL}/msq-questions`, { ...question, questionType: 'MSQ' });
+  }
+
+  addFillBlankQuestion(question: Partial<Question> & { evaluationId: number; paragraphText: string; blanks: Blank[] }): Observable<Question> {
+    return this.http.post<Question>(`${API_URL}/fillblank-questions`, { ...question, questionType: 'FILL_BLANK' });
+  }
+
+  addReadingQuestion(question: Partial<Question> & { evaluationId: number; instructions?: string; pdfUrl?: string }): Observable<Question> {
+    return this.http.post<Question>(`${API_URL}/reading-questions`, { ...question, questionType: 'READING' });
+  }
+
+  addWritingQuestion(question: Partial<Question> & { evaluationId: number; subject?: string; maxWords?: number }): Observable<Question> {
+    return this.http.post<Question>(`${API_URL}/writing-questions`, { ...question, questionType: 'WRITING' });
+  }
+
+  getUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${API_URL}/users`);
+  }
+}
