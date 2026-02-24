@@ -5,7 +5,13 @@
   </p>
   <div class="eval-header" *ngIf="evaluation">
     <h1>{{ evaluation.title }}</h1>
-    <p class="subtitle">Question {{ currentIndex + 1 }} of {{ questions.length }}</p>
+    <div class="header-meta">
+      <p class="subtitle">Question {{ currentIndex + 1 }} of {{ questions.length }}</p>
+      <p class="timer" *ngIf="timeRemainingSeconds !== null" [class.timer-low]="timeRemainingSeconds <= 300">
+        <mat-icon>schedule</mat-icon>
+        {{ timeRemainingDisplay }}
+      </p>
+    </div>
     <mat-progress-bar mode="determinate" [value]="progress" class="progress-bar"></mat-progress-bar>
   </div>
 

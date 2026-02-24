@@ -36,6 +36,12 @@ export class TakeEvaluationComponent implements OnInit, OnDestroy {
   private violationHandled = false;
   private visibilityListener = () => this.onVisibilityChange();
 
+  /** Duration countdown: remaining seconds; null when no timer. */
+  timeRemainingSeconds: number | null = null;
+  /** Display string e.g. "45:00" for the timer. */
+  timeRemainingDisplay = '';
+  private timerInterval: ReturnType<typeof setInterval> | null = null;
+
   answers: Map<number, { textAnswer?: string; selectedOptions?: Option[] }> = new Map();
   /** For FILL_BLANK: questionId -> { bank: remaining words, slots: word per blank index } */
   fillBlankState: Map<number, { bank: string[]; slots: string[] }> = new Map();
@@ -69,6 +75,79 @@ export class TakeEvaluationComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     document.removeEventListener('visibilitychange', this.visibilityListener);
+    this.clearTimer();
+  }
+
+  private clearTimer(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+    this.timeRemainingSeconds = null;
+    this.timeRemainingDisplay = '';
+  }
+
+  private startDurationTimer(): void {
+    this.clearTimer();
+    if (!this.attempt?.startTime || !this.evaluation?.durationMinutes) return;
+    const startMs = new Date(this.attempt.startTime).getTime();
+    const durationMs = this.evaluation.durationMinutes * 60 * 1000;
+    const endMs = startMs + durationMs;
+
+    const tick = (): void => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.floor((endMs - now) / 1000));
+      this.timeRemainingSeconds = remaining;
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      this.timeRemainingDisplay = `${m}:${s.toString().padStart(2, '0')}`;
+      if (remaining <= 0) {
+        this.clearTimer();
+        this.autoFinishBecauseTimeUp();
+      }
+    };
+
+    tick();
+    this.timerInterval = setInterval(tick, 1000);
+  }
+
+  /** When duration runs out: submit current answer if any, then finish. Student gets score for questions already submitted. */
+  private autoFinishBecauseTimeUp(): void {
+    if (this.finishing || !this.attempt?.id) return;
+    this.snackBar.open('Time is up! Submitting your answers.', 'Close', { duration: 3000 });
+    this.finishing = true;
+
+    const q = this.currentQuestion;
+    if (q?.id && q.questionType === 'FILL_BLANK') this.syncFillBlankAnswer(q.id);
+    const body = q?.id ? this.answers.get(q.id) : undefined;
+    const hasCurrent = body && (body.textAnswer !== undefined || (body.selectedOptions?.length ?? 0) > 0);
+
+    const doFinish = (): void => {
+      this.api.finishAttempt(this.attempt!.id).subscribe({
+        next: (a) => {
+          this.attempt = a;
+          this.router.navigate(['/frontoffice/evaluations', this.evaluationId, 'results'], {
+            queryParams: { attemptId: a.id }
+          });
+        },
+        error: () => {
+          this.finishing = false;
+          this.snackBar.open('Failed to submit. Try again.', 'Close', { duration: 3000 });
+        }
+      });
+    };
+
+    if (hasCurrent && q?.id) {
+      const submitBody: { textAnswer?: string; selectedOptions?: { id: number }[] } = {};
+      if (body!.textAnswer) submitBody.textAnswer = body!.textAnswer;
+      if (body!.selectedOptions?.length) submitBody.selectedOptions = body!.selectedOptions!.map(o => ({ id: o.id! }));
+      this.api.submitAnswer(this.attempt.id, q.id, submitBody).subscribe({
+        next: () => doFinish(),
+        error: () => doFinish()
+      });
+    } else {
+      doFinish();
+    }
   }
 
   /** When student switches tab or leaves browser: finish with 0 and go to results. */
@@ -113,6 +192,9 @@ export class TakeEvaluationComponent implements OnInit, OnDestroy {
       next: (a) => {
         this.attempt = a;
         this.loading = false;
+        if (a.status === 'IN_PROGRESS' && this.evaluation?.durationMinutes) {
+          this.startDurationTimer();
+        }
       },
       error: (err) => {
         this.loading = false;
@@ -209,6 +291,7 @@ export class TakeEvaluationComponent implements OnInit, OnDestroy {
   finishAttempt(): void {
     if (!this.attempt?.id || this.finishing) return;
     this.finishing = true;
+    this.clearTimer();
     this.api.finishAttempt(this.attempt.id).subscribe({
       next: (a) => {
         this.attempt = a;

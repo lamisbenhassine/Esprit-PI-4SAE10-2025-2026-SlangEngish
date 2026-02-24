@@ -148,6 +148,17 @@ export class EvaluationFormComponent implements OnInit {
       this.snackBar.open('Please set start and end date', 'Close', { duration: 3000 });
       return;
     }
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const startDate = v.dateStartDate as Date;
+    if (startDate && startDate < todayStart) {
+      this.snackBar.open('Start date cannot be in the past. Choose today or a future date.', 'Close', { duration: 4000 });
+      return;
+    }
+    if (dateStart > dateEnd) {
+      this.snackBar.open('End date/time cannot be before start date/time.', 'Close', { duration: 4000 });
+      return;
+    }
     // Don't send data URLs (base64) to API - they can be huge and break DB; backend expects a normal URL string
     const imageUrl = v.imageUrl?.trim();
     const sendImageUrl = imageUrl && !imageUrl.startsWith('data:') ? imageUrl : undefined;
@@ -191,5 +202,21 @@ export class EvaluationFormComponent implements OnInit {
 
   cancel(): void {
     this.router.navigate(['/backoffice/evaluations']);
+  }
+
+  /** Min date for start: today (no past dates). */
+  get minStartDate(): Date {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  /** Min date for end: the selected start date (end cannot be before start). */
+  get minEndDate(): Date | null {
+    const start = this.form.get('dateStartDate')?.value as Date | null;
+    if (!start) return null;
+    const d = new Date(start);
+    d.setHours(0, 0, 0, 0);
+    return d;
   }
 }

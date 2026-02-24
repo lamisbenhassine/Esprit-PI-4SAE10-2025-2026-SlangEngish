@@ -53,10 +53,38 @@
   margin: 0 0 8px 0;
 }
 
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
 .subtitle {
   font-size: 14px;
   color: #666;
-  margin: 0 0 12px 0;
+  margin: 0;
+}
+
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.timer mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.timer-low {
+  color: #c62828;
 }
 
 .progress-bar {
