@@ -69,8 +69,10 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
+    @Transactional
     public void deleteEvaluation(Long id) {
-        Evaluation evaluation = getEvaluationById(id);
+        Evaluation evaluation = getEvaluationById(id); // loads evaluation with questions
+        evaluation.getAttempts().size(); // load attempts so cascade delete removes them (and their student answers) first
         evaluationRepository.delete(evaluation);
     }
 

@@ -53,7 +53,7 @@ public class Evaluation {
     @OrderBy("questionOrder ASC")
     private List<Question> questions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "evaluation")
+    @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<EvaluationAttempt> attempts = new ArrayList<>();
 }
