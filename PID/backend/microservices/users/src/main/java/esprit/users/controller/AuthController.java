@@ -50,5 +50,17 @@ public class AuthController {
         userService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/google-signin")
+    public ResponseEntity<UserResponse> googleSignin(@Valid @RequestBody GoogleSigninRequest request) {
+        User user = userService.googleSignin(request.getIdToken());
+        return ResponseEntity.ok(UserResponse.fromEntity(user));
+    }
+
+    @PostMapping("/facebook-signin")
+    public ResponseEntity<UserResponse> facebookSignin(@Valid @RequestBody FacebookSigninRequest request) {
+        User user = userService.facebookSignin(request.getAccessToken());
+        return ResponseEntity.ok(UserResponse.fromEntity(user));
+    }
 }
 

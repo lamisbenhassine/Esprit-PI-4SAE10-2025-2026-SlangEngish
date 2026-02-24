@@ -26,6 +26,12 @@ public class SignupRequest {
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
+    @Size(max = 20)
+    private String phone;
+
+    @Size(max = 255)
+    private String address;
+
     @NotBlank(message = "Role is required")
     private String role; // ADMIN, TUTOR, STUDENT, CLUB_MANAGER, EMPLOYEE
 

@@ -2,6 +2,7 @@ package esprit.users.controller;
 
 import esprit.users.entity.User;
 import esprit.users.service.UserService;
+import esprit.users.dto.UserProfileUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,13 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody User user) {
         User updated = userService.updateUser(id, user);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PatchMapping("/{id}/profile")
+    public ResponseEntity<User> updateProfile(@PathVariable Long id,
+                                              @Valid @RequestBody UserProfileUpdateRequest request) {
+        User updated = userService.updateUserProfile(id, request);
         return ResponseEntity.ok(updated);
     }
 

@@ -41,6 +41,14 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @Size(max = 20, message = "Phone number must be at most 20 characters")
+    @Column(name = "phone", length = 20)
+    private String phone;
+
+    @Size(max = 255, message = "Address must be at most 255 characters")
+    @Column(name = "address", length = 255)
+    private String address;
+
     // Password is required on create, but optional on update.
     // Validation for non-empty on create est gérée côté front.
     @Size(min = 8, message = "Password must be at least 8 characters")

@@ -33,7 +33,9 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'STUDENT' as Role
+    role: 'STUDENT' as Role,
+    phone: '',
+    address: ''
   };
   hidePassword = true;
   hideConfirmPassword = true;
@@ -96,7 +98,9 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
            this.signUpData.email.trim() !== '' &&
            this.signUpData.password.trim() !== '' &&
            this.signUpData.confirmPassword.trim() !== '' &&
+           this.signUpData.phone.trim() !== '' &&
            this.isValidEmail(this.signUpData.email) &&
+           this.isValidPhone(this.signUpData.phone) &&
            this.signUpData.password === this.signUpData.confirmPassword &&
            this.signUpData.password.length >= 8 &&
            this.agreeToTerms &&
@@ -106,6 +110,12 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
   isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  }
+
+  isValidPhone(phone: string): boolean {
+    if (!phone) return false;
+    const cleaned = phone.replace(/\s+/g, '');
+    return /^\+?\d{8,15}$/.test(cleaned);
   }
 
   onAvatarChange(event: Event): void {
@@ -244,6 +254,8 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
       email: this.signUpData.email,
       password: this.signUpData.password,
       role: this.signUpData.role,
+      phone: this.signUpData.phone,
+      address: this.signUpData.address,
       recaptchaToken
     };
     if (this.photoBase64) payload.photoBase64 = this.photoBase64;
@@ -251,11 +263,11 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
     this.authService.signup(payload).subscribe({
       next: (user) => {
         this.isSubmitting = false;
-        if (user.role === 'ADMIN') {
-          this.router.navigate(['/backoffice/users']);
-        } else {
-          this.router.navigate(['/frontoffice/dashboard']);
-        }
+        // Après inscription, rediriger vers la page de connexion
+        // pour que l'utilisateur se connecte puis accède au frontoffice.
+        this.router.navigate(['/auth/signin'], {
+          queryParams: { registered: 'true' }
+        });
       },
       error: err => {
         this.isSubmitting = false;
@@ -276,4 +288,5 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
       }
     });
   }
+
 }

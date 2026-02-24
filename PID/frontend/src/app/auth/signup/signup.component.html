@@ -44,6 +44,29 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Phone Number</mat-label>
+        <input
+          matInput
+          [(ngModel)]="signUpData.phone"
+          name="phone"
+          type="tel"
+          placeholder="+216 12 345 678"
+          required>
+        <mat-icon matSuffix>phone</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Address</mat-label>
+        <textarea
+          matInput
+          [(ngModel)]="signUpData.address"
+          name="address"
+          rows="2"
+          placeholder="City, Country"></textarea>
+        <mat-icon matSuffix>location_on</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field full-width">
         <mat-label>Password</mat-label>
         <input 
           matInput 
@@ -119,7 +142,10 @@
 
       <div class="form-options">
         <mat-checkbox [(ngModel)]="agreeToTerms" name="agreeToTerms" required>
-          I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a>
+          J'accepte les
+          <a routerLink="/auth/terms-of-service" class="terms-link" target="_blank">Conditions d'utilisation</a>
+          et la
+          <a routerLink="/auth/privacy-policy" class="terms-link" target="_blank">Politique de confidentialité</a>
         </mat-checkbox>
       </div>
 
@@ -134,21 +160,6 @@
         {{ isSubmitting ? 'Création...' : 'Create Account' }}
       </button>
     </form>
-
-    <div class="auth-divider">
-      <span>OR</span>
-    </div>
-
-    <div class="social-login">
-      <button mat-stroked-button class="social-btn google-btn">
-        <mat-icon>google</mat-icon>
-        Sign up with Google
-      </button>
-      <button mat-stroked-button class="social-btn facebook-btn">
-        <mat-icon>facebook</mat-icon>
-        Sign up with Facebook
-      </button>
-    </div>
 
     <div class="auth-footer">
       <p>Already have an account? <a routerLink="/auth/signin">Sign in</a></p>

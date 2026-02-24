@@ -2,7 +2,9 @@ package esprit.users.service;
 
 import esprit.users.dto.SigninRequest;
 import esprit.users.dto.SignupRequest;
+import esprit.users.dto.UserProfileUpdateRequest;
 import esprit.users.entity.User;
+import esprit.users.entity.Role;
 import esprit.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -12,6 +14,10 @@ import javax.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +48,8 @@ public class UserServiceImpl implements UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.toRoleEnum())
+                .phone(request.getPhone())
+                .address(request.getAddress())
                 .photoBase64(request.getPhotoBase64())
                 .build();
 
@@ -58,6 +66,107 @@ public class UserServiceImpl implements UserService {
         }
 
         return user;
+    }
+
+    @Override
+    public User googleSignin(String idToken) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String url = UriComponentsBuilder
+                    .fromHttpUrl("https://oauth2.googleapis.com/tokeninfo")
+                    .queryParam("id_token", idToken)
+                    .toUriString();
+
+            String json = restTemplate.getForObject(url, String.class);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(json);
+
+            String email = node.path("email").asText(null);
+            String emailVerified = node.path("email_verified").asText("false");
+
+            if (email == null || !"true".equalsIgnoreCase(emailVerified)) {
+                throw new IllegalArgumentException("Google token invalide ou email non vérifié.");
+            }
+
+            String picture = node.path("picture").asText(null);
+
+            return userRepository.findByEmail(email)
+                    .map(existing -> {
+                        // Toujours synchroniser la photo avec le compte Google
+                        existing.setPhotoBase64(picture);
+                        return userRepository.save(existing);
+                    })
+                    .orElseGet(() -> {
+                        String givenName = node.path("given_name").asText("Google");
+                        String familyName = node.path("family_name").asText("User");
+
+                        User user = User.builder()
+                                .firstName(givenName)
+                                .lastName(familyName)
+                                .email(email)
+                                // Mot de passe technique non utilisé (auth via Google)
+                                .password(passwordEncoder.encode("google-auth-" + email))
+                                .role(Role.STUDENT)
+                                // On stocke ici l'URL de la photo Google
+                                .photoBase64(picture)
+                                .build();
+                        return userRepository.save(user);
+                    });
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Échec de la vérification Google : " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public User facebookSignin(String accessToken) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String url = UriComponentsBuilder
+                    .fromHttpUrl("https://graph.facebook.com/me")
+                    .queryParam("fields", "id,first_name,last_name,email,picture.type(large)")
+                    .queryParam("access_token", accessToken)
+                    .toUriString();
+
+            String json = restTemplate.getForObject(url, String.class);
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(json);
+
+            String email = node.path("email").asText(null);
+            if (email == null || email.isBlank()) {
+                throw new IllegalArgumentException("Impossible de récupérer l'email Facebook.");
+            }
+
+            return userRepository.findByEmail(email)
+                    .map(existing -> {
+                        if (existing.getPhotoBase64() == null || existing.getPhotoBase64().isBlank()) {
+                            JsonNode pictureNode = node.path("picture").path("data").path("url");
+                            String pictureUrl = pictureNode.asText(null);
+                            existing.setPhotoBase64(pictureUrl);
+                            return userRepository.save(existing);
+                        }
+                        return existing;
+                    })
+                    .orElseGet(() -> {
+                        String firstName = node.path("first_name").asText("Facebook");
+                        String lastName = node.path("last_name").asText("User");
+                        JsonNode pictureNode = node.path("picture").path("data").path("url");
+                        String pictureUrl = pictureNode.asText(null);
+
+                        User user = User.builder()
+                                .firstName(firstName)
+                                .lastName(lastName)
+                                .email(email)
+                                // Mot de passe technique non utilisé (auth via Facebook)
+                                .password(passwordEncoder.encode("facebook-auth-" + email))
+                                .role(Role.STUDENT)
+                                // On stocke l'URL de la photo Facebook
+                                .photoBase64(pictureUrl)
+                                .build();
+                        return userRepository.save(user);
+                    });
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Échec de la vérification Facebook : " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -106,6 +215,27 @@ public class UserServiceImpl implements UserService {
             existing.setPassword(passwordEncoder.encode(user.getPassword()));
         }
 
+        return userRepository.save(existing);
+    }
+
+    @Override
+    public User updateUserProfile(Long id, UserProfileUpdateRequest request) {
+        User existing = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        existing.setFirstName(request.getFirstName());
+        existing.setLastName(request.getLastName());
+        existing.setPhone(request.getPhone());
+        existing.setAddress(request.getAddress());
+
+        if (!existing.getEmail().equals(request.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new IllegalArgumentException("Email is already in use");
+            }
+            existing.setEmail(request.getEmail());
+        }
+
+        // On ne modifie ni le rôle ni le mot de passe ici
         return userRepository.save(existing);
     }
 

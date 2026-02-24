@@ -7,6 +7,8 @@ import { SigninComponent } from './signin/signin.component';
 import { SignupComponent } from './signup/signup.component';
 import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
+import { TermsOfServiceComponent } from './terms-of-service/terms-of-service.component';
+import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 import { SharedModule } from '../shared/shared.module';
 
 
@@ -15,7 +17,9 @@ import { SharedModule } from '../shared/shared.module';
     SigninComponent,
     SignupComponent,
     ForgotPasswordComponent,
-    ResetPasswordComponent
+    ResetPasswordComponent,
+    TermsOfServiceComponent,
+    PrivacyPolicyComponent
   ],
   imports: [
     CommonModule,

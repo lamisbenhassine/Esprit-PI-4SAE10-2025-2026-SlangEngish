@@ -35,7 +35,20 @@ export class LayoutComponent implements OnInit {
         return;
       }
       this.username = `${user.firstName} ${user.lastName}`;
-      this.userAvatar = `https://via.placeholder.com/40x40/667eea/ffffff?text=${user.firstName.charAt(0)}${user.lastName.charAt(0)}`;
+      // Utiliser la vraie photo de profil si disponible, sinon avatar avec initiales
+      if (user.photoBase64) {
+        // Si la valeur ressemble à une URL (Google / Facebook), on l'utilise directement
+        if (user.photoBase64.startsWith('http://') || user.photoBase64.startsWith('https://')) {
+          this.userAvatar = user.photoBase64;
+        } else {
+          // Sinon c'est un base64 classique encodé côté signup
+          this.userAvatar = `data:image/jpeg;base64,${user.photoBase64}`;
+        }
+      } else {
+        const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+        this.userAvatar =
+          `https://via.placeholder.com/40x40/667eea/ffffff?text=${encodeURIComponent(initials)}`;
+      }
     });
   }
 

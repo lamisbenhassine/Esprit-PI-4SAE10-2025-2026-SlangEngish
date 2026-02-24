@@ -19,6 +19,8 @@ export interface SignupPayload {
   email: string;
   password: string;
   role: Role;
+  phone?: string;
+  address?: string;
   photoBase64?: string;
   recaptchaToken: string;
 }
@@ -35,6 +37,14 @@ export interface ForgotPasswordPayload {
 export interface ResetPasswordPayload {
   token: string;
   newPassword: string;
+}
+
+export interface GoogleSigninPayload {
+  idToken: string;
+}
+
+export interface FacebookSigninPayload {
+  accessToken: string;
 }
 
 
@@ -73,6 +83,20 @@ export class AuthService {
 
   resetPassword(payload: ResetPasswordPayload): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/reset-password`, payload);
+  }
+
+  googleSignin(idToken: string): Observable<AuthUser> {
+    const body: GoogleSigninPayload = { idToken };
+    return this.http.post<AuthUser>(`${this.apiUrl}/google-signin`, body).pipe(
+      tap(user => this.setCurrentUser(user))
+    );
+  }
+
+  facebookSignin(accessToken: string): Observable<AuthUser> {
+    const body: FacebookSigninPayload = { accessToken };
+    return this.http.post<AuthUser>(`${this.apiUrl}/facebook-signin`, body).pipe(
+      tap(user => this.setCurrentUser(user))
+    );
   }
 
   signout(): void {

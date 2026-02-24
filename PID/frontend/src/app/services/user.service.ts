@@ -11,13 +11,14 @@ export interface User {
   email: string;
   password?: string;
   role: Role;
+  photoBase64?: string;
+  phone?: string;
+  address?: string;
   // Optional UI-only fields
   avatar?: string;
   status?: 'active' | 'inactive' | 'pending';
   joinDate?: string;
   lastActive?: string;
-  phone?: string;
-  address?: string;
 }
 
 @Injectable({
@@ -43,6 +44,10 @@ export class UserService {
 
   update(id: number, user: User): Observable<User> {
     return this.http.put<User>(`${this.apiUrl}/${id}`, user);
+  }
+
+  updateProfile(id: number, data: Pick<User, 'firstName' | 'lastName' | 'email' | 'phone' | 'address'>): Observable<User> {
+    return this.http.patch<User>(`${this.apiUrl}/${id}/profile`, data);
   }
 
   delete(id: number): Observable<void> {

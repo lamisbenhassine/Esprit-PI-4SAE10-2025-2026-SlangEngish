@@ -7,7 +7,7 @@
     <div class="profile-card">
       <div class="user-info-card">
         <div class="user-avatar">
-          <img [src]="user.avatar || 'https://via.placeholder.com/140x140/667eea/ffffff?text=' + user.firstName.charAt(0) + user.lastName.charAt(0)" [alt]="user.firstName + ' ' + user.lastName">
+          <img [src]="getAvatarSrc(user) || 'https://via.placeholder.com/140x140/667eea/ffffff?text=' + (user.firstName?.charAt(0) || '') + (user.lastName?.charAt(0) || '')" [alt]="user.firstName + ' ' + user.lastName">
           <button mat-fab class="avatar-edit" color="primary">
             <mat-icon>camera_alt</mat-icon>
           </button>
@@ -24,6 +24,8 @@
       <mat-card>
         <mat-card-content>
           <h3>Edit Profile Information</h3>
+          <p class="status-message success" *ngIf="saveSuccess">Profil mis à jour avec succès.</p>
+          <p class="status-message error" *ngIf="saveError">{{ saveError }}</p>
           <form class="profile-form-content">
             <div class="form-row">
               <mat-form-field appearance="outline" class="form-field">
@@ -57,9 +59,9 @@
             </mat-form-field>
 
             <div class="form-actions">
-              <button mat-raised-button color="primary" (click)="saveProfile()">
+              <button mat-raised-button color="primary" (click)="saveProfile()" [disabled]="isSaving">
                 <mat-icon>save</mat-icon>
-                Save Changes
+                {{ isSaving ? 'Saving...' : 'Save Changes' }}
               </button>
               <button mat-button (click)="cancelEdit()">
                 Cancel
