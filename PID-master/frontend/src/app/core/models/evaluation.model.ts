@@ -45,6 +45,8 @@ export interface EvaluationAttempt {
   startTime: string;
   endTime?: string;
   score?: number;
+  /** Max possible score (e.g. 100) so results show "score / maxScore". */
+  maxScore?: number;
   status: 'IN_PROGRESS' | 'SUBMITTED' | 'EXPIRED';
   attemptNumber: number;
   studentAnswers?: StudentAnswer[];

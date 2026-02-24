@@ -9,6 +9,9 @@
     </div>
     <h1>Evaluation Results</h1>
     <p class="subtitle">Review your answers and see where you made mistakes.</p>
+    <p class="score-explanation" *ngIf="getTotalScore() < getMaxScore()">
+      Your score is based only on the questions you answered. Questions you did not answer count as 0.
+    </p>
     <button mat-raised-button class="back-btn" (click)="backToEvaluations()">
       <mat-icon>arrow_back</mat-icon>
       Back to evaluations

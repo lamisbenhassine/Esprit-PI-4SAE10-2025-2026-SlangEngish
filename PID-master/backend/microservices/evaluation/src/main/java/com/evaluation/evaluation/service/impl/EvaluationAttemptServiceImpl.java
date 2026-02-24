@@ -232,8 +232,13 @@ public class EvaluationAttemptServiceImpl implements EvaluationAttemptService {
 
     @Override
     public EvaluationAttempt getAttemptById(Long attemptId) {
-        return evaluationAttemptRepository.findById(attemptId)
+        EvaluationAttempt attempt = evaluationAttemptRepository.findById(attemptId)
                 .orElseThrow(() -> new ResourceNotFoundException("Attempt not found with id: " + attemptId));
+        // Set maxScore from evaluation so results always show "earned / total" e.g. 30/100 (not 30/30 when incomplete)
+        if (attempt.getEvaluation() != null && attempt.getEvaluation().getTotalScore() != null) {
+            attempt.setMaxScore(attempt.getEvaluation().getTotalScore());
+        }
+        return attempt;
     }
 
     @Override

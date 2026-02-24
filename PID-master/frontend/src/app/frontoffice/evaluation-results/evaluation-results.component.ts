@@ -60,6 +60,7 @@ export class EvaluationResultsComponent implements OnInit {
   }
 
   getMaxScore(): number {
+    if (this.attempt?.maxScore != null) return this.attempt.maxScore;
     if (this.attempt?.evaluation?.totalScore != null) return this.attempt.evaluation.totalScore;
     const sum = this.attempt?.studentAnswers?.reduce((s, a) => s + (a.question?.points ?? 0), 0);
     return sum ?? 100;

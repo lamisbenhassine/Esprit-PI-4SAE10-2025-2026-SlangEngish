@@ -15,6 +15,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -63,6 +64,15 @@ public class EvaluationAttempt {
     @JoinColumn(name = "evaluation_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnore
     private Evaluation evaluation;
+
+    /** Set by service when loading attempt so results show "score / maxScore" e.g. 30/100 (not 30/30). Not stored in DB. */
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("maxScore")
+    private Double maxScore;
+
+    public Double getMaxScore() {
+        return maxScore != null ? maxScore : (evaluation != null && evaluation.getTotalScore() != null ? evaluation.getTotalScore() : null);
+    }
 
     @OneToMany(mappedBy = "evaluationAttempt", cascade = CascadeType.ALL)
     private List<StudentAnswer> studentAnswers = new ArrayList<>();
