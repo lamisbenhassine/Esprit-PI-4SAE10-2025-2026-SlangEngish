@@ -98,7 +98,7 @@ export class EvaluationApiService {
       evaluationId: params.evaluationId,
       pdfUrl: params.pdfUrl,
       instructions: params.instructions ?? '',
-      pointsPerQuestion: params.pointsPerQuestion ?? 10
+      pointsPerQuestion: params.pointsPerQuestion ?? 2
     });
   }
 

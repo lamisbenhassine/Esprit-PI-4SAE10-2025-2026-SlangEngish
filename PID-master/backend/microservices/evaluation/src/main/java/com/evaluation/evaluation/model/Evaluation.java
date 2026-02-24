@@ -12,6 +12,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,5 +54,6 @@ public class Evaluation {
     private List<Question> questions = new ArrayList<>();
 
     @OneToMany(mappedBy = "evaluation")
+    @JsonIgnore
     private List<EvaluationAttempt> attempts = new ArrayList<>();
 }

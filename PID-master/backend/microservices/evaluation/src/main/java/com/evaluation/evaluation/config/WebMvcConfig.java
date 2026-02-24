@@ -1,21 +1,22 @@
 package com.evaluation.evaluation.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.nio.file.Paths;
-
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    @Value("${app.upload.dir:uploads}")
-    private String uploadDirConfig;
+    private final UploadPathConfig uploadPathConfig;
+
+    public WebMvcConfig(UploadPathConfig uploadPathConfig) {
+        this.uploadPathConfig = uploadPathConfig;
+    }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        String uploadsPath = Paths.get(uploadDirConfig).toAbsolutePath().normalize().toUri().toString();
+        // Serve from same directory as upload controller so saved files are reachable
+        String uploadsPath = uploadPathConfig.getUploadDir().toAbsolutePath().normalize().toUri().toString();
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations(uploadsPath + "/");
     }

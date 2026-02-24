@@ -2,10 +2,15 @@ package com.evaluation.evaluation.service.impl;
 
 import com.evaluation.evaluation.exception.ResourceNotFoundException;
 import com.evaluation.evaluation.model.Evaluation;
+import com.evaluation.evaluation.model.FillBlankQuestion;
+import com.evaluation.evaluation.model.MCQQuestion;
+import com.evaluation.evaluation.model.MSQQuestion;
+import com.evaluation.evaluation.model.Question;
 import com.evaluation.evaluation.repository.EvaluationRepository;
 import com.evaluation.evaluation.service.EvaluationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,10 +34,22 @@ public class EvaluationServiceImpl implements EvaluationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Evaluation getEvaluationById(Long id) {
-        return evaluationRepository.findByIdWithQuestions(id)
+        Evaluation evaluation = evaluationRepository.findByIdWithQuestions(id)
                 .or(() -> evaluationRepository.findById(id))
                 .orElseThrow(() -> new ResourceNotFoundException("Evaluation not found with id: " + id));
+        // Initialize lazy collections so JSON serialization does not cause LazyInitializationException
+        for (Question q : evaluation.getQuestions()) {
+            if (q instanceof MCQQuestion) {
+                ((MCQQuestion) q).getOptions().size();
+            } else if (q instanceof MSQQuestion) {
+                ((MSQQuestion) q).getOptions().size();
+            } else if (q instanceof FillBlankQuestion) {
+                ((FillBlankQuestion) q).getBlanks().size();
+            }
+        }
+        return evaluation;
     }
 
     @Override

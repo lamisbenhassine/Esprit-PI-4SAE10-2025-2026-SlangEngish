@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { Evaluation } from '../../core/models';
 import { EvaluationApiService } from '../../core/services/evaluation-api.service';
+import { getDisplayUploadUrl } from '../../core/utils/upload-url.util';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 const PLACEHOLDER_GRADIENT = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
@@ -23,12 +24,13 @@ export class EvaluationsManagementComponent implements OnInit {
     private sanitizer: DomSanitizer
   ) {}
 
-  /** Safe style for card background so data URLs (uploaded images) are allowed. */
+  /** Safe style for card background (uploaded photo or placeholder). */
   getEvaluationImageStyle(imageUrl: string | undefined): SafeStyle {
-    if (!imageUrl?.trim()) {
+    const url = getDisplayUploadUrl(imageUrl);
+    if (!url) {
       return this.sanitizer.bypassSecurityTrustStyle(PLACEHOLDER_GRADIENT);
     }
-    return this.sanitizer.bypassSecurityTrustStyle(`url(${imageUrl})`);
+    return this.sanitizer.bypassSecurityTrustStyle(`url(${url})`);
   }
 
   ngOnInit(): void {

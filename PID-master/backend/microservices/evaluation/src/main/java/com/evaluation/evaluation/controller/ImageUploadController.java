@@ -22,8 +22,8 @@ public class ImageUploadController {
 
     private static final String[] ALLOWED_EXTENSIONS = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
 
-    @Value("${server.port:8020}")
-    private String serverPort;
+    @Value("${app.public.base-url:http://localhost:8080}")
+    private String publicBaseUrl;
 
     private final UploadPathConfig uploadPathConfig;
 
@@ -51,7 +51,8 @@ public class ImageUploadController {
             Path target = uploadPathConfig.resolve(savedName);
             Files.copy(file.getInputStream(), target);
 
-            String url = "http://localhost:" + serverPort + "/uploads/" + savedName;
+            String base = publicBaseUrl.endsWith("/") ? publicBaseUrl : publicBaseUrl + "/";
+            String url = base + "uploads/" + savedName;
             Map<String, String> body = new HashMap<>();
             body.put("url", url);
             return ResponseEntity.ok(body);
@@ -94,7 +95,8 @@ public class ImageUploadController {
             Path target = uploadPathConfig.resolve(savedName);
             Files.copy(file.getInputStream(), target);
 
-            String url = "http://localhost:" + serverPort + "/uploads/" + savedName;
+            String base = publicBaseUrl.endsWith("/") ? publicBaseUrl : publicBaseUrl + "/";
+            String url = base + "uploads/" + savedName;
             Map<String, String> body = new HashMap<>();
             body.put("url", url);
             return ResponseEntity.ok(body);

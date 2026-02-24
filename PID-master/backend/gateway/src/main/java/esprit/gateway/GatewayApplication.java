@@ -20,6 +20,9 @@ public class GatewayApplication {
                 // Route /api/** to the evaluation microservice (discovered via Eureka as "evaluation")
                 .route("evaluation", r -> r.path("/api/**")
                         .uri("lb://evaluation"))
+                // Serve uploaded files (photo, PDF) so frontend can display them
+                .route("evaluation-uploads", r -> r.path("/uploads/**")
+                        .uri("lb://evaluation"))
                 .build();
     }
 }
