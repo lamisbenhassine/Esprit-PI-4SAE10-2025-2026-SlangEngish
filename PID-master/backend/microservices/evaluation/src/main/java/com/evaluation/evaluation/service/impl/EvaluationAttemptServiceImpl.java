@@ -124,6 +124,25 @@ public class EvaluationAttemptServiceImpl implements EvaluationAttemptService {
         return evaluationAttemptRepository.save(attempt);
     }
 
+    @Override
+    public EvaluationAttempt finishAttemptWithZero(Long attemptId) {
+        EvaluationAttempt attempt = getAttemptById(attemptId);
+        if (attempt.getStatus() != AttemptStatus.IN_PROGRESS) {
+            return attempt; // already finished, return as-is
+        }
+        List<StudentAnswer> answers = studentAnswerRepository.findByEvaluationAttemptId(attemptId);
+        for (StudentAnswer a : answers) {
+            a.setScoreAwarded(0.0);
+            studentAnswerRepository.save(a);
+        }
+        attempt.setStudentAnswers(answers);
+        attempt.setScore(0.0);
+        attempt.setEndTime(LocalDateTime.now());
+        attempt.setStatus(AttemptStatus.SUBMITTED);
+        attempt.setUpdatedAt(LocalDateTime.now());
+        return evaluationAttemptRepository.save(attempt);
+    }
+
     private double calculateScore(EvaluationAttempt attempt) {
         double totalScore = 0.0;
         for (StudentAnswer answer : attempt.getStudentAnswers()) {

@@ -37,6 +37,12 @@ public class EvaluationAttemptController {
         return ResponseEntity.ok(evaluationAttemptService.finishAttempt(attemptId));
     }
 
+    /** Finish attempt with 0 score when student leaves tab or browser (anti-cheating). */
+    @PostMapping("/{attemptId}/finish-with-zero")
+    public ResponseEntity<EvaluationAttempt> finishAttemptWithZero(@PathVariable Long attemptId) {
+        return ResponseEntity.ok(evaluationAttemptService.finishAttemptWithZero(attemptId));
+    }
+
     @GetMapping("/{attemptId}")
     public ResponseEntity<EvaluationAttempt> getAttemptById(@PathVariable Long attemptId) {
         return ResponseEntity.ok(evaluationAttemptService.getAttemptById(attemptId));

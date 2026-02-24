@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Evaluation, EvaluationAttempt, Question, Option, Blank } from '../../core/models';
@@ -23,7 +23,7 @@ function shuffle<T>(arr: T[]): T[] {
   templateUrl: './take-evaluation.component.html',
   styleUrls: ['./take-evaluation.component.css']
 })
-export class TakeEvaluationComponent implements OnInit {
+export class TakeEvaluationComponent implements OnInit, OnDestroy {
   evaluationId!: number;
   evaluation: Evaluation | null = null;
   attempt: EvaluationAttempt | null = null;
@@ -32,6 +32,9 @@ export class TakeEvaluationComponent implements OnInit {
   loading = true;
   submitting = false;
   finishing = false;
+  /** True after we auto-finished due to tab/browser leave (avoid double call). */
+  private violationHandled = false;
+  private visibilityListener = () => this.onVisibilityChange();
 
   answers: Map<number, { textAnswer?: string; selectedOptions?: Option[] }> = new Map();
   /** For FILL_BLANK: questionId -> { bank: remaining words, slots: word per blank index } */
@@ -61,6 +64,32 @@ export class TakeEvaluationComponent implements OnInit {
   ngOnInit(): void {
     this.evaluationId = +this.route.snapshot.paramMap.get('id')!;
     this.loadEvaluation();
+    document.addEventListener('visibilitychange', this.visibilityListener);
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('visibilitychange', this.visibilityListener);
+  }
+
+  /** When student switches tab or leaves browser: finish with 0 and go to results. */
+  private onVisibilityChange(): void {
+    if (document.visibilityState !== 'hidden') return;
+    if (this.violationHandled || this.finishing || !this.attempt?.id || this.loading) return;
+    this.violationHandled = true;
+    this.finishing = true;
+    this.api.finishAttemptWithZero(this.attempt.id).subscribe({
+      next: (a) => {
+        this.attempt = a;
+        this.router.navigate(['/frontoffice/evaluations', this.evaluationId, 'results'], {
+          queryParams: { attemptId: a.id }
+        });
+      },
+      error: () => {
+        this.finishing = false;
+        this.violationHandled = false;
+        this.snackBar.open('Connection error. Stay on this tab to continue.', 'Close', { duration: 4000 });
+      }
+    });
   }
 
   loadEvaluation(): void {

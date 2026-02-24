@@ -60,6 +60,11 @@ export class EvaluationApiService {
     return this.http.post<EvaluationAttempt>(`${API_URL}/attempts/${attemptId}/finish`, {});
   }
 
+  /** Finish attempt with 0 score when student leaves tab/browser (anti-cheating). */
+  finishAttemptWithZero(attemptId: number): Observable<EvaluationAttempt> {
+    return this.http.post<EvaluationAttempt>(`${API_URL}/attempts/${attemptId}/finish-with-zero`, {});
+  }
+
   getAttempt(attemptId: number): Observable<EvaluationAttempt> {
     return this.http.get<EvaluationAttempt>(`${API_URL}/attempts/${attemptId}`);
   }

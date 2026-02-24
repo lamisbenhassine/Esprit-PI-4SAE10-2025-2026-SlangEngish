@@ -1,4 +1,8 @@
 <div class="take-evaluation">
+  <p class="tab-warning" *ngIf="attempt && !loading">
+    <mat-icon>warning</mat-icon>
+    Do not switch tabs or leave this page — your attempt will be submitted with 0.
+  </p>
   <div class="eval-header" *ngIf="evaluation">
     <h1>{{ evaluation.title }}</h1>
     <p class="subtitle">Question {{ currentIndex + 1 }} of {{ questions.length }}</p>

@@ -12,6 +12,9 @@ public interface EvaluationAttemptService {
 
     EvaluationAttempt finishAttempt(Long attemptId);
 
+    /** Finish attempt with 0 score (e.g. tab switch / leave browser violation). */
+    EvaluationAttempt finishAttemptWithZero(Long attemptId);
+
     EvaluationAttempt getAttemptById(Long attemptId);
 
     List<EvaluationAttempt> getAttemptsByUserAndEvaluation(Long userId, Long evaluationId);
