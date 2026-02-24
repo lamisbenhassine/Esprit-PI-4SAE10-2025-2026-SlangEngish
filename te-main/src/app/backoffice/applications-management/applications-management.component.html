@@ -1,0 +1,125 @@
+<div class="applications-container">
+
+  <div class="page-header">
+    <h1><mat-icon>people</mat-icon> Gestion des Candidatures</h1>
+    <span class="total-badge">{{ filteredApplications.length }} candidature(s)</span>
+  </div>
+
+  <!-- Filtres -->
+  <mat-card class="filters-card">
+    <div class="filters-row">
+
+      <!-- Recherche -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Rechercher</mat-label>
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput [(ngModel)]="searchTerm" 
+               (ngModelChange)="applyFilters()" 
+               placeholder="Nom, email...">
+      </mat-form-field>
+
+      <!-- Filtre par offre -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Filtrer par offre</mat-label>
+        <mat-select [(ngModel)]="selectedJobOfferId" (ngModelChange)="applyFilters()">
+          <mat-option value="ALL">Toutes les offres</mat-option>
+          <mat-option *ngFor="let offer of jobOffers" [value]="offer.id?.toString()">
+            {{ offer.title }} ({{ offer.contractType }})
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Filtre par statut -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Statut</mat-label>
+        <mat-select [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
+  <mat-option value="ALL">Tous les statuts</mat-option>
+  <mat-option value="PENDING">⏳ En attente</mat-option>
+  <mat-option value="INTERVIEW">📅 Entretien</mat-option>
+  <mat-option value="ACCEPTED">✅ Accepté</mat-option>
+  <mat-option value="REJECTED">❌ Refusé</mat-option>
+  <mat-option value="CANCELLED">🚫 Annulé</mat-option>
+</mat-select>
+      </mat-form-field>
+
+      <!-- Filtre par contrat -->
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Type de contrat</mat-label>
+        <mat-select [(ngModel)]="selectedContractType" (ngModelChange)="applyFilters()">
+          <mat-option *ngFor="let c of contractTypes" [value]="c">
+            {{ c === 'ALL' ? 'Tous les contrats' : c }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+    </div>
+  </mat-card>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+    <p>Chargement...</p>
+  </div>
+
+  <!-- Liste candidatures -->
+  <div *ngIf="!loading">
+
+    <div *ngIf="filteredApplications.length === 0" class="empty-state">
+      <mat-icon>inbox</mat-icon>
+      <p>Aucune candidature trouvée</p>
+    </div>
+
+    <mat-card *ngFor="let app of filteredApplications" class="application-card">
+      <div class="card-content">
+
+        <!-- Info candidat -->
+        <div class="candidate-info">
+          <div class="avatar-circle">
+          {{ app.applicantName.charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <h3>{{ app.applicantName }}</h3>
+            <p><mat-icon>email</mat-icon> {{ app.applicantEmail }}</p>
+          </div>
+        </div>
+
+        <!-- Info offre -->
+        <div class="offer-info">
+          <span class="offer-title">{{ getJobTitle(app.jobOfferId) }}</span>
+          <span class="contract-chip">{{ getJobContractType(app.jobOfferId) }}</span>
+        </div>
+
+        <!-- Statut -->
+        <div class="status-section">
+          <span class="status-badge" [style.background]="getStatusColor(app.status || '')">
+            {{ getStatusLabel(app.status || '') }}
+          </span>
+          <mat-select [(ngModel)]="app.status" 
+            (ngModelChange)="updateStatus(app, $event)"
+            class="status-select">
+  <mat-option value="PENDING">⏳ En attente</mat-option>
+  <mat-option value="INTERVIEW">📅 Entretien</mat-option>
+  <mat-option value="ACCEPTED">✅ Accepté</mat-option>
+  <mat-option value="REJECTED">❌ Refusé</mat-option>
+  <mat-option value="CANCELLED">🚫 Annulé</mat-option>
+</mat-select>
+        </div>
+
+        <!-- Documents PDF -->
+        <div class="documents">
+          <button mat-stroked-button color="primary" 
+                  (click)="openFile(app.cvUrl!)"
+                  [disabled]="!app.cvUrl">
+            <mat-icon>picture_as_pdf</mat-icon> CV
+          </button>
+          <button mat-stroked-button color="accent"
+                  (click)="openFile(app.coverLetterUrl!)"
+                  [disabled]="!app.coverLetterUrl">
+            <mat-icon>picture_as_pdf</mat-icon> Lettre
+          </button>
+        </div>
+
+      </div>
+    </mat-card>
+  </div>
+</div>

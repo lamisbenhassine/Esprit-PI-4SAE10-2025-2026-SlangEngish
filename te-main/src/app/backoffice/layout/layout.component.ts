@@ -1,0 +1,47 @@
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { MenuItem } from '../../shared/sidebar/sidebar.component';
+
+@Component({
+  selector: 'app-layout',
+  templateUrl: './layout.component.html',
+  styleUrls: ['./layout.component.css']
+})
+export class LayoutComponent {
+  isSidebarCollapsed = false;
+  username = 'Admin User';
+  userAvatar = '';
+backofficeMenuItems: MenuItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', routerLink: '/backoffice/dashboard' },
+  { id: 'users', label: 'User Management', icon: 'people', routerLink: '/backoffice/users' },
+  { id: 'courses', label: 'Course Management', icon: 'school', routerLink: '/backoffice/courses' },
+  { id: 'clubs', label: 'Club Management', icon: 'groups', routerLink: '/backoffice/clubs' },
+  { id: 'jobs', label: 'Job Offers', icon: 'work', routerLink: '/backoffice/jobs' },  // ← AJOUTE CETTE LIGNE
+  { id: 'applications', label: 'Applications', icon: 'assignment', routerLink: '/backoffice/applications' },  // ← AJOUTE ICI
+  { id: 'reports', label: 'Reports', icon: 'assessment', routerLink: '/backoffice/reports' },
+  { id: 'settings', label: 'Settings', icon: 'settings', routerLink: '/backoffice/settings' },
+  //{ id: 'applications', label: 'Candidatures', icon: 'people', routerLink: '/backoffice/applications' }
+];
+
+  constructor(private router: Router) {}
+
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  }
+
+  onMenuItemClick(item: MenuItem) {
+    this.router.navigate([item.routerLink]);
+  }
+
+  onLogout() {
+    this.router.navigate(['/auth/signin']);
+  }
+
+  onProfile() {
+    this.router.navigate(['/backoffice/profile']);
+  }
+
+  onSettings() {
+    this.router.navigate(['/backoffice/settings']);
+  }
+}

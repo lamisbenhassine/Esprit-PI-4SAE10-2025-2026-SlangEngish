@@ -1,0 +1,30 @@
+<div class="frontoffice-layout">
+  <!-- Navbar -->
+  <app-navbar 
+  theme="light"
+  [username]="username"
+  [userAvatar]="userAvatar"
+  [showSidebarToggle]="true"
+  [notifications]="notifications"
+  (sidebarToggle)="toggleSidebar()"
+  (logout)="onLogout()"
+  (notifClick)="goToOffer($event)"
+  (notifClear)="clearNotifications()">
+</app-navbar>
+
+  <!-- Sidebar -->
+  <app-sidebar 
+    theme="light"
+    [menuItems]="frontofficeMenuItems"
+    [isCollapsed]="isSidebarCollapsed"
+    (toggleCollapse)="toggleSidebar()"
+    (menuItemClick)="onMenuItemClick($event)">
+  </app-sidebar>
+
+  <!-- Main Content -->
+  <div class="main-content" [class.sidebar-collapsed]="isSidebarCollapsed">
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

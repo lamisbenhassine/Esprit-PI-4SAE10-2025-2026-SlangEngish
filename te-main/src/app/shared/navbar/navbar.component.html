@@ -1,0 +1,87 @@
+<mat-toolbar [class]="'navbar ' + theme" color="default">
+  <!-- Left Section -->
+  <div class="navbar-left">
+    <button 
+      *ngIf="showSidebarToggle"
+      mat-icon-button 
+      (click)="toggleSidebar()"
+      class="sidebar-toggle"
+      [matTooltip]="'Toggle Sidebar'">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <div class="logo">
+      <img src="assets/logo1.png" alt="Slang-logo" class="logo-image">
+      <span class="logo-text">Slang-English</span>
+    </div>
+  </div>
+
+  <!-- Center Section -->
+  <div class="navbar-center">
+    <div class="search-container">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input type="text" placeholder="Search courses, topics..." class="search-input">
+    </div>
+  </div>
+
+  <!-- Right Section -->
+  <div class="navbar-right">
+
+    <!-- 🔔 Cloche Notifications -->
+    <div class="notif-wrapper">
+      <button mat-icon-button (click)="toggleNotifPanel()" class="notif-btn">
+        <mat-icon>notifications</mat-icon>
+        <span class="notif-badge" *ngIf="notifications.length > 0">
+          {{ notifications.length }}
+        </span>
+      </button>
+
+      <!-- Panel notifications -->
+      <div class="notif-panel" *ngIf="showNotifPanel">
+        <div class="notif-panel-header">
+          <strong>Notifications</strong>
+          <button mat-button color="warn" (click)="onClearNotifs()">Effacer</button>
+        </div>
+        <div *ngIf="notifications.length === 0" class="notif-empty">
+          Aucune notification
+        </div>
+        <div *ngFor="let notif of notifications" 
+             class="notif-item" 
+             (click)="onNotifClick(notif)">
+          <mat-icon class="notif-icon">work_outline</mat-icon>
+          <div class="notif-content">
+            <strong>{{ notif.title }}</strong> — {{ notif.company }}
+            <p>{{ notif.message }}</p>
+            <small>{{ notif.date | date:'dd/MM/yyyy HH:mm' }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile -->
+    <div class="user-profile" [matMenuTriggerFor]="profileMenu">
+      <div class="user-info">
+        <span class="username">{{ username }}</span>
+        <div class="avatar">
+          <img [src]="userAvatar || 'https://via.placeholder.com/40x40'" [alt]="username">
+        </div>
+      </div>
+      <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+    </div>
+
+    <mat-menu #profileMenu="matMenu" class="profile-menu">
+      <button mat-menu-item (click)="onProfile()">
+        <mat-icon>person</mat-icon>
+        <span>Profile</span>
+      </button>
+      <button mat-menu-item (click)="onSettings()">
+        <mat-icon>settings</mat-icon>
+        <span>Settings</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="onLogout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>

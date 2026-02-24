@@ -1,0 +1,93 @@
+<div class="jobs-container">
+  <div class="header">
+    <div class="header-content">
+      <h1>
+        <mat-icon>work_outline</mat-icon>
+        Offres d'emploi
+      </h1>
+      <p class="subtitle">{{ filteredOffers.length }} offre(s) disponible(s)</p>
+    </div>
+  </div>
+
+  <!-- Filtres -->
+  <mat-card class="filters-card">
+    <mat-card-content>
+      <div class="filters-row">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Rechercher</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" 
+                 placeholder="Titre, entreprise, lieu..." />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Type de contrat</mat-label>
+          <mat-select [(ngModel)]="selectedContractType" (selectionChange)="onContractTypeChange()">
+            <mat-option value="ALL">Tous</mat-option>
+            <mat-option *ngFor="let type of contractTypes.slice(1)" [value]="type">
+              {{ type }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Chargement -->
+  <div *ngIf="loading" class="loading">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Chargement des offres...</p>
+  </div>
+
+  <!-- Grille des offres -->
+  <div *ngIf="!loading && filteredOffers.length > 0" class="offers-grid">
+    <mat-card *ngFor="let offer of filteredOffers" class="offer-card" (click)="viewDetails(offer.id!)">
+      <mat-card-header>
+        <div mat-card-avatar class="offer-avatar">
+          <mat-icon>business_center</mat-icon>
+        </div>
+        <mat-card-title>{{ offer.title || '-' }}</mat-card-title>
+        <mat-card-subtitle>{{ offer.company || '-' }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="offer-badges">
+          <span class="contract-chip" [ngClass]="'chip-' + (offer.contractType || 'CDI')">
+            {{ offer.contractType || '-' }}
+          </span>
+        </div>
+
+        <div class="offer-info">
+          <div class="info-item">
+            <mat-icon>location_on</mat-icon>
+            <span>{{ offer.location || '-' }}</span>
+          </div>
+          <div class="info-item" *ngIf="offer.salary">
+            <mat-icon>euro</mat-icon>
+            <span>{{ offer.salary | number }} €/an</span>
+          </div>
+          <div class="info-item deadline" *ngIf="offer.deadline">
+            <mat-icon>event</mat-icon>
+            <span>Limite: {{ offer.deadline | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        <p class="offer-description">{{ offer.description || '' }}</p>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-raised-button color="primary">
+          <mat-icon>visibility</mat-icon>
+          Voir l'offre
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <!-- État vide -->
+  <mat-card *ngIf="!loading && filteredOffers.length === 0" class="empty-state">
+    <mat-icon class="empty-icon">inbox</mat-icon>
+    <h3>Aucune offre trouvée</h3>
+    <p>{{ searchTerm || selectedContractType !== 'ALL' ? 'Modifiez vos filtres pour voir plus d\'offres.' : 'Aucune offre disponible pour le moment.' }}</p>
+  </mat-card>
+</div>

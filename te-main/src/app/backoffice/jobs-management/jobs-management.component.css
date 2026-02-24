@@ -1,0 +1,86 @@
+.management-container {
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+}
+
+.full-width-table {
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.full-width-table th {
+  background-color: var(--background-light);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.contract-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-CDI { background: #e8f5e9; color: #2e7d32; }
+.badge-CDD { background: #e3f2fd; color: #1565c0; }
+.badge-STAGE { background: #fff3e0; color: #e65100; }
+.badge-ALTERNANCE { background: #f3e5f5; color: #6a1b9a; }
+.badge-FREELANCE { background: #fce4ec; color: #b71c1c; }
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+}
+
+/* Formulaire */
+.form-card {
+  margin-top: 24px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.half-width {
+  flex: 1;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}

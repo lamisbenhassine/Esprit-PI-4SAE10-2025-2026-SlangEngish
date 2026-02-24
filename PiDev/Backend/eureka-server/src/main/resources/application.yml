@@ -1,0 +1,32 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: eureka-server
+  main:
+    # Éviter le chargement lazy qui peut provoquer des races au démarrage
+    lazy-initialization: false
+
+eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: false
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    # Désactiver complètement le côté client pour un serveur standalone
+    enabled: true
+    service-url:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+  server:
+    enable-self-preservation: false
+    # Réduire le temps d’attente quand le registre est vide (évite des timeouts au bootstrap)
+    wait-time-in-ms-when-sync-empty: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+

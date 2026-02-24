@@ -1,0 +1,226 @@
+<div class="details-container" *ngIf="!loading && jobOffer">
+  
+  <!-- Bouton retour -->
+  <button mat-icon-button (click)="goBack()" class="back-button">
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+
+  <div class="details-layout">
+    
+    <!-- Colonne principale -->
+    <div class="main-column">
+      <mat-card class="offer-card">
+        <mat-card-content>
+          
+          <!-- Badges -->
+          <div class="badges">
+            <span class="contract-chip" [ngClass]="'chip-' + jobOffer.contractType">
+              {{ jobOffer.contractType }}
+            </span>
+            <span class="active-badge">
+              <mat-icon>check_circle</mat-icon>
+              Active
+            </span>
+          </div>
+
+          <h1 class="offer-title">{{ jobOffer.title }}</h1>
+
+          <!-- Métadonnées -->
+          <div class="meta-grid">
+            <div class="meta-item">
+              <mat-icon>business</mat-icon>
+              <span>{{ jobOffer.company }}</span>
+            </div>
+            <div class="meta-item">
+              <mat-icon>location_on</mat-icon>
+              <span>{{ jobOffer.location }}</span>
+            </div>
+            <div class="meta-item" *ngIf="jobOffer.salary">
+              <mat-icon>euro</mat-icon>
+              <span>{{ jobOffer.salary | number }} €/an</span>
+            </div>
+            <div class="meta-item deadline" *ngIf="jobOffer.deadline">
+              <mat-icon>event</mat-icon>
+              <span>Limite: {{ jobOffer.deadline | date:'dd MMMM yyyy' }}</span>
+            </div>
+          </div>
+
+          <mat-divider class="section-divider"></mat-divider>
+
+          <h2 class="section-title">Description du poste</h2>
+          <p class="offer-description">{{ jobOffer.description }}</p>
+
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Succès de candidature -->
+      <mat-card *ngIf="applicationSuccess" class="success-card">
+        <mat-card-content>
+          <div class="success-content">
+            <mat-icon class="success-icon">check_circle</mat-icon>
+            <div>
+              <h3>Candidature envoyée !</h3>
+              <p>Votre candidature a bien été transmise. Bonne chance !</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Formulaire de candidature avec validation ✅ -->
+      <mat-card class="application-card" *ngIf="!applicationSuccess">
+        <mat-card-header>
+          <mat-icon mat-card-avatar class="apply-avatar">person_add</mat-icon>
+          <mat-card-title>Postuler à cette offre</mat-card-title>
+          <mat-card-subtitle>Remplissez le formulaire ci-dessous</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          
+          <div *ngIf="applicationError" class="error-alert">
+            <mat-icon>warning</mat-icon>
+            {{ applicationError }}
+          </div>
+
+          <form [formGroup]="applicationForm" (ngSubmit)="submitApplication()">
+
+  <div *ngIf="applicationError" class="error-alert">
+    <mat-icon>warning</mat-icon> {{ applicationError }}
+  </div>
+
+  <div class="form-row">
+    <mat-form-field appearance="outline" class="half-width">
+      <mat-label>Nom complet *</mat-label>
+      <mat-icon matPrefix>person</mat-icon>
+      <input matInput formControlName="applicantName" />
+      <mat-error *ngIf="isFieldInvalid('applicantName')">
+        Nom obligatoire (min 3 caractères)
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="half-width">
+      <mat-label>Email *</mat-label>
+      <mat-icon matPrefix>email</mat-icon>
+      <input matInput type="email" formControlName="applicantEmail" />
+      <mat-error *ngIf="isFieldInvalid('applicantEmail')">
+        Email invalide
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <!-- ✅ Upload CV -->
+  <div class="upload-section">
+    <label class="upload-label">📄 CV (PDF) *</label>
+    <div class="upload-box" (click)="cvInput.click()" 
+         [class.uploaded]="cvFile">
+      <mat-icon>{{ cvFile ? 'check_circle' : 'upload_file' }}</mat-icon>
+      <span>{{ cvFile ? cvFile.name : 'Cliquez pour uploader votre CV (PDF)' }}</span>
+    </div>
+    <input #cvInput type="file" accept=".pdf" 
+           (change)="onCvSelected($event)" hidden>
+  </div>
+
+  <!-- ✅ Upload Lettre -->
+  <div class="upload-section">
+    <label class="upload-label">📝 Lettre de motivation (PDF) *</label>
+    <div class="upload-box" (click)="coverInput.click()" 
+         [class.uploaded]="coverLetterFile">
+      <mat-icon>{{ coverLetterFile ? 'check_circle' : 'upload_file' }}</mat-icon>
+      <span>{{ coverLetterFile ? coverLetterFile.name : 'Cliquez pour uploader votre lettre (PDF)' }}</span>
+    </div>
+    <input #coverInput type="file" accept=".pdf" 
+           (change)="onCoverLetterSelected($event)" hidden>
+  </div>
+
+  <div class="form-actions">
+    <button mat-raised-button color="primary" type="submit" 
+            [disabled]="submitting">
+      <mat-icon *ngIf="!submitting">send</mat-icon>
+      <mat-progress-spinner *ngIf="submitting" 
+        mode="indeterminate" diameter="20">
+      </mat-progress-spinner>
+      {{ submitting ? 'Envoi en cours...' : 'Envoyer ma candidature' }}
+    </button>
+  </div>
+
+</form>
+
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Sidebar récapitulatif -->
+    <aside class="sidebar">
+      <mat-card class="info-card">
+        <mat-card-header>
+          <mat-card-title>Récapitulatif</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          
+          <div class="info-item">
+            <mat-icon>work</mat-icon>
+            <div>
+              <span class="info-label">Poste</span>
+              <span class="info-value">{{ jobOffer.title }}</span>
+            </div>
+          </div>
+          <mat-divider></mat-divider>
+
+          <div class="info-item">
+            <mat-icon>business</mat-icon>
+            <div>
+              <span class="info-label">Entreprise</span>
+              <span class="info-value">{{ jobOffer.company }}</span>
+            </div>
+          </div>
+          <mat-divider></mat-divider>
+
+          <div class="info-item">
+            <mat-icon>location_on</mat-icon>
+            <div>
+              <span class="info-label">Lieu</span>
+              <span class="info-value">{{ jobOffer.location }}</span>
+            </div>
+          </div>
+          <mat-divider></mat-divider>
+
+          <div class="info-item">
+            <mat-icon>description</mat-icon>
+            <div>
+              <span class="info-label">Contrat</span>
+              <span class="info-value">{{ jobOffer.contractType }}</span>
+            </div>
+          </div>
+
+          <ng-container *ngIf="jobOffer.salary">
+            <mat-divider></mat-divider>
+            <div class="info-item">
+              <mat-icon>euro</mat-icon>
+              <div>
+                <span class="info-label">Rémunération</span>
+                <span class="info-value">{{ jobOffer.salary | number }} €/an</span>
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-container *ngIf="jobOffer.deadline">
+            <mat-divider></mat-divider>
+            <div class="info-item deadline-item">
+              <mat-icon>event</mat-icon>
+              <div>
+                <span class="info-label">Date limite</span>
+                <span class="info-value">{{ jobOffer.deadline | date:'dd/MM/yyyy' }}</span>
+              </div>
+            </div>
+          </ng-container>
+
+        </mat-card-content>
+      </mat-card>
+    </aside>
+
+  </div>
+</div>
+
+<!-- Chargement -->
+<div *ngIf="loading" class="loading">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  <p>Chargement de l'offre...</p>
+</div>
