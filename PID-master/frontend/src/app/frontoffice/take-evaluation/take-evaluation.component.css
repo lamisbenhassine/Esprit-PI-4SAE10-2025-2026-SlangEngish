@@ -2,6 +2,19 @@
   max-width: 720px;
   margin: 0 auto;
   animation: fadeInUp 0.5s ease-out;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Allow selection in answer inputs so student can type and edit */
+.take-evaluation textarea,
+.take-evaluation input {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
 }
 
 .tab-warning {
