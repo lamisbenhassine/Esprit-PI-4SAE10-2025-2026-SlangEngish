@@ -10,6 +10,7 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -50,5 +51,16 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role; // ADMIN, TUTOR, STUDENT, CLUB_MANAGER, EMPLOYEE
+
+    @Column(name = "reset_token", length = 100)
+    private String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    private LocalDateTime resetTokenExpiry;
+
+    /** Photo de profil (base64, optionnel). */
+    @Lob
+    @Column(name = "photo_base64", columnDefinition = "LONGTEXT")
+    private String photoBase64;
 }
 

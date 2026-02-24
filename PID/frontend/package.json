@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "serve:gateway": "ng build --configuration development && node server-gateway.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:my-project": "node dist/my-project/server/server.mjs"

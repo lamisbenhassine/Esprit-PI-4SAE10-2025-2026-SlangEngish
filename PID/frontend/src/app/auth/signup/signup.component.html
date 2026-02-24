@@ -79,22 +79,42 @@
         </button>
       </mat-form-field>
 
-      <div class="avatar-upload">
-        <label for="avatar-upload" class="upload-label">
+      <div class="avatar-section">
+        <div class="avatar-preview-wrap">
           <div class="avatar-preview">
-            <img [src]="avatarPreview || 'https://via.placeholder.com/100x100/667eea/ffffff?text=AVATAR'" alt="Avatar">
-            <div class="upload-overlay">
-              <mat-icon>camera_alt</mat-icon>
-            </div>
+            <img [src]="avatarPreview || 'https://via.placeholder.com/100x100/667eea/ffffff?text=Photo'" alt="Photo">
           </div>
-          <span>Upload Avatar (Optional)</span>
-        </label>
-        <input 
-          id="avatar-upload" 
-          type="file" 
-          accept="image/*" 
-          (change)="onAvatarChange($event)"
-          style="display: none;">
+          <p class="avatar-label">Photo de profil (optionnel)</p>
+        </div>
+        <div class="avatar-options">
+          <label for="avatar-upload" class="option-btn file-btn">
+            <mat-icon>folder_open</mat-icon>
+            <span>Depuis mon PC</span>
+          </label>
+          <input id="avatar-upload" type="file" accept="image/*" (change)="onAvatarChange($event)" hidden>
+          <button type="button" class="option-btn camera-btn" (click)="openCamera()">
+            <mat-icon>camera_alt</mat-icon>
+            <span>Prendre une photo</span>
+          </button>
+        </div>
+        <p *ngIf="cameraError" class="camera-error">{{ cameraError }}</p>
+        <p class="camera-hint">La caméra fonctionne sur <strong>localhost</strong> ou en <strong>HTTPS</strong>. Sinon, utilisez « Depuis mon PC ».</p>
+        <div *ngIf="showCamera" class="camera-panel">
+          <video #videoEl autoplay playsinline muted class="camera-video"></video>
+          <canvas #canvasEl class="camera-canvas" hidden></canvas>
+          <div class="camera-actions">
+            <button type="button" mat-raised-button color="primary" (click)="capturePhoto()">
+              <mat-icon>camera</mat-icon>
+              Capturer
+            </button>
+            <button type="button" mat-stroked-button (click)="closeCamera()">Annuler</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="recaptcha-wrap">
+        <div id="recaptcha-signup" class="recaptcha-container"></div>
+        <p class="recaptcha-hint">Vérifiez que vous n'êtes pas un robot.</p>
       </div>
 
       <div class="form-options">
@@ -103,14 +123,15 @@
         </mat-checkbox>
       </div>
 
+      <p *ngIf="signupError" class="signup-error">{{ signupError }}</p>
       <button 
         mat-raised-button 
         color="primary" 
         class="submit-btn"
         type="submit"
-        [disabled]="!isFormValid()">
+        [disabled]="!isFormValid() || isSubmitting">
         <mat-icon>person_add</mat-icon>
-        Create Account
+        {{ isSubmitting ? 'Création...' : 'Create Account' }}
       </button>
     </form>
 

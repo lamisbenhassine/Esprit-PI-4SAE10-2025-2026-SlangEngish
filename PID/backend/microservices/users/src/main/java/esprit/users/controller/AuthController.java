@@ -1,9 +1,8 @@
 package esprit.users.controller;
 
-import esprit.users.dto.SigninRequest;
-import esprit.users.dto.SignupRequest;
-import esprit.users.dto.UserResponse;
+import esprit.users.dto.*;
 import esprit.users.entity.User;
+import esprit.users.service.RecaptchaVerificationService;
 import esprit.users.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,6 +11,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,9 +21,14 @@ import javax.validation.Valid;
 public class AuthController {
 
     private final UserService userService;
+    private final RecaptchaVerificationService recaptchaVerificationService;
 
     @PostMapping("/signup")
-    public ResponseEntity<UserResponse> signup(@Valid @RequestBody SignupRequest request) {
+    public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest request) {
+        if (!recaptchaVerificationService.verify(request.getRecaptchaToken())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Vérification « I'm not a robot » échouée. Cochez la case et réessayez."));
+        }
         User created = userService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.fromEntity(created));
     }
@@ -32,6 +37,18 @@ public class AuthController {
     public ResponseEntity<UserResponse> signin(@Valid @RequestBody SigninRequest request) {
         User user = userService.signin(request);
         return ResponseEntity.ok(UserResponse.fromEntity(user));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        userService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok().build();
     }
 }
 

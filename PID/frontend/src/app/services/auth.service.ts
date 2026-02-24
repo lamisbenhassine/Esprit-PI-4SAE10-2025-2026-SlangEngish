@@ -10,6 +10,7 @@ export interface AuthUser {
   lastName: string;
   email: string;
   role: Role;
+  photoBase64?: string;
 }
 
 export interface SignupPayload {
@@ -18,6 +19,8 @@ export interface SignupPayload {
   email: string;
   password: string;
   role: Role;
+  photoBase64?: string;
+  recaptchaToken: string;
 }
 
 export interface SigninPayload {
@@ -25,12 +28,22 @@ export interface SigninPayload {
   password: string;
 }
 
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface ResetPasswordPayload {
+  token: string;
+  newPassword: string;
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
-  private readonly apiUrl = 'http://localhost:8011/api/auth';
+  private readonly apiUrl = '/api/auth';
 
   // Simple in-memory current user (pas de localStorage pour éviter les erreurs SSR)
   private currentUserSubject = new BehaviorSubject<AuthUser | null>(null);
@@ -52,6 +65,14 @@ export class AuthService {
     return this.http.post<AuthUser>(`${this.apiUrl}/signin`, payload).pipe(
       tap(user => this.setCurrentUser(user))
     );
+  }
+
+  forgotPassword(payload: ForgotPasswordPayload): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/forgot-password`, payload);
+  }
+
+  resetPassword(payload: ResetPasswordPayload): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/reset-password`, payload);
   }
 
   signout(): void {

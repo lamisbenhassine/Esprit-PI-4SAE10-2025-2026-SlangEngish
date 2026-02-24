@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Fichier local avec mot de passe email (ne pas versionner)
+src/main/resources/application-local.properties

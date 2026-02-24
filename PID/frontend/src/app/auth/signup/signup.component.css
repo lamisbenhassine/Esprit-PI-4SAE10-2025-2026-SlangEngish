@@ -195,37 +195,23 @@
   margin-bottom: 0;
 }
 
-.avatar-upload {
+.avatar-section {
   text-align: center;
   margin-bottom: 24px;
 }
 
-.upload-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.upload-label:hover .upload-overlay {
-  opacity: 1;
+.avatar-preview-wrap {
+  margin-bottom: 12px;
 }
 
 .avatar-preview {
-  position: relative;
   width: 100px;
   height: 100px;
   border-radius: 50%;
   overflow: hidden;
   border: 3px solid #667eea;
-  transition: all 0.3s ease;
-}
-
-.upload-label:hover .avatar-preview {
-  transform: scale(1.05);
-  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+  margin: 0 auto;
+  display: block;
 }
 
 .avatar-preview img {
@@ -234,31 +220,105 @@
   object-fit: cover;
 }
 
-.upload-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.upload-overlay mat-icon {
-  color: white;
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
-}
-
-.upload-label span {
+.avatar-label {
+  margin: 8px 0 0;
   color: #666;
   font-size: 14px;
+}
+
+.avatar-options {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.option-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  color: #333;
+}
+
+.option-btn:hover {
+  background: #e8eaf0;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.option-btn mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.camera-btn {
+  font-family: inherit;
+}
+
+.camera-error {
+  margin-top: 8px;
+  color: #f44336;
+  font-size: 13px;
+}
+
+.camera-hint {
+  margin-top: 8px;
+  color: #888;
+  font-size: 12px;
+}
+
+.camera-panel {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.camera-video {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 8px;
+  background: #000;
+  display: block;
+  margin: 0 auto 12px;
+}
+
+.camera-canvas {
+  display: none;
+}
+
+.camera-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.recaptcha-wrap {
+  margin-bottom: 20px;
+}
+
+.recaptcha-container {
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.recaptcha-hint {
+  margin: 8px 0 0;
+  color: #666;
+  font-size: 13px;
 }
 
 .form-options {
@@ -322,6 +382,15 @@
   font-size: 18px;
   width: 18px;
   height: 18px;
+}
+
+.signup-error {
+  color: #f44336;
+  font-size: 14px;
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  background: #ffebee;
+  border-radius: 8px;
 }
 
 .auth-divider {

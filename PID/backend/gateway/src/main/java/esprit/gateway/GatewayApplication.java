@@ -16,11 +16,11 @@ public class GatewayApplication {
     }
     @Bean
     public RouteLocator gatewayRoutes(RouteLocatorBuilder builder){
-        return builder.routes() .route("evaluation",r->r.path("/evaluation/**")
-                        .uri("http://localhost:8020/") )
-                .route("user",r->r.path("/user/**")
-                        .uri("http://localhost:8011/") )
+        return builder.routes()
+                .route("evaluation", r -> r.path("/evaluation/**").uri("http://localhost:8020/"))
+                .route("user", r -> r.path("/user/**").uri("http://localhost:8011/"))
+                .route("auth", r -> r.path("/api/auth/**").uri("http://localhost:8011"))
+                .route("frontend", r -> r.order(1).path("/**").uri("http://127.0.0.1:4200"))
                 .build();
-
-         }
+    }
 }

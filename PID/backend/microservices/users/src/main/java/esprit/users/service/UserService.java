@@ -14,6 +14,10 @@ public interface UserService {
 
     User signin(SigninRequest request);
 
+    void requestPasswordReset(String email);
+
+    void resetPassword(String token, String newPassword);
+
     User updateUser(Long id, User user);
 
     void deleteUser(Long id);

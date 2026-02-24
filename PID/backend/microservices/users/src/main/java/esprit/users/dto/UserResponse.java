@@ -13,6 +13,7 @@ public class UserResponse {
     private String lastName;
     private String email;
     private String role;
+    private String photoBase64;
 
     public static UserResponse fromEntity(User user) {
         return UserResponse.builder()
@@ -21,6 +22,7 @@ public class UserResponse {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
+                .photoBase64(user.getPhotoBase64())
                 .build();
     }
 }

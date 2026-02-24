@@ -29,6 +29,13 @@ public class SignupRequest {
     @NotBlank(message = "Role is required")
     private String role; // ADMIN, TUTOR, STUDENT, CLUB_MANAGER, EMPLOYEE
 
+    /** Photo de profil en base64 (optionnel). */
+    private String photoBase64;
+
+    /** Token reCAPTCHA (« I'm not a robot »). */
+    @NotBlank(message = "Veuillez confirmer que vous n'êtes pas un robot.")
+    private String recaptchaToken;
+
     public Role toRoleEnum() {
         return Role.valueOf(role.toUpperCase());
     }
