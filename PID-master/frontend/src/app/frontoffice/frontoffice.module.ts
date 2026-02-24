@@ -13,6 +13,8 @@ import { TakeEvaluationComponent } from './take-evaluation/take-evaluation.compo
 import { EvaluationResultsComponent } from './evaluation-results/evaluation-results.component';
 import { SharedModule } from '../shared/shared.module';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSelectModule } from '@angular/material/select';
 
 @NgModule({
   declarations: [
@@ -31,7 +33,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
     ReactiveFormsModule,
     FrontofficeRoutingModule,
     SharedModule,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatPaginatorModule,
+    MatSelectModule
   ]
 })
 export class FrontofficeModule { }

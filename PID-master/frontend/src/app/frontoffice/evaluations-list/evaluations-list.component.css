@@ -58,10 +58,50 @@
   color: white;
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.toolbar .search-field {
+  min-width: 220px;
+  flex: 1;
+}
+
+.toolbar .filter-field {
+  width: 160px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 48px 24px;
+  color: #666;
+}
+
+.no-results mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #ccc;
+  margin-bottom: 16px;
+}
+
+.no-results p {
+  margin: 0;
+  font-size: 16px;
+}
+
 .eval-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
+}
+
+mat-paginator {
+  margin-top: 24px;
 }
 
 .eval-card {

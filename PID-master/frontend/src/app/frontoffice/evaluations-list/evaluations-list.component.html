@@ -15,8 +15,25 @@
     </div>
   </div>
 
+  <div class="toolbar" *ngIf="!loading && evaluations.length > 0">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search by title</mat-label>
+      <input matInput [(ngModel)]="searchText" (ngModelChange)="pageIndex = 0" placeholder="Type to search...">
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="filter-field">
+      <mat-label>Filter</mat-label>
+      <mat-select [(ngModel)]="filterStatus" (ngModelChange)="pageIndex = 0">
+        <mat-option value="all">All</mat-option>
+        <mat-option value="upcoming">Upcoming</mat-option>
+        <mat-option value="ongoing">Ongoing</mat-option>
+        <mat-option value="past">Past</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
   <div class="eval-grid" *ngIf="!loading">
-    <div class="eval-card" *ngFor="let e of evaluations" (click)="startEvaluation(e)">
+    <div class="eval-card" *ngFor="let e of paginatedEvaluations" (click)="startEvaluation(e)">
       <div class="eval-image" [style.backgroundImage]="getEvaluationImageStyle(e.imageUrl)">
         <span class="eval-badge">{{ e.numberOfAttempts }} attempt(s)</span>
       </div>
@@ -33,6 +50,19 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <mat-paginator *ngIf="!loading && totalFiltered > 0"
+    [length]="totalFiltered"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[6, 9, 12, 24]"
+    [pageIndex]="pageIndex"
+    (page)="onPageChange($event)">
+  </mat-paginator>
+
+  <div class="no-results" *ngIf="!loading && evaluations.length > 0 && totalFiltered === 0">
+    <mat-icon>search_off</mat-icon>
+    <p>No evaluations match your search or filter.</p>
   </div>
 
   <div class="loading-state" *ngIf="loading">
