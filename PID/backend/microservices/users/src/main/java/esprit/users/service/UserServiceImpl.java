@@ -3,8 +3,9 @@ package esprit.users.service;
 import esprit.users.dto.SigninRequest;
 import esprit.users.dto.SignupRequest;
 import esprit.users.dto.UserProfileUpdateRequest;
-import esprit.users.entity.User;
 import esprit.users.entity.Role;
+import esprit.users.entity.Status;
+import esprit.users.entity.User;
 import esprit.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -48,6 +49,7 @@ public class UserServiceImpl implements UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.toRoleEnum())
+                .status(Status.ACTIVE)
                 .phone(request.getPhone())
                 .address(request.getAddress())
                 .photoBase64(request.getPhotoBase64())
@@ -63,6 +65,10 @@ public class UserServiceImpl implements UserService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new EntityNotFoundException("Invalid email or password");
+        }
+
+        if (user.getStatus() == Status.INACTIVE) {
+            throw new IllegalStateException("Compte bloqué. Contactez l'administrateur.");
         }
 
         return user;
@@ -92,7 +98,9 @@ public class UserServiceImpl implements UserService {
 
             return userRepository.findByEmail(email)
                     .map(existing -> {
-                        // Toujours synchroniser la photo avec le compte Google
+                        if (existing.getStatus() == Status.INACTIVE) {
+                            throw new IllegalStateException("Compte bloqué. Contactez l'administrateur.");
+                        }
                         existing.setPhotoBase64(picture);
                         return userRepository.save(existing);
                     })
@@ -104,10 +112,9 @@ public class UserServiceImpl implements UserService {
                                 .firstName(givenName)
                                 .lastName(familyName)
                                 .email(email)
-                                // Mot de passe technique non utilisé (auth via Google)
                                 .password(passwordEncoder.encode("google-auth-" + email))
                                 .role(Role.STUDENT)
-                                // On stocke ici l'URL de la photo Google
+                                .status(Status.ACTIVE)
                                 .photoBase64(picture)
                                 .build();
                         return userRepository.save(user);
@@ -138,6 +145,9 @@ public class UserServiceImpl implements UserService {
 
             return userRepository.findByEmail(email)
                     .map(existing -> {
+                        if (existing.getStatus() == Status.INACTIVE) {
+                            throw new IllegalStateException("Compte bloqué. Contactez l'administrateur.");
+                        }
                         if (existing.getPhotoBase64() == null || existing.getPhotoBase64().isBlank()) {
                             JsonNode pictureNode = node.path("picture").path("data").path("url");
                             String pictureUrl = pictureNode.asText(null);
@@ -156,10 +166,9 @@ public class UserServiceImpl implements UserService {
                                 .firstName(firstName)
                                 .lastName(lastName)
                                 .email(email)
-                                // Mot de passe technique non utilisé (auth via Facebook)
                                 .password(passwordEncoder.encode("facebook-auth-" + email))
                                 .role(Role.STUDENT)
-                                // On stocke l'URL de la photo Facebook
+                                .status(Status.ACTIVE)
                                 .photoBase64(pictureUrl)
                                 .build();
                         return userRepository.save(user);
@@ -256,6 +265,29 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    @Override
+    public List<User> searchUsers(String search, String role, String status) {
+        Role r = (role == null || role.isBlank() || "all".equalsIgnoreCase(role)) ? null : Role.valueOf(role.trim().toUpperCase());
+        Status s = (status == null || status.isBlank() || "all".equalsIgnoreCase(status)) ? null : Status.valueOf(status.trim().toUpperCase());
+        return userRepository.searchUsers(search == null ? "" : search.trim(), r, s);
+    }
+
+    @Override
+    public User setUserStatus(Long userId, Long adminId, Status status) {
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new EntityNotFoundException("Admin not found"));
+        if (admin.getRole() != Role.ADMIN) {
+            throw new IllegalArgumentException("Seul un administrateur peut bloquer ou débloquer un utilisateur.");
+        }
+        User target = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        if (target.getRole() == Role.ADMIN) {
+            throw new IllegalArgumentException("Impossible de bloquer un administrateur.");
+        }
+        target.setStatus(status);
+        return userRepository.save(target);
     }
 }
 

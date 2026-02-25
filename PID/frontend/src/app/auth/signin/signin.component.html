@@ -46,14 +46,15 @@
         <a routerLink="/auth/forgot-password" class="forgot-password">Forgot password?</a>
       </div>
 
+      <p *ngIf="signinError" class="signup-error">{{ signinError }}</p>
       <button 
         mat-raised-button 
         color="primary" 
         class="submit-btn"
         type="submit"
-        [disabled]="!isFormValid()">
+        [disabled]="!isFormValid() || isSubmitting">
         <mat-icon>login</mat-icon>
-        Sign In
+        {{ isSubmitting ? 'Connexion...' : 'Sign In' }}
       </button>
     </form>
 

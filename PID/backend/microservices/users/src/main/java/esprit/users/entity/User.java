@@ -60,6 +60,10 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role; // ADMIN, TUTOR, STUDENT, CLUB_MANAGER, EMPLOYEE
 
+    @Convert(converter = StatusConverter.class)
+    @Column(name = "status", length = 20)
+    private Status status = Status.ACTIVE; // ACTIVE, INACTIVE, PENDING
+
     @Column(name = "reset_token", length = 100)
     private String resetToken;
 

@@ -21,8 +21,8 @@
         type="text" 
         placeholder="Search users by name or email..." 
         class="search-input"
-        [(ngModel)]="searchTerm"
-        (input)="onSearch()">
+        [ngModel]="searchTerm"
+        (ngModelChange)="searchTerm = $event; onSearchInput()">
     </div>
     
     <div class="filter-controls">
@@ -39,12 +39,12 @@
       </mat-form-field>
       
       <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>Status</mat-label>
+        <mat-label>Statut</mat-label>
         <mat-select [(ngModel)]="selectedStatus" (selectionChange)="onStatusChange()">
-          <mat-option value="all">All Status</mat-option>
-          <mat-option value="active">Active</mat-option>
-          <mat-option value="inactive">Inactive</mat-option>
-          <mat-option value="pending">Pending</mat-option>
+          <mat-option value="all">Tous</mat-option>
+          <mat-option value="ACTIVE">Actif</mat-option>
+          <mat-option value="INACTIVE">Bloqué</mat-option>
+          <mat-option value="PENDING">En attente</mat-option>
         </mat-select>
       </mat-form-field>
     </div>
@@ -53,7 +53,7 @@
   <!-- Users Table -->
   <div class="users-table-container">
     <div class="table-header">
-      <span class="results-count">Showing {{ filteredUsers.length }} of {{ users.length }} users</span>
+      <span class="results-count">{{ isLoading ? 'Loading...' : ('Showing ' + filteredUsers.length + ' of ' + users.length + ' users') }}</span>
     </div>
     
     <div class="users-table">
@@ -83,18 +83,26 @@
             <span [class]="getRoleClass(user.role)">{{ user.role }}</span>
           </div>
           <div class="td status-col">
-            <span [class]="getStatusClass(user.status)">{{ user.status ?? 'active' }}</span>
+            <span [class]="getStatusClass(user.status)">{{ getStatusLabel(user.status) }}</span>
           </div>
           <div class="td date-col">{{ user.joinDate }}</div>
           <div class="td active-col">{{ user.lastActive }}</div>
           <div class="td actions-col">
-            <button mat-icon-button class="action-icon view" (click)="viewUser(user)" matTooltip="View Details">
+            <button mat-icon-button class="action-icon view" (click)="viewUser(user)" matTooltip="Voir">
               <mat-icon>visibility</mat-icon>
             </button>
-            <button mat-icon-button class="action-icon edit" (click)="editUser(user)" matTooltip="Edit User">
+            <button mat-icon-button class="action-icon edit" (click)="editUser(user)" matTooltip="Modifier">
               <mat-icon>edit</mat-icon>
             </button>
-            <button mat-icon-button class="action-icon delete" (click)="deleteUser(user)" matTooltip="Delete User">
+            <ng-container *ngIf="isAdmin && user.role !== 'ADMIN'">
+              <button mat-icon-button class="action-icon block" (click)="blockUser(user)" *ngIf="(user.status ?? 'ACTIVE') !== 'INACTIVE'" matTooltip="Bloquer">
+                <mat-icon>block</mat-icon>
+              </button>
+              <button mat-icon-button class="action-icon unblock" (click)="unblockUser(user)" *ngIf="(user.status ?? 'ACTIVE') === 'INACTIVE'" matTooltip="Débloquer">
+                <mat-icon>lock_open</mat-icon>
+              </button>
+            </ng-container>
+            <button mat-icon-button class="action-icon delete" (click)="deleteUser(user)" matTooltip="Supprimer">
               <mat-icon>delete</mat-icon>
             </button>
           </div>
@@ -103,7 +111,7 @@
     </div>
     
     <!-- Empty State -->
-    <div class="empty-state" *ngIf="filteredUsers.length === 0">
+    <div class="empty-state" *ngIf="!isLoading && filteredUsers.length === 0">
       <mat-icon>search_off</mat-icon>
       <h3>No users found</h3>
       <p>Try adjusting your search or filter criteria</p>

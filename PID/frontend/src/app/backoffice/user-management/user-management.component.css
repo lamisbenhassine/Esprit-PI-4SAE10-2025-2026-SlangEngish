@@ -332,6 +332,22 @@
   background: #ffebee;
 }
 
+.action-icon.block {
+  color: #e91e63;
+}
+
+.action-icon.block:hover {
+  background: #fce4ec;
+}
+
+.action-icon.unblock {
+  color: #4caf50;
+}
+
+.action-icon.unblock:hover {
+  background: #e8f5e9;
+}
+
 /* Empty State */
 .empty-state {
   display: flex;

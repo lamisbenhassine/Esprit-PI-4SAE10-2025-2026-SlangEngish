@@ -1,8 +1,10 @@
 package esprit.users.controller;
 
 import esprit.users.entity.User;
+import esprit.users.entity.Status;
 import esprit.users.service.UserService;
 import esprit.users.dto.UserProfileUpdateRequest;
+import esprit.users.dto.UpdateStatusRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,9 +55,26 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<User>> getAllUsers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status) {
+        if ((search != null && !search.isBlank()) || (role != null && !role.isBlank() && !"all".equalsIgnoreCase(role))
+                || (status != null && !status.isBlank() && !"all".equalsIgnoreCase(status))) {
+            List<User> users = userService.searchUsers(search, role, status);
+            return ResponseEntity.ok(users);
+        }
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
+    }
+
+    /** Seul un ADMIN peut appeler cet endpoint (vérifié via adminId dans le body). */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<User> setUserStatus(@PathVariable Long id,
+                                              @Valid @RequestBody UpdateStatusRequest request) {
+        Status status = Status.valueOf(request.getStatus().toUpperCase());
+        User updated = userService.setUserStatus(id, request.getAdminId(), status);
+        return ResponseEntity.ok(updated);
     }
 }
 

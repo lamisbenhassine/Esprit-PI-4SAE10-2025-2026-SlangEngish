@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { MenuItem } from '../../shared/sidebar/sidebar.component';
 import { AuthService } from '../../services/auth.service';
 
@@ -8,10 +10,15 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.css']
 })
-export class LayoutComponent implements OnInit {
+export class LayoutComponent implements OnInit, OnDestroy {
   isSidebarCollapsed = false;
   username = 'User';
   userAvatar = '';
+  showWelcomeOverlay = false;
+  welcomeOverlayFading = false;
+  private welcomeOverlayShown = false;
+  private welcomeOverlayTimeout: ReturnType<typeof setTimeout> | null = null;
+  private routerSub: Subscription | null = null;
 
   frontofficeMenuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', routerLink: '/frontoffice/dashboard' },
@@ -49,7 +56,57 @@ export class LayoutComponent implements OnInit {
         this.userAvatar =
           `https://via.placeholder.com/40x40/667eea/ffffff?text=${encodeURIComponent(initials)}`;
       }
+      // Afficher l'overlay de bienvenue une fois pour un étudiant sur le dashboard
+      if (this.isStudentRole(user) && this.isOnDashboard() && !this.showWelcomeOverlay && !this.welcomeOverlayShown) {
+        this.welcomeOverlayShown = true;
+        this.showWelcomeOverlay = true;
+        this.welcomeOverlayTimeout = setTimeout(() => this.dismissWelcomeOverlay(), 4500);
+      }
     });
+    this.routerSub = this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.tryShowWelcomeOverlay();
+    });
+    // Au premier chargement, l'URL peut ne pas être à jour : réessayer après un court délai
+    setTimeout(() => this.tryShowWelcomeOverlay(), 150);
+  }
+
+  private tryShowWelcomeOverlay(): void {
+    if (this.welcomeOverlayShown || this.showWelcomeOverlay) return;
+    const user = this.authService.getCurrentUser();
+    if (!this.isStudentRole(user) || !this.isOnDashboard()) return;
+    this.welcomeOverlayShown = true;
+    this.showWelcomeOverlay = true;
+    this.welcomeOverlayTimeout = setTimeout(() => this.dismissWelcomeOverlay(), 4500);
+  }
+
+  private isStudentRole(user: { role?: string } | null): boolean {
+    if (!user || !user.role) return false;
+    const r = String(user.role).toUpperCase();
+    return r === 'STUDENT' || (r !== 'ADMIN' && r !== 'CLUB_MANAGER');
+  }
+
+  private isOnDashboard(): boolean {
+    const url = this.router.url || '';
+    return url.includes('/frontoffice/dashboard') || url === '/frontoffice' || url === '/frontoffice/';
+  }
+
+  ngOnDestroy(): void {
+    if (this.welcomeOverlayTimeout) clearTimeout(this.welcomeOverlayTimeout);
+    this.routerSub?.unsubscribe();
+  }
+
+  dismissWelcomeOverlay(): void {
+    if (this.welcomeOverlayTimeout) {
+      clearTimeout(this.welcomeOverlayTimeout);
+      this.welcomeOverlayTimeout = null;
+    }
+    this.welcomeOverlayFading = true;
+    setTimeout(() => {
+      this.showWelcomeOverlay = false;
+      this.welcomeOverlayFading = false;
+    }, 450);
   }
 
   toggleSidebar() {

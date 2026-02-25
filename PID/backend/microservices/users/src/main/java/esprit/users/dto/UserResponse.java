@@ -13,6 +13,7 @@ public class UserResponse {
     private String lastName;
     private String email;
     private String role;
+    private String status;
     private String photoBase64;
     private String phone;
     private String address;
@@ -24,6 +25,7 @@ public class UserResponse {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
+                .status(user.getStatus() != null ? user.getStatus().name() : "ACTIVE")
                 .photoBase64(user.getPhotoBase64())
                 .phone(user.getPhone())
                 .address(user.getAddress())

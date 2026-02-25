@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 
 export type Role = 'ADMIN' | 'TUTOR' | 'STUDENT' | 'CLUB_MANAGER' | 'EMPLOYEE';
 
+export type Status = 'ACTIVE' | 'INACTIVE' | 'PENDING';
+
 export interface User {
   id?: number;
   firstName: string;
@@ -11,12 +13,11 @@ export interface User {
   email: string;
   password?: string;
   role: Role;
+  status?: Status;
   photoBase64?: string;
   phone?: string;
   address?: string;
-  // Optional UI-only fields
   avatar?: string;
-  status?: 'active' | 'inactive' | 'pending';
   joinDate?: string;
   lastActive?: string;
 }
@@ -32,6 +33,17 @@ export class UserService {
 
   getAll(): Observable<User[]> {
     return this.http.get<User[]>(this.apiUrl);
+  }
+
+  /** Recherche dynamique : search (nom, prénom, email), role, status (null/'all' = tous). */
+  search(params: { search?: string; role?: string; status?: string }): Observable<User[]> {
+    const q = new URLSearchParams();
+    if (params.search != null && params.search.trim() !== '') q.set('search', params.search.trim());
+    if (params.role != null && params.role !== 'all') q.set('role', params.role);
+    if (params.status != null && params.status !== 'all') q.set('status', params.status);
+    const query = q.toString();
+    const url = query ? `${this.apiUrl}?${query}` : this.apiUrl;
+    return this.http.get<User[]>(url);
   }
 
   getById(id: number): Observable<User> {
@@ -52,6 +64,11 @@ export class UserService {
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  /** Bloque ou débloque un utilisateur (réservé à l'admin). */
+  setStatus(userId: number, adminId: number, status: Status): Observable<User> {
+    return this.http.patch<User>(`${this.apiUrl}/${userId}/status`, { adminId, status });
   }
 }
 

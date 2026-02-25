@@ -15,6 +15,7 @@ export class SigninComponent {
   hidePassword = true;
   rememberMe = false;
   isSubmitting = false;
+  signinError = '';
   oauthError = '';
 
   constructor(
@@ -47,10 +48,10 @@ export class SigninComponent {
     }
 
     this.isSubmitting = true;
+    this.signinError = '';
 
     this.authService.signin(this.signInData).subscribe({
       next: (user) => {
-        // Redirect based on role
         if (user.role === 'ADMIN' || user.role === 'CLUB_MANAGER') {
           this.router.navigate(['/backoffice/users']);
         } else {
@@ -61,7 +62,7 @@ export class SigninComponent {
       error: (err) => {
         console.error('Signin failed', err);
         this.isSubmitting = false;
-        // TODO: afficher un message d'erreur dans le template
+        this.signinError = err?.error?.message || err?.message || 'Identifiants incorrects ou compte bloqué.';
       }
     });
   }
@@ -116,7 +117,7 @@ export class SigninComponent {
       error: (err) => {
         console.error('Google signin failed', err);
         this.isSubmitting = false;
-        this.oauthError = 'Connexion Google impossible. Essayez avec votre email/mot de passe.';
+        this.oauthError = err?.error?.message || 'Connexion Google impossible. Essayez avec votre email/mot de passe.';
       }
     });
   }
@@ -166,7 +167,7 @@ export class SigninComponent {
         error: (err) => {
           console.error('Facebook signin failed', err);
           this.isSubmitting = false;
-          this.oauthError = 'Connexion Facebook impossible. Essayez avec votre email/mot de passe.';
+          this.oauthError = err?.error?.message || 'Connexion Facebook impossible. Essayez avec votre email/mot de passe.';
         }
       });
     }, { scope: 'email,public_profile' });
