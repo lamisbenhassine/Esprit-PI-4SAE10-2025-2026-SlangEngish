@@ -62,6 +62,19 @@ export class TakeEvaluationComponent implements OnInit, OnDestroy {
     return this.sanitizer.bypassSecurityTrustResourceUrl(displayUrl);
   }
 
+  /** Cached safe PDF URL for the current question so the iframe doesn't reload on every keystroke. */
+  private _cachedSafePdfUrl: SafeResourceUrl | null = null;
+  private _cachedSafePdfUrlKey = '';
+  get safePdfUrlForCurrentQuestion(): SafeResourceUrl | null {
+    const q = this.currentQuestion;
+    const url = q?.pdfUrl;
+    const key = url ?? '';
+    if (this._cachedSafePdfUrlKey === key) return this._cachedSafePdfUrl;
+    this._cachedSafePdfUrlKey = key;
+    this._cachedSafePdfUrl = this.getSafePdfUrl(url) ?? null;
+    return this._cachedSafePdfUrl;
+  }
+
   /** Display URL for PDF link (open in new tab). */
   getPdfDisplayUrl(url: string | undefined): string {
     return getDisplayUploadUrl(url);
