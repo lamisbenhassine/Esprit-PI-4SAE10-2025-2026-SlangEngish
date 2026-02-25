@@ -25,6 +25,26 @@ public class GatewayApplication {
                 .route("user", r -> r.path("/user/**")
                         .uri("http://localhost:8010"))
 
+                .route("inscription", r -> r.path("/inscription/**")
+                        .uri("http://localhost:8030"))
+
+                .route("forum", r -> r.path("/forum/**")
+                        .uri("http://localhost:8040"))
+
                 .build();
+    }
+
+    @Bean
+    public org.springframework.web.cors.reactive.CorsWebFilter corsWebFilter() {
+        org.springframework.web.cors.CorsConfiguration corsConfig = new org.springframework.web.cors.CorsConfiguration();
+        corsConfig.addAllowedOriginPattern("*");
+        corsConfig.addAllowedMethod("*");
+        corsConfig.addAllowedHeader("*");
+        corsConfig.setAllowCredentials(true);
+
+        org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfig);
+
+        return new org.springframework.web.cors.reactive.CorsWebFilter(source);
     }
 }
