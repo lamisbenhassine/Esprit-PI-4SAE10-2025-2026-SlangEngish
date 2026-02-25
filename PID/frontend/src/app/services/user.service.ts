@@ -62,8 +62,10 @@ export class UserService {
     return this.http.patch<User>(`${this.apiUrl}/${id}/profile`, data);
   }
 
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  delete(id: number, adminId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, {
+      params: { adminId: adminId.toString() }
+    });
   }
 
   /** Bloque ou débloque un utilisateur (réservé à l'admin). */

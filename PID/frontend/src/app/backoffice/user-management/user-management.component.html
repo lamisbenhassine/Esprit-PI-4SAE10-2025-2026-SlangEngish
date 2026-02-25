@@ -68,7 +68,7 @@
       </div>
       
       <div class="table-body">
-        <div class="table-row" *ngFor="let user of filteredUsers">
+        <div class="table-row" *ngFor="let user of pagedUsers">
           <div class="td user-col">
             <div class="user-info">
               <img [src]="user.avatar" [alt]="user.firstName" class="user-avatar">
@@ -102,7 +102,12 @@
                 <mat-icon>lock_open</mat-icon>
               </button>
             </ng-container>
-            <button mat-icon-button class="action-icon delete" (click)="deleteUser(user)" matTooltip="Supprimer">
+            <button
+              *ngIf="isAdmin && user.role !== 'ADMIN'"
+              mat-icon-button
+              class="action-icon delete"
+              (click)="deleteUser(user)"
+              matTooltip="Supprimer">
               <mat-icon>delete</mat-icon>
             </button>
           </div>
@@ -116,5 +121,14 @@
       <h3>No users found</h3>
       <p>Try adjusting your search or filter criteria</p>
     </div>
+
+    <!-- Pagination -->
+    <mat-paginator
+      [length]="filteredUsers.length"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)">
+    </mat-paginator>
   </div>
 </div>

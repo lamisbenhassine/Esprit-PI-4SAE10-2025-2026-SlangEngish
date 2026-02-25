@@ -195,6 +195,12 @@
   margin-bottom: 0;
 }
 
+.password-hint {
+  margin: -8px 0 12px 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
 .form-options {
   display: flex;
   justify-content: space-between;

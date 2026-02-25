@@ -75,6 +75,12 @@
   width: 100%;
 }
 
+.password-hint {
+  margin: -8px 0 12px 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
 /* Improved Material Form Field Styling - Fixed version */
 ::ng-deep .mat-mdc-form-field {
   width: 100% !important;

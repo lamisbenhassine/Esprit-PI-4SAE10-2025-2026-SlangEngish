@@ -8,6 +8,10 @@ import { AuthService } from '../../services/auth.service';
 })
 export class ForgotPasswordComponent {
   email = '';
+  phone = '';
+  channel: 'EMAIL' | 'WHATSAPP' = 'EMAIL';
+  /** Mettre à true pour afficher l'option WhatsApp (quand l'envoi WhatsApp fonctionne côté Meta). */
+  showWhatsAppOption = false;
   isSubmitting = false;
   success = false;
   error: string | null = null;
@@ -22,18 +26,34 @@ export class ForgotPasswordComponent {
 
   onSubmit(): void {
     this.error = null;
-    if (!this.email || !this.email.trim()) {
-      this.error = 'Veuillez entrer votre adresse email.';
-      return;
-    }
-    if (!this.isValidEmail(this.email)) {
-      this.error = 'Veuillez entrer une adresse email valide.';
-      return;
+    if (this.channel === 'EMAIL') {
+      if (!this.email || !this.email.trim()) {
+        this.error = 'Veuillez entrer votre adresse email.';
+        return;
+      }
+      if (!this.isValidEmail(this.email)) {
+        this.error = 'Veuillez entrer une adresse email valide.';
+        return;
+      }
+    } else {
+      if (!this.phone || !this.phone.trim()) {
+        this.error = 'Veuillez entrer votre numéro de téléphone.';
+        return;
+      }
     }
     if (this.isSubmitting) return;
 
     this.isSubmitting = true;
-    this.authService.forgotPassword({ email: this.email.trim() }).subscribe({
+    const payload: any = {
+      channel: this.channel
+    };
+    if (this.channel === 'EMAIL') {
+      payload.email = this.email.trim();
+    } else {
+      payload.phone = this.phone.trim();
+    }
+
+    this.authService.forgotPassword(payload).subscribe({
       next: () => {
         this.success = true;
         this.isSubmitting = false;

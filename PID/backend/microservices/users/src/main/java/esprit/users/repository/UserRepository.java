@@ -18,6 +18,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByResetToken(String resetToken);
 
+    Optional<User> findByPhone(String phone);
+
     @Query("SELECT u FROM User u WHERE " +
         "(:search IS NULL OR :search = '' OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :search, '%')) " +
         "OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :search, '%')) " +

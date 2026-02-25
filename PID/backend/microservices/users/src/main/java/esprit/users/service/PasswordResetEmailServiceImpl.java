@@ -56,10 +56,8 @@ public class PasswordResetEmailServiceImpl implements PasswordResetEmailService 
                 throw new RuntimeException("Impossible d'envoyer l'email de réinitialisation. Réessayez plus tard.");
             }
         } else {
-            log.warn("SMTP non configuré : aucun email envoyé. Configurez spring.mail.* dans application.properties.");
-            throw new IllegalStateException(
-                "L'envoi d'email n'est pas configuré. Ajoutez spring.mail.host, spring.mail.username et spring.mail.password dans application.properties (voir les commentaires pour Gmail)."
-            );
+            // SMTP non configuré : on log juste un warning, mais on ne bloque pas la requête.
+            log.warn("SMTP non configuré : aucun email de réinitialisation envoyé (spring.mail.* manquant).");
         }
     }
 }

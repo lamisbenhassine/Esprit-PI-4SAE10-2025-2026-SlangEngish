@@ -31,7 +31,10 @@ export interface SigninPayload {
 }
 
 export interface ForgotPasswordPayload {
-  email: string;
+  email?: string;
+  phone?: string;
+  /** Canal : 'EMAIL' ou 'WHATSAPP' (optionnel, défaut EMAIL) */
+  channel?: 'EMAIL' | 'WHATSAPP';
 }
 
 export interface ResetPasswordPayload {

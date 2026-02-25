@@ -102,9 +102,15 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
            this.isValidEmail(this.signUpData.email) &&
            this.isValidPhone(this.signUpData.phone) &&
            this.signUpData.password === this.signUpData.confirmPassword &&
-           this.signUpData.password.length >= 8 &&
+           this.isValidPassword(this.signUpData.password) &&
            this.agreeToTerms &&
            this.getRecaptchaToken().length > 0;
+  }
+
+  /** Au moins 8 caractères, au moins une lettre et un chiffre. */
+  isValidPassword(password: string): boolean {
+    if (!password || password.length < 8) return false;
+    return /[a-zA-Z]/.test(password) && /\d/.test(password);
   }
 
   isValidEmail(email: string): boolean {
@@ -240,6 +246,10 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
   onSignUp(): void {
     if (!this.isFormValid() || this.isSubmitting) return;
     this.signupError = '';
+    if (!this.isValidPassword(this.signUpData.password)) {
+      this.signupError = 'Le mot de passe doit contenir au moins 8 caractères, des lettres et des chiffres.';
+      return;
+    }
     this.isSubmitting = true;
 
     const recaptchaToken = this.getRecaptchaToken();

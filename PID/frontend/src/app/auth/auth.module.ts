@@ -10,7 +10,7 @@ import { ResetPasswordComponent } from './reset-password/reset-password.componen
 import { TermsOfServiceComponent } from './terms-of-service/terms-of-service.component';
 import { PrivacyPolicyComponent } from './privacy-policy/privacy-policy.component';
 import { SharedModule } from '../shared/shared.module';
-
+import { MatRadioModule } from '@angular/material/radio';
 
 @NgModule({
   declarations: [
@@ -26,7 +26,8 @@ import { SharedModule } from '../shared/shared.module';
     FormsModule,
     ReactiveFormsModule,
     AuthRoutingModule,
-    SharedModule
+    SharedModule,
+    MatRadioModule
   ]
 })
 export class AuthModule { }

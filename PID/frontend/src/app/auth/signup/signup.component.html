@@ -73,7 +73,7 @@
           [(ngModel)]="signUpData.password" 
           name="password" 
           [type]="hidePassword ? 'password' : 'text'"
-          placeholder="Create a strong password"
+          placeholder="Min. 8 caractères, lettres et chiffres"
           required>
         <button 
           mat-icon-button 
@@ -83,6 +83,7 @@
           <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
       </mat-form-field>
+      <p class="password-hint">Le mot de passe doit contenir au moins 8 caractères, des lettres et des chiffres.</p>
 
       <mat-form-field appearance="outline" class="form-field full-width">
         <mat-label>Confirm Password</mat-label>

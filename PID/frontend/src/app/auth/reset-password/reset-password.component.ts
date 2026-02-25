@@ -31,17 +31,28 @@ export class ResetPasswordComponent {
     return /^\d{6}$/.test(this.code.trim());
   }
 
+  /** Au moins 8 caractères, au moins une lettre et un chiffre. */
+  isValidPassword(password: string): boolean {
+    if (!password || password.length < 8) return false;
+    return /[a-zA-Z]/.test(password) && /\d/.test(password);
+  }
+
   get canSubmit(): boolean {
     return this.isCodeValid &&
       this.newPassword === this.confirmPassword &&
-      this.newPassword.length >= 8 &&
+      this.isValidPassword(this.newPassword) &&
       !this.isSubmitting;
   }
 
   onSubmit(): void {
-    if (!this.canSubmit) return;
-    this.isSubmitting = true;
     this.error = null;
+    if (!this.canSubmit) {
+      if (this.isCodeValid && this.newPassword === this.confirmPassword && this.newPassword.length >= 8 && !this.isValidPassword(this.newPassword)) {
+        this.error = 'Le mot de passe doit contenir au moins 8 caractères, des lettres et des chiffres.';
+      }
+      return;
+    }
+    this.isSubmitting = true;
 
     this.authService.resetPassword({ token: this.code.trim(), newPassword: this.newPassword }).subscribe({
       next: () => {

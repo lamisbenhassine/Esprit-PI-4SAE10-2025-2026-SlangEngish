@@ -24,7 +24,7 @@ public interface UserService {
 
     User facebookSignin(String accessToken);
 
-    void requestPasswordReset(String email);
+    void requestPasswordReset(String email, String phone, String channel);
 
     void resetPassword(String token, String newPassword);
 
@@ -32,7 +32,8 @@ public interface UserService {
 
     User updateUserProfile(Long id, UserProfileUpdateRequest request);
 
-    void deleteUser(Long id);
+    /** Seul un ADMIN peut supprimer un utilisateur. */
+    void deleteUser(Long id, Long adminId);
 
     User getUserById(Long id);
 

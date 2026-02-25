@@ -7,7 +7,7 @@
     <div class="profile-card">
       <div class="user-info-card">
         <div class="user-avatar">
-          <img [src]="getAvatarSrc(user) || 'https://via.placeholder.com/140x140/667eea/ffffff?text=' + (user.firstName?.charAt(0) || '') + (user.lastName?.charAt(0) || '')" [alt]="user.firstName + ' ' + user.lastName">
+          <img [src]="getAvatarSrc(user) || 'https://via.placeholder.com/140x140/667eea/ffffff?text=' + (user.firstName.charAt(0) || '') + (user.lastName.charAt(0) || '')" [alt]="user.firstName + ' ' + user.lastName">
           <button mat-fab class="avatar-edit" color="primary">
             <mat-icon>camera_alt</mat-icon>
           </button>

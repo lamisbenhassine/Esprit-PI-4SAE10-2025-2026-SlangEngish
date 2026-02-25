@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { PageEvent } from '@angular/material/paginator';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { UserService, User, Status } from '../../services/user.service';
@@ -14,12 +15,20 @@ import { EditUserDialogComponent } from './edit-user-dialog.component';
 export class UserManagementComponent implements OnInit {
   /** Liste complète chargée depuis l'API */
   users: User[] = [];
-  /** Liste filtrée affichée (recherche + rôle + statut) */
+  /** Liste filtrée (recherche + rôle + statut) */
   filteredUsers: User[] = [];
+  /** Liste paginée affichée dans le tableau */
+  pagedUsers: User[] = [];
+
   searchTerm: string = '';
   selectedRole: string = 'all';
   selectedStatus: string = 'all';
   isLoading = false;
+
+  // Pagination (locale côté front)
+  pageIndex = 0;
+  pageSize = 10;
+  pageSizeOptions: number[] = [5, 10, 25, 50];
 
   constructor(
     private userService: UserService,
@@ -66,7 +75,7 @@ export class UserManagementComponent implements OnInit {
     };
   }
 
-  /** Filtre la liste localement (recherche dynamique). */
+  /** Filtre la liste localement (recherche dynamique) et met à jour la pagination. */
   applyFilters(): void {
     const term = (this.searchTerm || '').trim().toLowerCase();
     const role = this.selectedRole;
@@ -81,6 +90,10 @@ export class UserManagementComponent implements OnInit {
       const matchesStatus = status === 'all' || (user.status ?? 'ACTIVE') === status;
       return matchesSearch && matchesRole && matchesStatus;
     });
+
+    // Réinitialiser la page courante après un filtre
+    this.pageIndex = 0;
+    this.updatePagedUsers();
   }
 
   /** Saisie recherche : filtre immédiat (recherche dynamique). */
@@ -94,6 +107,20 @@ export class UserManagementComponent implements OnInit {
 
   onStatusChange(): void {
     this.applyFilters();
+  }
+
+  /** Changement de page sur le paginator. */
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.updatePagedUsers();
+  }
+
+  /** Met à jour la liste des utilisateurs affichés pour la page courante. */
+  private updatePagedUsers(): void {
+    const start = this.pageIndex * this.pageSize;
+    const end = start + this.pageSize;
+    this.pagedUsers = this.filteredUsers.slice(start, end);
   }
 
   getStatusClass(status: string | undefined): string {
@@ -169,10 +196,14 @@ export class UserManagementComponent implements OnInit {
   }
 
   deleteUser(user: User): void {
-    if (!user.id) {
+    if (!user.id || !this.isAdmin) {
       return;
     }
-    this.userService.delete(user.id).subscribe({
+    const adminId = this.authService.getCurrentUser()?.id;
+    if (!adminId) {
+      return;
+    }
+    this.userService.delete(user.id, adminId).subscribe({
       next: () => {
         this.loadUsers();
       },

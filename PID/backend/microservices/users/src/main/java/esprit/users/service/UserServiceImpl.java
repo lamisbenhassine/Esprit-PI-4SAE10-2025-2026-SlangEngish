@@ -27,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final PasswordResetEmailService passwordResetEmailService;
+    private final PasswordResetWhatsAppService passwordResetWhatsAppService;
 
     @Override
     public User createUser(User user) {
@@ -37,10 +38,19 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    /** Au moins 8 caractères, au moins une lettre et un chiffre. */
+    private boolean isValidPasswordFormat(String password) {
+        if (password == null || password.length() < 8) return false;
+        return password.matches(".*[a-zA-Z].*") && password.matches(".*\\d.*");
+    }
+
     @Override
     public User signup(SignupRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email is already in use");
+        }
+        if (!isValidPasswordFormat(request.getPassword())) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au moins 8 caractères, des lettres et des chiffres.");
         }
 
         User user = User.builder()
@@ -179,13 +189,49 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void requestPasswordReset(String email) {
-        userRepository.findByEmail(email).ifPresent(user -> {
+    public void requestPasswordReset(String email, String phone, String channel) {
+        final String ch;
+        if (channel == null || channel.isBlank()) {
+            ch = "EMAIL";
+        } else {
+            ch = channel.trim().toUpperCase();
+        }
+
+        // Sélection de l'utilisateur en fonction du canal
+        java.util.Optional<User> optionalUser;
+        if ("WHATSAPP".equals(ch)) {
+            if (phone == null || phone.isBlank()) {
+                throw new IllegalArgumentException("Le numéro de téléphone est requis pour l'envoi par WhatsApp.");
+            }
+            optionalUser = userRepository.findByPhone(phone.trim());
+        } else {
+            if (email == null || email.isBlank()) {
+                throw new IllegalArgumentException("L'email est requis pour l'envoi par email.");
+            }
+            optionalUser = userRepository.findByEmail(email.trim());
+        }
+
+        optionalUser.ifPresent(user -> {
             String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1_000_000));
             user.setResetToken(code);
             user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
             userRepository.save(user);
-            passwordResetEmailService.sendPasswordResetEmail(user.getEmail(), user.getResetToken());
+
+            boolean sendEmail = "EMAIL".equals(ch) || "BOTH".equals(ch);
+            boolean sendWhatsApp = "WHATSAPP".equals(ch) || "BOTH".equals(ch);
+
+            if (sendEmail) {
+                passwordResetEmailService.sendPasswordResetEmail(user.getEmail(), user.getResetToken());
+            }
+
+            if (sendWhatsApp && user.getPhone() != null && !user.getPhone().isBlank()) {
+                passwordResetWhatsAppService.sendPasswordResetCode(user.getPhone(), user.getResetToken());
+            }
+
+            // Si canal WhatsApp : envoi aussi par email en secours (au cas où le message WhatsApp n'arrive pas)
+            if (sendWhatsApp && user.getEmail() != null && !user.getEmail().isBlank()) {
+                passwordResetEmailService.sendPasswordResetEmail(user.getEmail(), user.getResetToken());
+            }
         });
     }
 
@@ -196,6 +242,9 @@ public class UserServiceImpl implements UserService {
 
         if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("Password reset token has expired");
+        }
+        if (!isValidPasswordFormat(newPassword)) {
+            throw new IllegalArgumentException("Le mot de passe doit contenir au moins 8 caractères, des lettres et des chiffres.");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -249,11 +298,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new EntityNotFoundException("User not found");
+    public void deleteUser(Long id, Long adminId) {
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new EntityNotFoundException("Admin not found"));
+        if (admin.getRole() != Role.ADMIN) {
+            throw new IllegalArgumentException("Seul un administrateur peut supprimer un utilisateur.");
         }
-        userRepository.deleteById(id);
+
+        User target = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        if (target.getRole() == Role.ADMIN) {
+            throw new IllegalArgumentException("Impossible de supprimer un administrateur.");
+        }
+
+        userRepository.delete(target);
     }
 
     @Override
