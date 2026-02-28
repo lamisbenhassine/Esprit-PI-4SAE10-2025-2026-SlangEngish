@@ -7,7 +7,7 @@
   <ng-container *ngIf="!loading">
     <!-- Certificate card (when eligible) -->
     <div class="certificate-wrapper" *ngIf="eligible">
-      <div class="certificate">
+      <div class="certificate" #certificateEl>
         <div class="certificate-border">
           <div class="certificate-inner">
             <div class="certificate-header">
@@ -19,7 +19,7 @@
             </div>
             <div class="certificate-body">
               <p class="certificate-label">This is to certify that</p>
-              <h1 class="student-name">{{ studentName }}</h1>
+              <h1 class="student-name">{{ studentName || 'Certificate Holder' }}</h1>
               <p class="congrats-message">{{ congratulationMessage }}</p>
               <p class="certificate-date">{{ certificateDate }}</p>
             </div>
@@ -28,14 +28,21 @@
                 <mat-icon>school</mat-icon>
                 <span>{{ platformName }}</span>
               </div>
+              <p class="awarded-to">Awarded to <strong>{{ studentName || 'Certificate Holder' }}</strong></p>
             </div>
           </div>
         </div>
       </div>
-      <button mat-raised-button class="back-btn" (click)="backToEvaluations()">
-        <mat-icon>arrow_back</mat-icon>
-        Back to evaluations
-      </button>
+      <div class="certificate-actions">
+        <button mat-raised-button class="export-pdf-btn" (click)="exportPdf()" [disabled]="exportingPdf">
+          <mat-icon>picture_as_pdf</mat-icon>
+          {{ exportingPdf ? 'Exporting...' : 'Export PDF' }}
+        </button>
+        <button mat-raised-button class="back-btn" (click)="backToEvaluations()">
+          <mat-icon>arrow_back</mat-icon>
+          Back to evaluations
+        </button>
+      </div>
     </div>
 
     <!-- Not eligible yet -->

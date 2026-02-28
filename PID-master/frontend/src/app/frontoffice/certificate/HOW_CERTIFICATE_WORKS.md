@@ -371,9 +371,11 @@ Used by both the certificate view and the “not eligible” view.
 
 **Certificate (eligible):**
 
+The certificate div has `#certificateEl` so the component can pass it to html2pdf. The actions row has "Export PDF" and "Back to evaluations".
+
 ```html
 <div class="certificate-wrapper" *ngIf="eligible">
-  <div class="certificate">
+  <div class="certificate" #certificateEl>
     <div class="certificate-border">
       <div class="certificate-inner">
         <div class="certificate-header">
@@ -398,10 +400,16 @@ Used by both the certificate view and the “not eligible” view.
       </div>
     </div>
   </div>
-  <button mat-raised-button class="back-btn" (click)="backToEvaluations()">
-    <mat-icon>arrow_back</mat-icon>
-    Back to evaluations
-  </button>
+  <div class="certificate-actions">
+    <button mat-raised-button class="export-pdf-btn" (click)="exportPdf()" [disabled]="exportingPdf">
+      <mat-icon>picture_as_pdf</mat-icon>
+      {{ exportingPdf ? 'Exporting...' : 'Export PDF' }}
+    </button>
+    <button mat-raised-button class="back-btn" (click)="backToEvaluations()">
+      <mat-icon>arrow_back</mat-icon>
+      Back to evaluations
+    </button>
+  </div>
 </div>
 ```
 
@@ -432,6 +440,25 @@ Used by both the certificate view and the “not eligible” view.
 
 - Progress bar width = `(passedCount / 5) * 100` percent.  
 - Hint uses `requiredPassed - passedCount` (how many more to pass).
+
+---
+
+## 10.5 Export PDF (certificate only)
+
+When the user is **eligible**, they see an **"Export PDF"** button next to "Back to evaluations". Clicking it downloads the certificate as a PDF (e.g. `SlangEnglish-Certificate-John-Doe.pdf`).
+
+**How it works:**
+
+- **File:** `certificate.component.ts`  
+  - `@ViewChild('certificateEl')` references the certificate div.  
+  - `exportingPdf` disables the button and shows "Exporting..." while generating.  
+  - `exportPdf()` dynamically imports `html2pdf.js`, then calls it with the certificate element and options (A4, scale 2, margin 10, JPEG quality 0.98). On success: snackbar "Certificate exported as PDF". On error: snackbar "Failed to export PDF" and console error.
+
+- **File:** `certificate.component.html`  
+  - The certificate div has `#certificateEl`.  
+  - The actions row (class `certificate-actions`) contains the Export PDF button and the Back button.
+
+- **Dependency:** `html2pdf.js` in `frontend/package.json`. It uses html2canvas and jsPDF to capture the certificate DOM and save as PDF.
 
 ---
 
@@ -479,6 +506,10 @@ Used by both the certificate view and the “not eligible” view.
 
 - **.not-eligible / .not-eligible-card:**  
   Centered card with lock icon, title, progress text, progress bar, hint, and button.
+
+- **.certificate-actions:** Flex container with gap; wraps the Export PDF and Back buttons below the certificate.
+
+- **.export-pdf-btn:** Gold-style button for Export PDF; when disabled (during export) opacity 0.7.
 
 - **.progress-bar-wrap / .progress-fill:**  
   Grey track; fill is a gradient (purple) and width is bound in the template to `(passedCount/requiredPassed)*100`.

@@ -4,18 +4,30 @@ This file explains how the **warning boxes** (7 days / 3 days) and the **"X days
 
 ---
 
-## 1. Where the data comes from
+## 1. Code reference (files involved)
+
+| File | Role |
+|------|------|
+| `frontend/src/app/frontoffice/evaluations-list/evaluations-list.component.ts` | Loads evaluations, defines `getTimeLeftDisplay()`, getters `evaluationsDeadlineUnder7Days` and `evaluationsDeadlineUnder3Days`, `isDeadlineUnder3Days()`, and `filteredEvaluations` (sorted by `dateEnd`). |
+| `frontend/src/app/frontoffice/evaluations-list/evaluations-list.component.html` | Renders red/yellow warning boxes and each evaluation card; uses the getters and helpers above for "days left" and urgent styling. |
+| `frontend/src/app/frontoffice/evaluations-list/evaluations-list.component.css` | Styles for `.deadline-warning`, `.deadline-warning-urgent`, `.eval-card-urgent`, `.eval-time-left-urgent`, `.expired`. |
+
+All logic uses **current time** and **evaluation.dateEnd**; no backend is involved.
+
+---
+
+## 2. Where the data comes from
 
 Each evaluation has a **deadline**: `dateEnd` (e.g. `"2025-02-28T23:59:00"`).  
 The list is loaded in `load()` and stored in `this.evaluations`. All logic uses this list and the **current time** to compute "time left" and who is in the warning lists.
 
 ---
 
-## 2. How "days left" is computed (in the TypeScript file)
+## 3. How "days left" is computed (in the TypeScript file)
 
 We use one function that, given a deadline string, returns a short text like **"1 day left"** or **"3 hours left"**.
 
-### Code (evaluations-list.component.ts)
+**File:** `evaluations-list.component.ts`
 
 ```typescript
 /** Human-readable time left until deadline (e.g. "1 day left", "3 hours left"). */
@@ -54,11 +66,13 @@ So for **each card**, we call `getTimeLeftDisplay(e.dateEnd)` and show that text
 
 ---
 
-## 3. How the 7-day and 3-day warning lists are built (TypeScript)
+## 4. How the 7-day and 3-day warning lists are built (TypeScript)
 
 We have two **getters** that filter `this.evaluations` into lists used only for the warning boxes.
 
-### 3.1 Evaluations ending in less than 7 days
+### 4.1 Evaluations ending in less than 7 days
+
+**File:** `evaluations-list.component.ts`
 
 ```typescript
 /** Evaluations whose deadline is in less than 7 days (for warning). */
@@ -78,7 +92,9 @@ get evaluationsDeadlineUnder7Days(): Evaluation[] {
 - **Condition:** `(end - now) < sevenDaysMs` → less than 7 days from now.  
 So this list = **all evaluations due in the next 7 days** (not past, not more than 7 days away).
 
-### 3.2 Evaluations ending in 3 days or less (red warning)
+### 4.2 Evaluations ending in 3 days or less (red warning)
+
+**File:** `evaluations-list.component.ts`
 
 ```typescript
 /** Evaluations whose deadline is in 3 days or less (for red urgent warning). */
@@ -99,9 +115,9 @@ This list = **evaluations due in 3 days or less** (names shown in the red warnin
 
 ---
 
-## 4. How the template uses this (HTML)
+## 5. How the template uses this (HTML)
 
-### 4.1 Red warning (3 days or less)
+### 5.1 Red warning (3 days or less)
 
 - Shown only when **not loading** and **there is at least one** evaluation in `evaluationsDeadlineUnder3Days`.
 - The box lists **each evaluation by name**, and for each we show the same “time left” text and the “until” date.
@@ -127,11 +143,11 @@ So: **warning with red style** + **names** from `evaluationsDeadlineUnder3Days` 
 
 In addition, **every evaluation that has 3 days or less left** is also styled in **red in the list**: the evaluation card gets a red top strip, red border/shadow, and the "time left" badge on the card is red. So the warning lists the names, and the same evaluations are visually highlighted in red in the grid below.
 
-### 4.2 Red styling on evaluation cards (3 days or less)
+### 5.2 Red styling on evaluation cards (3 days or less)
 
 For each evaluation card we check if its deadline is in 3 days or less. If yes, we add the class `eval-card-urgent` to the card and `eval-time-left-urgent` to the "time left" badge. That way the card and the badge are shown in red, not only the warning box.
 
-**TypeScript – helper used by the template:**
+**File:** `evaluations-list.component.ts` – helper used by the template
 
 ```typescript
 /** True if this evaluation's deadline is in 3 days or less (used to style the card in red). */
@@ -145,6 +161,8 @@ isDeadlineUnder3Days(e: Evaluation): boolean {
 ```
 
 **HTML – card and time-left badge get urgent class when 3 days or less:**
+
+**File:** `evaluations-list.component.html`
 
 ```html
 <div class="eval-card" *ngFor="let e of paginatedEvaluations" (click)="startEvaluation(e)"
@@ -165,12 +183,16 @@ isDeadlineUnder3Days(e: Evaluation): boolean {
 
 **CSS – red styles for urgent cards and badge:**
 
+**File:** `evaluations-list.component.css`
+
 - **Card:** `.eval-card-urgent` has a red border and red-tinted box-shadow. `.eval-card-urgent .card-top-strip` uses a red gradient (`#dc2626` → `#ef4444`) and is slightly taller (6px).
 - **Time-left badge:** `.eval-time-left.eval-time-left-urgent` has a red background (`rgba(220, 38, 38, 0.95)`) and a red shadow so the "X days left" text on the card is clearly in red.
 
 So: the **same evaluations** that appear in the red warning (by name) are the ones that get the **red card** and **red "time left" badge** in the list.
 
-### 4.3 Yellow warning (less than 7 days)
+### 5.3 Yellow warning (less than 7 days)
+
+**File:** `evaluations-list.component.html`
 
 Same idea with the 7-day list and a yellow style (class `deadline-warning` only, no `deadline-warning-urgent`):
 
@@ -190,7 +212,9 @@ Same idea with the 7-day list and a yellow style (class `deadline-warning` only,
 </div>
 ```
 
-### 4.4 "Days left" on each evaluation card
+### 5.4 "Days left" on each evaluation card
+
+**File:** `evaluations-list.component.html`
 
 For **each card** we call `getTimeLeftDisplay(e.dateEnd)` and show it in a span. If the result is `"Expired"`, we add the class `expired` so it can be styled (e.g. grey).
 
@@ -203,11 +227,13 @@ For **each card** we call `getTimeLeftDisplay(e.dateEnd)` and show it in a span.
 So:
 - **Same deadline** → same “time left” text (e.g. all with 1 day left show **"1 day left"**).
 - **Expired** → text is “Expired” and the badge uses the `expired` class (grey).
-- **3 days or less left** → the badge gets the `eval-time-left-urgent` class (red), and the card gets `eval-card-urgent` (red top strip and border). See section 4.2.
+- **3 days or less left** → the badge gets the `eval-time-left-urgent` class (red), and the card gets `eval-card-urgent` (red top strip and border). See section 5.2.
 
 ---
 
-## 5. Why evaluations with the same deadline appear next to each other
+## 6. Why evaluations with the same deadline appear next to each other
+
+**File:** `evaluations-list.component.ts`
 
 In the TypeScript, **filtered evaluations are sorted by `dateEnd`** (ascending = soonest first):
 
@@ -226,7 +252,7 @@ So evaluations with the **same** (or very close) **deadline** end up **next to e
 
 ---
 
-## 6. Summary
+## 7. Summary
 
 | What you see              | How it’s done |
 |---------------------------|---------------|

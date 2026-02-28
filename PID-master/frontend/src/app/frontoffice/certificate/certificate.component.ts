@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { EvaluationApiService } from '../../core/services/evaluation-api.service';
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -14,11 +14,14 @@ const MIN_PERCENT = 50;
   styleUrls: ['./certificate.component.css']
 })
 export class CertificateComponent implements OnInit {
+  @ViewChild('certificateEl') certificateEl!: ElementRef<HTMLElement>;
+
   loading = true;
   eligible = false;
   passedCount = 0;
   studentName = '';
   certificateDate = '';
+  exportingPdf = false;
 
   constructor(
     private api: EvaluationApiService,
@@ -83,5 +86,29 @@ export class CertificateComponent implements OnInit {
 
   backToEvaluations(): void {
     this.router.navigate(['/frontoffice/evaluations']);
+  }
+
+  exportPdf(): void {
+    if (!this.certificateEl?.nativeElement || this.exportingPdf) return;
+    this.exportingPdf = true;
+    import('html2pdf.js').then((module) => {
+      const html2pdf = module.default;
+      const el = this.certificateEl.nativeElement;
+      const opt = {
+        margin: 10,
+        filename: `SlangEnglish-Certificate-${this.studentName.replace(/\s+/g, '-')}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+      };
+      return html2pdf().set(opt).from(el).save();
+    }).then(() => {
+      this.exportingPdf = false;
+      this.snackBar.open('Certificate exported as PDF', 'Close', { duration: 3000 });
+    }).catch((err) => {
+      this.exportingPdf = false;
+      console.error('PDF export failed', err);
+      this.snackBar.open('Failed to export PDF', 'Close', { duration: 3000 });
+    });
   }
 }

@@ -60,13 +60,11 @@ Rules:
 - Do NOT include explanations.
 
 IMPORTANT:
-Return ONLY a valid JSON array containing exactly 10 strings.
-No markdown.
-No text before or after the JSON.
-No comments.
+Return ONLY a valid JSON array containing exactly 5 strings (one per question).
+No markdown. No text before or after the JSON. No comments.
 
 Example format:
-["Question one?", "Question two?", "Question three?", "..."]
+["First question here?", "Second question here?", "Third question here?", "Fourth question here?", "Fifth question here?"]
 
 Text:
 """ + text;

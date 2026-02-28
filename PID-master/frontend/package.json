@@ -25,6 +25,7 @@
     "@angular/ssr": "^18.2.21",
     "apexcharts": "^5.3.6",
     "express": "^4.18.2",
+    "html2pdf.js": "^0.14.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.10"
