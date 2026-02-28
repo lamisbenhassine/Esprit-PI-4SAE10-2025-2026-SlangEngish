@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { JobOffer, Application } from '../../models/job-offer.model';
 import { JobOfferService } from '../../services/job-offer.service';
 import { ApplicationService } from '../../services/application.service';
+import { ToastService } from '../../services/toast.service';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -28,7 +29,8 @@ export class JobDetailsComponent implements OnInit {
     private router: Router,
     private jobOfferService: JobOfferService,
     private applicationService: ApplicationService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -69,13 +71,13 @@ export class JobDetailsComponent implements OnInit {
     }
     if (!this.cvFile || !this.coverLetterFile) {
       this.applicationError = 'Veuillez uploader votre CV et votre lettre de motivation.';
+      this.toast.error('Veuillez uploader votre CV et votre lettre de motivation.');
       return;
     }
 
     this.submitting = true;
     this.applicationError = '';
 
-    // Upload les 2 fichiers en parallèle puis envoie la candidature
     forkJoin({
       cvUrl: this.applicationService.uploadFile(this.cvFile),
       coverLetterUrl: this.applicationService.uploadFile(this.coverLetterFile)
@@ -87,19 +89,22 @@ export class JobDetailsComponent implements OnInit {
           coverLetterUrl
         };
         this.applicationService.applyToOffer(this.jobOffer!.id!, application).subscribe({
-          next: () => { 
-            this.applicationSuccess = true; 
-            this.submitting = false; 
+          next: () => {
+            this.applicationSuccess = true;
+            this.submitting = false;
+            this.toast.success('Candidature envoyée avec succès. Bonne chance !');
           },
-          error: () => { 
-            this.applicationError = 'Erreur lors de la candidature.'; 
-            this.submitting = false; 
+          error: () => {
+            this.applicationError = 'Erreur lors de la candidature.';
+            this.submitting = false;
+            this.toast.error('Erreur lors de la candidature.');
           }
         });
       },
-      error: () => { 
-        this.applicationError = "Erreur lors de l'upload des fichiers."; 
-        this.submitting = false; 
+      error: () => {
+        this.applicationError = "Erreur lors de l'upload des fichiers.";
+        this.submitting = false;
+        this.toast.error("Erreur lors de l'upload des fichiers.");
       }
     });
   }
@@ -111,5 +116,10 @@ export class JobDetailsComponent implements OnInit {
   isFieldInvalid(fieldName: string): boolean {
     const control = this.applicationForm.get(fieldName);
     return !!(control && control.invalid && (control.dirty || control.touched));
+  }
+
+  isFieldValid(fieldName: string): boolean {
+    const control = this.applicationForm.get(fieldName);
+    return !!(control && control.valid && (control.dirty || control.touched));
   }
 }

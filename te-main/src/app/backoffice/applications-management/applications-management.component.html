@@ -69,7 +69,7 @@
       <p>Aucune candidature trouvée</p>
     </div>
 
-    <mat-card *ngFor="let app of filteredApplications" class="application-card">
+    <mat-card *ngFor="let app of paginatedApplications" class="application-card">
       <div class="card-content">
 
         <!-- Info candidat -->
@@ -121,5 +121,14 @@
 
       </div>
     </mat-card>
+
+    <app-pagination
+      *ngIf="filteredApplications.length > 0"
+      [totalItems]="filteredApplications.length"
+      [pageSize]="pageSize"
+      [currentPage]="currentPage"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)">
+    </app-pagination>
   </div>
 </div>

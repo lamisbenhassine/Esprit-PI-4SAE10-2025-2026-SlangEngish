@@ -14,13 +14,16 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-
-
+import { MatSelectModule } from '@angular/material/select';
+import { PaginationComponent } from './pagination/pagination.component';
+import { ToastComponent } from './toast/toast.component';
 
 @NgModule({
   declarations: [
     NavbarComponent,
-    SidebarComponent
+    SidebarComponent,
+    PaginationComponent,
+    ToastComponent
   ],
   imports: [
     CommonModule,
@@ -36,7 +39,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatDividerModule,
     MatProgressBarModule,
     MatCardModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatSelectModule
   ],
   exports: [
     NavbarComponent,
@@ -54,7 +58,10 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatDividerModule,
     MatProgressBarModule,
     MatCardModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatSelectModule,
+    PaginationComponent,
+    ToastComponent
   ]
 })
 export class SharedModule { }

@@ -6,9 +6,15 @@ export interface JobOffer {
   location: string;
   contractType: 'CDI' | 'CDD' | 'STAGE' | 'ALTERNANCE' | 'FREELANCE';
   salary?: number;
-  publishedAt?: string;
+  /** Date de publication (aligné sur le champ date / LocalDateTime du backend). */
+  date?: string;
   deadline?: string;
   active: boolean;
+  latitude?: number;
+  longitude?: number;
+  /** Si définie, l'offre expire à cette date (backend la désactive). Null = pas d'expiration automatique. */
+  expirationDate?: string;
+
 }
 
 export interface Application {
@@ -21,4 +27,13 @@ export interface Application {
   coverLetterUrl?: string;
   status?: 'PENDING' | 'REVIEWED' | 'ACCEPTED' | 'REJECTED';
   appliedAt?: string;
+  
+}
+
+export interface SavedOffer {
+  id?: number;
+  jobOfferId: number;
+  studentId: number;
+  savedAt?: string;
+  notes?: string;
 }

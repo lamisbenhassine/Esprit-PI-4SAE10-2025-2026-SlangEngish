@@ -24,6 +24,9 @@ export class ApplicationsManagementComponent implements OnInit {
   statuses = ['ALL', 'PENDING', 'REVIEWED', 'ACCEPTED', 'REJECTED'];
   contractTypes = ['ALL', 'CDI', 'CDD', 'STAGE', 'ALTERNANCE', 'FREELANCE'];
 
+  pageSize = 10;
+  currentPage = 1;
+
   constructor(
     private applicationService: ApplicationService,
     private jobOfferService: JobOfferService
@@ -69,6 +72,21 @@ export class ApplicationsManagementComponent implements OnInit {
     }
 
     this.filteredApplications = filtered;
+    this.currentPage = 1;
+  }
+
+  get paginatedApplications(): Application[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredApplications.slice(start, start + this.pageSize);
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage = page;
+  }
+
+  onPageSizeChange(size: number): void {
+    this.pageSize = size;
+    this.currentPage = 1;
   }
 
   getJobTitle(jobOfferId: number): string {

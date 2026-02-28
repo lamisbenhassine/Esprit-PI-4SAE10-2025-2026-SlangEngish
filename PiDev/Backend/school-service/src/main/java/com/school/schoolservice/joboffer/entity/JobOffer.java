@@ -3,6 +3,7 @@ package com.school.schoolservice.joboffer.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.school.schoolservice.application.entity.Application;
 import com.school.schoolservice.joboffer.enums.JobType;
+import com.school.schoolservice.savedoffer.entity.SavedOffer;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -61,8 +62,23 @@ public class JobOffer {
   @Column(nullable = false)
   private Boolean active = true;
 
+  @Column
+  private Double latitude;
+
+  @Column
+  private Double longitude;
+
+  /** When non-null and in the past, scheduler will deactivate the offer. When null, offer never expires automatically. */
+  @Column(name = "expiration_date", nullable = true)
+  private LocalDateTime expirationDate;
+
+
   @OneToMany(mappedBy = "jobOffer", cascade = CascadeType.ALL, orphanRemoval = true)
   @JsonIgnore
   private List<Application> applications;
+
+  @OneToMany(mappedBy = "jobOffer", cascade = CascadeType.ALL, orphanRemoval = true)
+  @JsonIgnore
+  private List<SavedOffer> savedOffers;
 }
 

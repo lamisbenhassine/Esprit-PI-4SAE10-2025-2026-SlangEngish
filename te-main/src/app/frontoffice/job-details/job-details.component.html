@@ -11,8 +11,7 @@
     <div class="main-column">
       <mat-card class="offer-card">
         <mat-card-content>
-          
-          <!-- Badges -->
+          <!-- Badge type de contrat (contractType = source unique) -->
           <div class="badges">
             <span class="contract-chip" [ngClass]="'chip-' + jobOffer.contractType">
               {{ jobOffer.contractType }}
@@ -24,26 +23,6 @@
           </div>
 
           <h1 class="offer-title">{{ jobOffer.title }}</h1>
-
-          <!-- Métadonnées -->
-          <div class="meta-grid">
-            <div class="meta-item">
-              <mat-icon>business</mat-icon>
-              <span>{{ jobOffer.company }}</span>
-            </div>
-            <div class="meta-item">
-              <mat-icon>location_on</mat-icon>
-              <span>{{ jobOffer.location }}</span>
-            </div>
-            <div class="meta-item" *ngIf="jobOffer.salary">
-              <mat-icon>euro</mat-icon>
-              <span>{{ jobOffer.salary | number }} €/an</span>
-            </div>
-            <div class="meta-item deadline" *ngIf="jobOffer.deadline">
-              <mat-icon>event</mat-icon>
-              <span>Limite: {{ jobOffer.deadline | date:'dd MMMM yyyy' }}</span>
-            </div>
-          </div>
 
           <mat-divider class="section-divider"></mat-divider>
 
@@ -66,83 +45,72 @@
         </mat-card-content>
       </mat-card>
 
-      <!-- Formulaire de candidature avec validation ✅ -->
-      <mat-card class="application-card" *ngIf="!applicationSuccess">
+      <!-- Formulaire de candidature premium -->
+      <mat-card class="application-card application-card-premium" *ngIf="!applicationSuccess">
         <mat-card-header>
           <mat-icon mat-card-avatar class="apply-avatar">person_add</mat-icon>
           <mat-card-title>Postuler à cette offre</mat-card-title>
           <mat-card-subtitle>Remplissez le formulaire ci-dessous</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-          
-          <div *ngIf="applicationError" class="error-alert">
-            <mat-icon>warning</mat-icon>
-            {{ applicationError }}
-          </div>
+          <form [formGroup]="applicationForm" (ngSubmit)="submitApplication()" class="application-form">
+            <div *ngIf="applicationError" class="error-alert">
+              <mat-icon>warning</mat-icon>
+              {{ applicationError }}
+            </div>
 
-          <form [formGroup]="applicationForm" (ngSubmit)="submitApplication()">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width form-field-premium"
+                  [class.field-valid]="isFieldValid('applicantName')"
+                  [class.field-invalid]="isFieldInvalid('applicantName')">
+                <mat-label>Nom complet *</mat-label>
+                <mat-icon matPrefix>person</mat-icon>
+                <input matInput formControlName="applicantName" placeholder="Jean Dupont" />
+                <mat-hint>Minimum 3 caractères</mat-hint>
+                <mat-error>Nom obligatoire (min 3 caractères)</mat-error>
+              </mat-form-field>
 
-  <div *ngIf="applicationError" class="error-alert">
-    <mat-icon>warning</mat-icon> {{ applicationError }}
-  </div>
+              <mat-form-field appearance="outline" class="half-width form-field-premium"
+                  [class.field-valid]="isFieldValid('applicantEmail')"
+                  [class.field-invalid]="isFieldInvalid('applicantEmail')">
+                <mat-label>Email *</mat-label>
+                <mat-icon matPrefix>email</mat-icon>
+                <input matInput type="email" formControlName="applicantEmail" placeholder="jean@exemple.fr" />
+                <mat-hint>Adresse email valide</mat-hint>
+                <mat-error>Email invalide</mat-error>
+              </mat-form-field>
+            </div>
 
-  <div class="form-row">
-    <mat-form-field appearance="outline" class="half-width">
-      <mat-label>Nom complet *</mat-label>
-      <mat-icon matPrefix>person</mat-icon>
-      <input matInput formControlName="applicantName" />
-      <mat-error *ngIf="isFieldInvalid('applicantName')">
-        Nom obligatoire (min 3 caractères)
-      </mat-error>
-    </mat-form-field>
+            <div class="upload-section upload-section-premium">
+              <label class="upload-label">📄 CV (PDF) *</label>
+              <div class="upload-box" (click)="cvInput.click()"
+                   [class.uploaded]="cvFile" [class.upload-invalid]="applicationForm.touched && !cvFile && applicationForm.dirty">
+                <mat-icon>{{ cvFile ? 'check_circle' : 'upload_file' }}</mat-icon>
+                <span>{{ cvFile ? cvFile.name : 'Cliquez pour uploader votre CV (PDF)' }}</span>
+              </div>
+              <span class="upload-hint">Format PDF uniquement, max 5 Mo</span>
+              <input #cvInput type="file" accept=".pdf" (change)="onCvSelected($event)" hidden>
+            </div>
 
-    <mat-form-field appearance="outline" class="half-width">
-      <mat-label>Email *</mat-label>
-      <mat-icon matPrefix>email</mat-icon>
-      <input matInput type="email" formControlName="applicantEmail" />
-      <mat-error *ngIf="isFieldInvalid('applicantEmail')">
-        Email invalide
-      </mat-error>
-    </mat-form-field>
-  </div>
+            <div class="upload-section upload-section-premium">
+              <label class="upload-label">📝 Lettre de motivation (PDF) *</label>
+              <div class="upload-box" (click)="coverInput.click()"
+                   [class.uploaded]="coverLetterFile" [class.upload-invalid]="applicationForm.touched && !coverLetterFile && applicationForm.dirty">
+                <mat-icon>{{ coverLetterFile ? 'check_circle' : 'upload_file' }}</mat-icon>
+                <span>{{ coverLetterFile ? coverLetterFile.name : 'Cliquez pour uploader votre lettre (PDF)' }}</span>
+              </div>
+              <span class="upload-hint">Format PDF uniquement, max 5 Mo</span>
+              <input #coverInput type="file" accept=".pdf" (change)="onCoverLetterSelected($event)" hidden>
+            </div>
 
-  <!-- ✅ Upload CV -->
-  <div class="upload-section">
-    <label class="upload-label">📄 CV (PDF) *</label>
-    <div class="upload-box" (click)="cvInput.click()" 
-         [class.uploaded]="cvFile">
-      <mat-icon>{{ cvFile ? 'check_circle' : 'upload_file' }}</mat-icon>
-      <span>{{ cvFile ? cvFile.name : 'Cliquez pour uploader votre CV (PDF)' }}</span>
-    </div>
-    <input #cvInput type="file" accept=".pdf" 
-           (change)="onCvSelected($event)" hidden>
-  </div>
-
-  <!-- ✅ Upload Lettre -->
-  <div class="upload-section">
-    <label class="upload-label">📝 Lettre de motivation (PDF) *</label>
-    <div class="upload-box" (click)="coverInput.click()" 
-         [class.uploaded]="coverLetterFile">
-      <mat-icon>{{ coverLetterFile ? 'check_circle' : 'upload_file' }}</mat-icon>
-      <span>{{ coverLetterFile ? coverLetterFile.name : 'Cliquez pour uploader votre lettre (PDF)' }}</span>
-    </div>
-    <input #coverInput type="file" accept=".pdf" 
-           (change)="onCoverLetterSelected($event)" hidden>
-  </div>
-
-  <div class="form-actions">
-    <button mat-raised-button color="primary" type="submit" 
-            [disabled]="submitting">
-      <mat-icon *ngIf="!submitting">send</mat-icon>
-      <mat-progress-spinner *ngIf="submitting" 
-        mode="indeterminate" diameter="20">
-      </mat-progress-spinner>
-      {{ submitting ? 'Envoi en cours...' : 'Envoyer ma candidature' }}
-    </button>
-  </div>
-
-</form>
-
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" class="submit-btn-premium" [disabled]="submitting">
+                <mat-icon *ngIf="!submitting">send</mat-icon>
+                <mat-progress-spinner *ngIf="submitting" mode="indeterminate" diameter="20"></mat-progress-spinner>
+                {{ submitting ? 'Envoi en cours...' : 'Envoyer ma candidature' }}
+              </button>
+            </div>
+          </form>
         </mat-card-content>
       </mat-card>
     </div>
@@ -185,7 +153,7 @@
           <div class="info-item">
             <mat-icon>description</mat-icon>
             <div>
-              <span class="info-label">Contrat</span>
+              <span class="info-label">Type de contrat</span>
               <span class="info-value">{{ jobOffer.contractType }}</span>
             </div>
           </div>

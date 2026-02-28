@@ -1,5 +1,6 @@
 package com.school.schoolservice.savedoffer.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.school.schoolservice.joboffer.entity.JobOffer;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +45,8 @@ public class SavedOffer {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "job_offer_id", insertable = false, updatable = false)
+  @JsonIgnoreProperties({"applications", "hibernateLazyInitializer"})
+
   private JobOffer jobOffer;
 }
 

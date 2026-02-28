@@ -7,6 +7,10 @@ import { CoursesComponent } from './courses/courses.component';
 import { ChatComponent } from './chat/chat.component';
 import { JobOffersComponent } from './job-offers/job-offers.component';
 import { JobDetailsComponent } from './job-details/job-details.component';
+import { SavedOffersComponent } from './saved-offers/saved-offers.component';
+import { StudentPreferencesComponent } from './student-preferences/student-preferences.component';
+
+
 
 const routes: Routes = [
   {
@@ -20,7 +24,10 @@ const routes: Routes = [
       { path: 'courses', component: CoursesComponent },
       { path: 'chat', component: ChatComponent },
       { path: 'job-offers', component: JobOffersComponent },
-      { path: 'job-details/:id', component: JobDetailsComponent }
+      { path: 'job-details/:id', component: JobDetailsComponent },
+      { path: 'saved-offers', component: SavedOffersComponent },
+      { path: 'preferences', component: StudentPreferencesComponent }
+
     ]
   }
 ];

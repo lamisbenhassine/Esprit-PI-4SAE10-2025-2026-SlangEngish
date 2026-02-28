@@ -5,16 +5,20 @@ import com.school.schoolservice.application.enums.ApplicationStatus;
 import com.school.schoolservice.application.repository.ApplicationRepository;
 import com.school.schoolservice.application.service.ApplicationService;
 import com.school.schoolservice.common.exception.ResourceNotFoundException;
+import com.school.schoolservice.joboffer.entity.JobOffer;
 import com.school.schoolservice.joboffer.repository.JobOfferRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j  // ✅ ajoute
+
 public class ApplicationServiceImpl implements ApplicationService {
 
   private final ApplicationRepository repository;
@@ -24,9 +28,16 @@ public class ApplicationServiceImpl implements ApplicationService {
   @Transactional
   public Application create(Application application) {
     Long jobOfferId = application.getJobOfferId();
-    if (!jobOfferRepository.existsById(jobOfferId)) {
-      throw new RuntimeException(
-          "Erreur : L'offre avec l'ID " + jobOfferId + " n'existe pas. Impossible de postuler.");
+
+    // ✅ Récupère l'offre
+    JobOffer jobOffer = jobOfferRepository
+            .findById(jobOfferId)
+            .orElseThrow(() -> new RuntimeException(
+                    "Erreur : L'offre avec l'ID " + jobOfferId + " n'existe pas. Impossible de postuler."));
+
+    // ✅ Vérifie si l'offre est active
+    if (!jobOffer.getActive()) {
+      throw new RuntimeException("Cette offre n'est plus disponible.");
     }
 
     if (application.getDate() == null) {
@@ -39,7 +50,10 @@ public class ApplicationServiceImpl implements ApplicationService {
       application.setStudentId(1L);
     }
     application.setId(null);
-    return repository.save(application);
+
+    // ✅ Sauvegarde (ne plus désactiver l'offre selon le nombre de candidatures ; expiration = uniquement via expirationDate + scheduler)
+    Application saved = repository.save(application);
+    return saved;
   }
 
   @Override
@@ -73,18 +87,21 @@ public class ApplicationServiceImpl implements ApplicationService {
     Application saved = repository.save(existing);
 
     if (updated.getStatus() == ApplicationStatus.ACCEPTED) {
-      List<Application> sameStudentApplications =
-          repository.findByStudentId(existing.getStudentId());
+      // ✅ Annule uniquement les autres candidatures de la MÊME offre
+      List<Application> sameOfferApplications =
+              repository.findByJobOfferId(existing.getJobOfferId());
 
-      for (Application other : sameStudentApplications) {
+      for (Application other : sameOfferApplications) {
         if (!other.getId().equals(saved.getId())
-            && other.getStatus() != ApplicationStatus.CANCELLED) {
+                && other.getStatus() != ApplicationStatus.CANCELLED) {
           other.setStatus(ApplicationStatus.CANCELLED);
         }
       }
 
-      repository.saveAll(sameStudentApplications);
+      repository.saveAll(sameOfferApplications);
     }
+
+     
 
     return saved;
   }

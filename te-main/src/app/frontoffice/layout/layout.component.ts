@@ -24,7 +24,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
     { id: 'chat', label: 'Chat', icon: 'chat', routerLink: '/frontoffice/chat' },
     { id: 'settings', label: 'Settings', icon: 'settings', routerLink: '/frontoffice/settings' },
     { id: 'help', label: 'Help', icon: 'help', routerLink: '/frontoffice/help' },
-    { id: 'jobs', label: 'Job Offers', icon: 'work_outline', routerLink: '/frontoffice/job-offers' }
+    { id: 'jobs', label: 'Job Offers', icon: 'work_outline', routerLink: '/frontoffice/job-offers' },
+    { id: 'saved-offers', label: 'Offres Sauvegardées', icon: 'bookmark', routerLink: '/frontoffice/saved-offers' },
+    { id: 'preferences', label: 'Mes Préférences', icon: 'tune', routerLink: '/frontoffice/preferences' }
   ];
 
   constructor(

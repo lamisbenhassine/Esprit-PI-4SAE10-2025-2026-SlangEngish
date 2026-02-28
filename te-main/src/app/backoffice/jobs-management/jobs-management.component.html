@@ -19,7 +19,7 @@
   <!-- Tableau des offres -->
   <mat-card *ngIf="!loading && !showForm" class="table-card">
     <mat-card-content>
-      <table mat-table [dataSource]="jobOffers" class="mat-elevation-z0">
+      <table mat-table [dataSource]="dataSource" class="mat-elevation-z0">
         <ng-container matColumnDef="title">
           <th mat-header-cell *matHeaderCellDef>Titre</th>
           <td mat-cell *matCellDef="let row">{{ row.title }}</td>
@@ -65,6 +65,7 @@
           <td class="mat-cell" [attr.colspan]="displayedColumns.length">Aucune offre.</td>
         </tr>
       </table>
+      <mat-paginator [pageSizeOptions]="[5, 10, 25, 50]" [pageSize]="10" showFirstLastButtons></mat-paginator>
     </mat-card-content>
   </mat-card>
 
@@ -101,17 +102,37 @@
             {{ getErrorMessage('contractType') }}
           </mat-error>
         </mat-form-field>
+        <!-- Champ Lieu avec autocomplétion -->
+<div class="location-field">
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Lieu</mat-label>
+    <mat-icon matPrefix>location_on</mat-icon>
+    <input matInput 
+           formControlName="location"
+           (input)="onLocationInput($event)"
+           (blur)="hideSuggestions()"
+           placeholder="Ex: Tunis, Paris..."
+           autocomplete="off"/>
+    <mat-error *ngIf="jobForm.get('location')?.invalid">
+      {{ getErrorMessage('location') }}
+    </mat-error>
+  </mat-form-field>
+
+  <!-- Suggestions -->
+  <div class="suggestions-panel" *ngIf="showSuggestions">
+    <div *ngFor="let suggestion of locationSuggestions"
+         class="suggestion-item"
+         (click)="selectLocation(suggestion)">
+      <mat-icon>location_on</mat-icon>
+      <span>{{ suggestion.display_name.split(',').slice(0,3).join(',') }}</span>
+    </div>
+  </div>
+</div>
+
+    
 
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Lieu</mat-label>
-          <input matInput formControlName="location" />
-          <mat-error *ngIf="jobForm.get('location')?.invalid">
-            {{ getErrorMessage('location') }}
-          </mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Salaire (€/an)</mat-label>
+          <mat-label>Salaire (TND/an)</mat-label>
           <input matInput type="number" formControlName="salary" placeholder="Ex: 35000" />
           <mat-error *ngIf="jobForm.get('salary')?.invalid">
             {{ getErrorMessage('salary') }}
@@ -125,6 +146,36 @@
             {{ getErrorMessage('description') }}
           </mat-error>
         </mat-form-field>
+
+        <!-- ✅ Date d'expiration optionnelle -->
+<div class="expiration-section">
+  <div class="expiration-header">
+    <mat-icon>schedule</mat-icon>
+    <span>Date d'expiration</span>
+    <span class="optional-badge">Optionnel</span>
+  </div>
+  <p class="expiration-hint">
+    Si vous ne renseignez pas de date, l'offre restera active indéfiniment.
+  </p>
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Date d'expiration</mat-label>
+    <mat-icon matPrefix>event</mat-icon>
+    <input matInput 
+           type="datetime-local"
+           formControlName="expirationDate"/>
+    <mat-hint>Laissez vide si l'offre n'expire pas</mat-hint>
+  </mat-form-field>
+
+  <!-- ✅ Bouton effacer la date -->
+  <button mat-button 
+          type="button"
+          class="clear-date-btn"
+          *ngIf="jobForm.get('expirationDate')?.value"
+          (click)="jobForm.patchValue({expirationDate: null})">
+    <mat-icon>clear</mat-icon>
+    Supprimer la date d'expiration
+  </button>
+</div>
 
         <mat-checkbox formControlName="active">Offre active (visible)</mat-checkbox>
 

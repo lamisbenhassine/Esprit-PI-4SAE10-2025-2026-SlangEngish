@@ -30,7 +30,12 @@ export class NewOfferNotificationService {
       onConnect: () => {
         console.log('✅ WebSocket connecté');
         this.stompClient.subscribe('/topic/new-offers', (message: IMessage) => {
-          const notification: NewOfferNotification = JSON.parse(message.body);
+          const raw = JSON.parse(message.body);
+          const { type, contract_type, contractType, ...rest } = raw;
+          const notification: NewOfferNotification = {
+            ...rest,
+            contractType: contract_type ?? contractType,
+          };
           this.onNewOffer.next(notification);
         });
       },

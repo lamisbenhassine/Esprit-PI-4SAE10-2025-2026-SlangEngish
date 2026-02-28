@@ -14,6 +14,9 @@ import { ChatComponent } from './chat/chat.component';
 // Nouveaux composants
 import { JobOffersComponent } from './job-offers/job-offers.component';
 import { JobDetailsComponent } from './job-details/job-details.component';
+import { StudentPreferencesComponent } from './student-preferences/student-preferences.component';
+
+
 
 // Angular Material
 import { MatCardModule } from '@angular/material/card';
@@ -26,6 +29,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { SavedOffersComponent } from './saved-offers/saved-offers.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatChipsModule } from '@angular/material/chips';
+
 
 @NgModule({
   declarations: [
@@ -35,7 +42,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     CoursesComponent,
     ChatComponent,
     JobOffersComponent,   // ← NOUVEAU
-    JobDetailsComponent   // ← NOUVEAU
+    JobDetailsComponent, SavedOffersComponent, StudentPreferencesComponent   // ← NOUVEAU
   ],
   imports: [
     CommonModule,
@@ -52,7 +59,9 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     MatProgressBarModule,
     MatDividerModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatTooltipModule,
+    MatChipsModule
   ]
 })
 export class FrontofficeModule { }

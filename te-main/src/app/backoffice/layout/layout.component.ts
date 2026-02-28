@@ -21,6 +21,8 @@ backofficeMenuItems: MenuItem[] = [
   { id: 'reports', label: 'Reports', icon: 'assessment', routerLink: '/backoffice/reports' },
   { id: 'settings', label: 'Settings', icon: 'settings', routerLink: '/backoffice/settings' },
   //{ id: 'applications', label: 'Candidatures', icon: 'people', routerLink: '/backoffice/applications' }
+    { id: 'job-stats', label: 'Statistiques Offres', icon: 'bar_chart', routerLink: '/backoffice/job-stats' }
+
 ];
 
   constructor(private router: Router) {}

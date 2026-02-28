@@ -33,6 +33,7 @@ public class JobOfferServiceImpl implements JobOfferService {
     if (jobOffer.getActive() == null) {
       jobOffer.setActive(true);
     }
+    // expirationDate: do not set any default; keep exactly what is passed (null = never expire).
     jobOffer.setId(null);
     JobOffer created = repository.save(jobOffer);
     notifyFrontOfficeNewOffer(created);
@@ -68,6 +69,7 @@ public class JobOfferServiceImpl implements JobOfferService {
 
   @Override
   public JobOffer update(Long id, JobOffer updated) {
+
     JobOffer existing = findById(id);
     existing.setTitle(updated.getTitle());
     existing.setDescription(updated.getDescription());
@@ -78,6 +80,8 @@ public class JobOfferServiceImpl implements JobOfferService {
     existing.setRecruiterId(updated.getRecruiterId() != null ? updated.getRecruiterId() : existing.getRecruiterId());
     existing.setDate(updated.getDate() != null ? updated.getDate() : existing.getDate());
     existing.setActive(updated.getActive() != null ? updated.getActive() : existing.getActive());
+    existing.setExpirationDate(updated.getExpirationDate());
+
     return repository.save(existing);
   }
 
