@@ -83,6 +83,25 @@
   margin-bottom: 24px;
 }
 
+.deadline-warning-urgent {
+  background: #ffebee;
+  border-color: #e53935;
+}
+
+.deadline-warning-urgent .deadline-warning-header {
+  color: #b71c1c;
+}
+
+.deadline-warning-urgent .deadline-warning-intro,
+.deadline-warning-urgent .deadline-warning-list {
+  color: #8e0a0a;
+}
+
+.deadline-warning-intro {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+}
+
 .deadline-warning-header {
   display: flex;
   align-items: center;

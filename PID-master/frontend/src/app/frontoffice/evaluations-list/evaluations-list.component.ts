@@ -117,6 +117,17 @@ export class EvaluationsListComponent implements OnInit {
     });
   }
 
+  /** Evaluations whose deadline is in 3 days or less (for red urgent warning). */
+  get evaluationsDeadlineUnder3Days(): Evaluation[] {
+    const now = this.now.getTime();
+    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+    return this.evaluations.filter(e => {
+      if (!e.dateEnd) return false;
+      const end = new Date(e.dateEnd).getTime();
+      return end >= now && (end - now) <= threeDaysMs;
+    });
+  }
+
   /** Human-readable time left until deadline (e.g. "1 day left", "3 hours left"). */
   getTimeLeftDisplay(dateEnd: string | undefined): string {
     if (!dateEnd) return '—';

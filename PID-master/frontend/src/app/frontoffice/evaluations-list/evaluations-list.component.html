@@ -15,6 +15,20 @@
     </div>
   </div>
 
+  <!-- Urgent: evaluations ending in 3 days or less (red warning with names) -->
+  <div class="deadline-warning deadline-warning-urgent" *ngIf="!loading && evaluationsDeadlineUnder3Days.length > 0">
+    <div class="deadline-warning-header">
+      <mat-icon>error</mat-icon>
+      <span>Ending in 3 days or less</span>
+    </div>
+    <p class="deadline-warning-intro">The following evaluations are due very soon:</p>
+    <ul class="deadline-warning-list">
+      <li *ngFor="let e of evaluationsDeadlineUnder3Days">
+        <strong>{{ e.title }}</strong> — {{ getTimeLeftDisplay(e.dateEnd) }} (until {{ formatDate(e.dateEnd) }})
+      </li>
+    </ul>
+  </div>
+
   <!-- Warning: evaluations ending in less than 7 days -->
   <div class="deadline-warning" *ngIf="!loading && evaluationsDeadlineUnder7Days.length > 0">
     <div class="deadline-warning-header">
