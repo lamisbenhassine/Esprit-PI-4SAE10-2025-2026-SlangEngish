@@ -12,10 +12,12 @@ import { EvaluationsListComponent } from './evaluations-list/evaluations-list.co
 import { TakeEvaluationComponent } from './take-evaluation/take-evaluation.component';
 import { EvaluationResultsComponent } from './evaluation-results/evaluation-results.component';
 import { CertificateComponent } from './certificate/certificate.component';
+import { CertificateVerifyComponent } from './certificate/certificate-verify.component';
 import { SharedModule } from '../shared/shared.module';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
+import { QRCodeModule } from 'angularx-qrcode';
 
 @NgModule({
   declarations: [
@@ -27,7 +29,8 @@ import { MatSelectModule } from '@angular/material/select';
     EvaluationsListComponent,
     TakeEvaluationComponent,
     EvaluationResultsComponent,
-    CertificateComponent
+    CertificateComponent,
+    CertificateVerifyComponent
   ],
   imports: [
     CommonModule,
@@ -37,7 +40,8 @@ import { MatSelectModule } from '@angular/material/select';
     SharedModule,
     MatProgressBarModule,
     MatPaginatorModule,
-    MatSelectModule
+    MatSelectModule,
+    QRCodeModule
   ]
 })
 export class FrontofficeModule { }

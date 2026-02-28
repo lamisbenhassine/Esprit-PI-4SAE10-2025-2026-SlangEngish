@@ -9,6 +9,7 @@ import { EvaluationsListComponent } from './evaluations-list/evaluations-list.co
 import { TakeEvaluationComponent } from './take-evaluation/take-evaluation.component';
 import { EvaluationResultsComponent } from './evaluation-results/evaluation-results.component';
 import { CertificateComponent } from './certificate/certificate.component';
+import { CertificateVerifyComponent } from './certificate/certificate-verify.component';
 
 const routes: Routes = [
   {
@@ -25,7 +26,8 @@ const routes: Routes = [
       { path: 'evaluations/:id/results', component: EvaluationResultsComponent },
       { path: 'certificate', component: CertificateComponent }
     ]
-  }
+  },
+  { path: 'certificate/verify', component: CertificateVerifyComponent }
 ];
 
 @NgModule({

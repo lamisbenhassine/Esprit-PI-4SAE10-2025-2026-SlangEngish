@@ -24,9 +24,19 @@
               <p class="certificate-date">{{ certificateDate }}</p>
             </div>
             <div class="certificate-footer">
-              <div class="seal">
-                <mat-icon>school</mat-icon>
-                <span>{{ platformName }}</span>
+              <div class="footer-row">
+                <div class="seal">
+                  <mat-icon>school</mat-icon>
+                  <span>{{ platformName }}</span>
+                </div>
+                <div class="qrcode-block">
+                  <qrcode *ngIf="showQr && verificationUrl"
+                    [qrdata]="verificationUrl"
+                    [width]="96"
+                    [errorCorrectionLevel]="'M'"
+                    [elementType]="'img'"></qrcode>
+                  <p class="qrcode-hint">Scan to verify</p>
+                </div>
               </div>
               <p class="awarded-to">Awarded to <strong>{{ studentName || 'Certificate Holder' }}</strong></p>
             </div>

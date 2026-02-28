@@ -1,4 +1,5 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, PLATFORM_ID, Inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { EvaluationApiService } from '../../core/services/evaluation-api.service';
 import { CurrentUserService } from '../../core/services/current-user.service';
@@ -22,16 +23,22 @@ export class CertificateComponent implements OnInit {
   studentName = '';
   certificateDate = '';
   exportingPdf = false;
+  /** Only true in the browser; avoids SSR / NotYetImplemented from angularx-qrcode. */
+  showQr = false;
 
   constructor(
     private api: EvaluationApiService,
     private currentUser: CurrentUserService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    @Inject(PLATFORM_ID) private platformId: object
   ) {}
 
   ngOnInit(): void {
     this.load();
+    if (isPlatformBrowser(this.platformId)) {
+      setTimeout(() => { this.showQr = true; }, 0);
+    }
   }
 
   load(): void {
@@ -82,6 +89,14 @@ export class CertificateComponent implements OnInit {
 
   get requiredPassed(): number {
     return REQUIRED_PASSED;
+  }
+
+  /** URL that the QR code points to: verification page with student name and date. */
+  get verificationUrl(): string {
+    const base = typeof window !== 'undefined' ? window.location.origin : '';
+    const name = encodeURIComponent(this.studentName || 'Certificate Holder');
+    const date = encodeURIComponent(this.certificateDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+    return `${base}/frontoffice/certificate/verify?name=${name}&date=${date}`;
   }
 
   backToEvaluations(): void {
