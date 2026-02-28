@@ -11,8 +11,10 @@ import com.evaluation.evaluation.repository.EvaluationRepository;
 import com.evaluation.evaluation.repository.FillBlankQuestionRepository;
 import com.evaluation.evaluation.repository.OptionRepository;
 import com.evaluation.evaluation.repository.QuestionRepository;
+import com.evaluation.evaluation.repository.ReadingQuestionRepository;
 import com.evaluation.evaluation.repository.StudentAnswerRepository;
 import com.evaluation.evaluation.service.EvaluationAttemptService;
+import com.evaluation.evaluation.service.AiGradingService;
 import com.evaluation.evaluation.dto.CertificateEligibilityResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,8 @@ public class EvaluationAttemptServiceImpl implements EvaluationAttemptService {
     private final StudentAnswerRepository studentAnswerRepository;
     private final OptionRepository optionRepository;
     private final FillBlankQuestionRepository fillBlankQuestionRepository;
+    private final AiGradingService aiGradingService;
+    private final ReadingQuestionRepository readingQuestionRepository;
 
     @Override
     public EvaluationAttempt startAttempt(Long evaluationId, Long userId) {
@@ -118,9 +122,13 @@ public class EvaluationAttemptServiceImpl implements EvaluationAttemptService {
         attempt.setStatus(AttemptStatus.SUBMITTED);
         attempt.setUpdatedAt(LocalDateTime.now());
 
-        // Calculate score
+        // Calculate score (includes AI grading for Reading/Writing via Ollama)
         double totalScore = calculateScore(attempt);
         attempt.setScore(totalScore);
+
+        for (StudentAnswer a : attempt.getStudentAnswers()) {
+            studentAnswerRepository.save(a);
+        }
 
         return evaluationAttemptRepository.save(attempt);
     }
@@ -216,16 +224,42 @@ public class EvaluationAttemptServiceImpl implements EvaluationAttemptService {
                         }
                     }
                     break;
+                case READING:
+                case WRITING:
+                    // Automatic grading with Ollama (AI)
+                    String textAnswer = answer.getTextAnswer();
+                    double pointsForQuestion = question.getPoints() != null ? question.getPoints() : 0.0;
+                    if (textAnswer != null && !textAnswer.isBlank() && pointsForQuestion > 0) {
+                        String context = "";
+                        if (question.getQuestionType() == com.evaluation.evaluation.enums.QuestionType.READING) {
+                            context = readingQuestionRepository.findById(question.getId())
+                                    .map(rq -> rq.getInstructions() != null ? rq.getInstructions() : "")
+                                    .orElse("");
+                        }
+                        double aiScore = aiGradingService.gradeTextAnswer(
+                                question.getQuestionText() != null ? question.getQuestionText() : "",
+                                textAnswer,
+                                pointsForQuestion,
+                                context);
+                        answer.setScoreAwarded(aiScore);
+                        totalScore += aiScore;
+                    } else {
+                        answer.setScoreAwarded(0.0);
+                    }
+                    break;
                 default:
-                    // Reading/Writing need manual grading usually
+                    answer.setScoreAwarded(0.0);
                     break;
             }
 
-            if (isCorrect) {
-                totalScore += question.getPoints();
-                answer.setScoreAwarded(question.getPoints());
-            } else {
-                answer.setScoreAwarded(0.0);
+            if (question.getQuestionType() != com.evaluation.evaluation.enums.QuestionType.READING
+                    && question.getQuestionType() != com.evaluation.evaluation.enums.QuestionType.WRITING) {
+                if (isCorrect) {
+                    totalScore += question.getPoints();
+                    answer.setScoreAwarded(question.getPoints());
+                } else {
+                    answer.setScoreAwarded(0.0);
+                }
             }
         }
         return totalScore;
