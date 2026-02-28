@@ -1,10 +1,14 @@
 <div class="evaluations-list">
   <div class="page-header">
     <div class="welcome-card">
+      <div class="hero-shape hero-shape-1"></div>
+      <div class="hero-shape hero-shape-2"></div>
+      <div class="hero-shape hero-shape-3"></div>
       <div class="welcome-content">
         <div class="welcome-text">
-          <h1>My Evaluations 📝</h1>
-          <p>Available evaluations you can take. Click to start.</p>
+          <span class="hero-badge">Your learning path</span>
+          <h1>My Evaluations</h1>
+          <p>Choose a quiz below and show what you know. Each card opens when you’re ready.</p>
         </div>
         <div class="welcome-icon">
           <div class="icon-wrapper">
@@ -60,12 +64,19 @@
   </div>
 
   <div class="eval-grid" *ngIf="!loading">
-    <div class="eval-card" *ngFor="let e of paginatedEvaluations" (click)="startEvaluation(e)">
+    <div class="eval-card" *ngFor="let e of paginatedEvaluations" (click)="startEvaluation(e)"
+         [class.eval-card-urgent]="isDeadlineUnder3Days(e)">
+      <div class="card-top-strip"></div>
       <div class="eval-image" [style.backgroundImage]="getEvaluationImageStyle(e.imageUrl)">
         <span class="eval-badge">{{ e.numberOfAttempts }} attempt(s)</span>
-        <span class="eval-time-left" [class.expired]="getTimeLeftDisplay(e.dateEnd) === 'Expired'">
+        <span class="eval-time-left"
+              [class.expired]="getTimeLeftDisplay(e.dateEnd) === 'Expired'"
+              [class.eval-time-left-urgent]="isDeadlineUnder3Days(e)">
           {{ getTimeLeftDisplay(e.dateEnd) }}
         </span>
+        <div class="play-overlay">
+          <span class="play-btn"><mat-icon>play_arrow</mat-icon></span>
+        </div>
       </div>
       <div class="eval-content">
         <h3>{{ e.title }}</h3>

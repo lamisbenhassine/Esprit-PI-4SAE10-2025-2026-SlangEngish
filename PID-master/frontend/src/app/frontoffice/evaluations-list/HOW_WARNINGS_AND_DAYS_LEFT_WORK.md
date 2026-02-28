@@ -125,7 +125,52 @@ This list = **evaluations due in 3 days or less** (names shown in the red warnin
 
 So: **warning with red style** + **names** from `evaluationsDeadlineUnder3Days` + **days/hours left** from `getTimeLeftDisplay(e.dateEnd)`.
 
-### 4.2 Yellow warning (less than 7 days)
+In addition, **every evaluation that has 3 days or less left** is also styled in **red in the list**: the evaluation card gets a red top strip, red border/shadow, and the "time left" badge on the card is red. So the warning lists the names, and the same evaluations are visually highlighted in red in the grid below.
+
+### 4.2 Red styling on evaluation cards (3 days or less)
+
+For each evaluation card we check if its deadline is in 3 days or less. If yes, we add the class `eval-card-urgent` to the card and `eval-time-left-urgent` to the "time left" badge. That way the card and the badge are shown in red, not only the warning box.
+
+**TypeScript – helper used by the template:**
+
+```typescript
+/** True if this evaluation's deadline is in 3 days or less (used to style the card in red). */
+isDeadlineUnder3Days(e: Evaluation): boolean {
+  if (!e.dateEnd) return false;
+  const now = this.now.getTime();
+  const end = new Date(e.dateEnd).getTime();
+  const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+  return end >= now && (end - now) <= threeDaysMs;
+}
+```
+
+**HTML – card and time-left badge get urgent class when 3 days or less:**
+
+```html
+<div class="eval-card" *ngFor="let e of paginatedEvaluations" (click)="startEvaluation(e)"
+     [class.eval-card-urgent]="isDeadlineUnder3Days(e)">
+  <div class="card-top-strip"></div>
+  <div class="eval-image" ...>
+    ...
+    <span class="eval-time-left"
+          [class.expired]="getTimeLeftDisplay(e.dateEnd) === 'Expired'"
+          [class.eval-time-left-urgent]="isDeadlineUnder3Days(e)">
+      {{ getTimeLeftDisplay(e.dateEnd) }}
+    </span>
+    ...
+  </div>
+  ...
+</div>
+```
+
+**CSS – red styles for urgent cards and badge:**
+
+- **Card:** `.eval-card-urgent` has a red border and red-tinted box-shadow. `.eval-card-urgent .card-top-strip` uses a red gradient (`#dc2626` → `#ef4444`) and is slightly taller (6px).
+- **Time-left badge:** `.eval-time-left.eval-time-left-urgent` has a red background (`rgba(220, 38, 38, 0.95)`) and a red shadow so the "X days left" text on the card is clearly in red.
+
+So: the **same evaluations** that appear in the red warning (by name) are the ones that get the **red card** and **red "time left" badge** in the list.
+
+### 4.3 Yellow warning (less than 7 days)
 
 Same idea with the 7-day list and a yellow style (class `deadline-warning` only, no `deadline-warning-urgent`):
 
@@ -145,7 +190,7 @@ Same idea with the 7-day list and a yellow style (class `deadline-warning` only,
 </div>
 ```
 
-### 4.3 "Days left" on each evaluation card
+### 4.4 "Days left" on each evaluation card
 
 For **each card** we call `getTimeLeftDisplay(e.dateEnd)` and show it in a span. If the result is `"Expired"`, we add the class `expired` so it can be styled (e.g. grey).
 
@@ -157,7 +202,8 @@ For **each card** we call `getTimeLeftDisplay(e.dateEnd)` and show it in a span.
 
 So:
 - **Same deadline** → same “time left” text (e.g. all with 1 day left show **"1 day left"**).
-- **Expired** → text is “Expired” and the badge uses the `expired` class.
+- **Expired** → text is “Expired” and the badge uses the `expired` class (grey).
+- **3 days or less left** → the badge gets the `eval-time-left-urgent` class (red), and the card gets `eval-card-urgent` (red top strip and border). See section 4.2.
 
 ---
 
@@ -186,6 +232,8 @@ So evaluations with the **same** (or very close) **deadline** end up **next to e
 |---------------------------|---------------|
 | “1 day left” on a card    | `getTimeLeftDisplay(e.dateEnd)` in the card template. |
 | Red warning + names       | Getter `evaluationsDeadlineUnder3Days`; template shows it only when length > 0 and lists `e.title` + time left. |
+| **Red card** (3 days or less) | `isDeadlineUnder3Days(e)` adds class `eval-card-urgent` (red top strip, border, shadow). |
+| **Red "time left" badge** on those cards | `isDeadlineUnder3Days(e)` adds class `eval-time-left-urgent` (red background). |
 | Yellow warning + names    | Getter `evaluationsDeadlineUnder7Days`; same idea in the template. |
 | Same deadline next to each other | `filteredEvaluations` is sorted by `dateEnd` (ascending). |
 

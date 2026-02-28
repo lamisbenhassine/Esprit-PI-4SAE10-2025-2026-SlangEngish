@@ -128,6 +128,15 @@ export class EvaluationsListComponent implements OnInit {
     });
   }
 
+  /** True if this evaluation's deadline is in 3 days or less (used to style the card in red). */
+  isDeadlineUnder3Days(e: Evaluation): boolean {
+    if (!e.dateEnd) return false;
+    const now = this.now.getTime();
+    const end = new Date(e.dateEnd).getTime();
+    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+    return end >= now && (end - now) <= threeDaysMs;
+  }
+
   /** Human-readable time left until deadline (e.g. "1 day left", "3 hours left"). */
   getTimeLeftDisplay(dateEnd: string | undefined): string {
     if (!dateEnd) return '—';
