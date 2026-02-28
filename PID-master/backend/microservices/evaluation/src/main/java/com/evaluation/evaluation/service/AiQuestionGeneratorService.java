@@ -32,12 +32,10 @@ public class AiQuestionGeneratorService {
     @Value("${ai.ollama.model:llama3.2}")
     private String model;
 
-    private static final int MAX_QUESTIONS = 10;
+    private static final int MAX_QUESTIONS = 5;
     private static final int MAX_TEXT_LENGTH = 12000;
 
-    /**
-     * Sends the PDF text to Ollama and returns up to 10 reading comprehension questions.
-     */
+
     public List<String> generateQuestions(String pdfText) {
         if (pdfText == null || pdfText.isBlank()) {
             return List.of();
@@ -47,14 +45,31 @@ public class AiQuestionGeneratorService {
                 : pdfText;
 
         String prompt = """
-            Based on the following text extracted from a PDF, generate exactly 10 reading comprehension questions.
-            Each question should be clear and answerable from the text.
-            Return ONLY a JSON array of exactly 10 strings, nothing else. No markdown, no explanation.
-            Example format: ["Question 1 here?", "Question 2 here?", ...]
+           You are an English teacher creating reading comprehension exercises.
 
-            Text:
-            """
-            + text;
+Based ONLY on the text below, generate exactly 5 reading comprehension questions.
+
+Rules:
+- Questions must be clear, grammatically correct, and suitable for English learners.
+- Questions must be answerable directly from the text.
+- Mix question types (who, what, when, where, why, how, vocabulary meaning, inference if possible).
+- Do NOT repeat similar questions.
+- Do NOT invent information not present in the text.
+- Do NOT include answers.
+- Do NOT include numbering.
+- Do NOT include explanations.
+
+IMPORTANT:
+Return ONLY a valid JSON array containing exactly 10 strings.
+No markdown.
+No text before or after the JSON.
+No comments.
+
+Example format:
+["Question one?", "Question two?", "Question three?", "..."]
+
+Text:
+""" + text;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

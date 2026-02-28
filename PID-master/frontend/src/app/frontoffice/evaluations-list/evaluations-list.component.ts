@@ -97,7 +97,40 @@ export class EvaluationsListComponent implements OnInit {
   }
 
   get filteredEvaluations(): Evaluation[] {
-    return this.evaluations.filter(e => this.matchesSearch(e) && this.matchesFilter(e));
+    const list = this.evaluations.filter(e => this.matchesSearch(e) && this.matchesFilter(e));
+    // Sort by deadline (dateEnd) so same deadline evaluations are next to each other
+    return list.slice().sort((a, b) => {
+      const endA = a.dateEnd ? new Date(a.dateEnd).getTime() : 0;
+      const endB = b.dateEnd ? new Date(b.dateEnd).getTime() : 0;
+      return endA - endB;
+    });
+  }
+
+  /** Evaluations whose deadline is in less than 7 days (for warning). */
+  get evaluationsDeadlineUnder7Days(): Evaluation[] {
+    const now = this.now.getTime();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    return this.evaluations.filter(e => {
+      if (!e.dateEnd) return false;
+      const end = new Date(e.dateEnd).getTime();
+      return end >= now && (end - now) < sevenDaysMs;
+    });
+  }
+
+  /** Human-readable time left until deadline (e.g. "1 day left", "3 hours left"). */
+  getTimeLeftDisplay(dateEnd: string | undefined): string {
+    if (!dateEnd) return '—';
+    const end = new Date(dateEnd).getTime();
+    const now = this.now.getTime();
+    const diffMs = end - now;
+    if (diffMs <= 0) return 'Expired';
+    const diffHours = diffMs / (60 * 60 * 1000);
+    const diffDays = diffMs / (24 * 60 * 60 * 1000);
+    if (diffHours < 1) return 'Less than 1 hour left';
+    if (diffHours < 24) return `${Math.floor(diffHours)} hour${Math.floor(diffHours) === 1 ? '' : 's'} left`;
+    if (diffDays < 2) return '1 day left';
+    if (diffDays < 7) return `${Math.floor(diffDays)} days left`;
+    return `${Math.floor(diffDays)} days left`;
   }
 
   get paginatedEvaluations(): Evaluation[] {

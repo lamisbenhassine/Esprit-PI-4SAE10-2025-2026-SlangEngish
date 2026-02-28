@@ -15,6 +15,19 @@
     </div>
   </div>
 
+  <!-- Warning: evaluations ending in less than 7 days -->
+  <div class="deadline-warning" *ngIf="!loading && evaluationsDeadlineUnder7Days.length > 0">
+    <div class="deadline-warning-header">
+      <mat-icon>warning</mat-icon>
+      <span>Evaluations ending in less than 7 days</span>
+    </div>
+    <ul class="deadline-warning-list">
+      <li *ngFor="let e of evaluationsDeadlineUnder7Days">
+        <strong>{{ e.title }}</strong> — {{ getTimeLeftDisplay(e.dateEnd) }} (until {{ formatDate(e.dateEnd) }})
+      </li>
+    </ul>
+  </div>
+
   <div class="toolbar" *ngIf="!loading && evaluations.length > 0">
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search by title</mat-label>
@@ -36,6 +49,9 @@
     <div class="eval-card" *ngFor="let e of paginatedEvaluations" (click)="startEvaluation(e)">
       <div class="eval-image" [style.backgroundImage]="getEvaluationImageStyle(e.imageUrl)">
         <span class="eval-badge">{{ e.numberOfAttempts }} attempt(s)</span>
+        <span class="eval-time-left" [class.expired]="getTimeLeftDisplay(e.dateEnd) === 'Expired'">
+          {{ getTimeLeftDisplay(e.dateEnd) }}
+        </span>
       </div>
       <div class="eval-content">
         <h3>{{ e.title }}</h3>

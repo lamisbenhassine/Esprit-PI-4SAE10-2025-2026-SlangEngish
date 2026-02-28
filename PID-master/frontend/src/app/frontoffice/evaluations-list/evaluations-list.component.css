@@ -75,6 +75,39 @@
   width: 160px;
 }
 
+.deadline-warning {
+  background: #fff8e1;
+  border: 1px solid #ffc107;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.deadline-warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #b38600;
+  margin-bottom: 12px;
+}
+
+.deadline-warning-header mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.deadline-warning-list {
+  margin: 0;
+  padding-left: 24px;
+  color: #5d4e00;
+}
+
+.deadline-warning-list li {
+  margin-bottom: 6px;
+}
+
 .no-results {
   text-align: center;
   padding: 48px 24px;
@@ -137,6 +170,22 @@ mat-paginator {
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.eval-time-left {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(102, 126, 234, 0.9);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.eval-time-left.expired {
+  background: rgba(150, 150, 150, 0.9);
 }
 
 .eval-content {

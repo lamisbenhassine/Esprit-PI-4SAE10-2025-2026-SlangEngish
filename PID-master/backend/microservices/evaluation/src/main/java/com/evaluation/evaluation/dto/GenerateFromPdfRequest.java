@@ -7,5 +7,5 @@ public class GenerateFromPdfRequest {
     private Long evaluationId;
     private String pdfUrl;
     private String instructions;
-    private Double pointsPerQuestion; // optional; default 10.0
+    private Double pointsPerQuestion;
 }
