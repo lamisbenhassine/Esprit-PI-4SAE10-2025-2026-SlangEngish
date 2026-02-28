@@ -22,4 +22,6 @@ public interface EvaluationAttemptService {
     List<EvaluationAttempt> getAttemptsByEvaluation(Long evaluationId);
 
     StudentAnswer updateAnswerScore(Long answerId, Double newScore);
+
+    com.evaluation.evaluation.dto.CertificateEligibilityResponse getCertificateEligibility(Long userId);
 }

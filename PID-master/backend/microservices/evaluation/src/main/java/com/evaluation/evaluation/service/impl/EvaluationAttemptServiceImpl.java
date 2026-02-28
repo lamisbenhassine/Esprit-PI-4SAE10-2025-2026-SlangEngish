@@ -13,6 +13,7 @@ import com.evaluation.evaluation.repository.OptionRepository;
 import com.evaluation.evaluation.repository.QuestionRepository;
 import com.evaluation.evaluation.repository.StudentAnswerRepository;
 import com.evaluation.evaluation.service.EvaluationAttemptService;
+import com.evaluation.evaluation.dto.CertificateEligibilityResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -272,5 +273,23 @@ public class EvaluationAttemptServiceImpl implements EvaluationAttemptService {
         evaluationAttemptRepository.save(attempt);
 
         return answer;
+    }
+
+    @Override
+    public CertificateEligibilityResponse getCertificateEligibility(Long userId) {
+        List<EvaluationAttempt> submitted = evaluationAttemptRepository.findByUserIdAndStatusWithEvaluation(userId, AttemptStatus.SUBMITTED);
+        java.util.Set<Long> passedEvaluationIds = new java.util.HashSet<>();
+        for (EvaluationAttempt a : submitted) {
+            if (a.getScore() == null) continue;
+            Evaluation ev = a.getEvaluation();
+            if (ev == null || ev.getTotalScore() == null || ev.getTotalScore() <= 0) continue;
+            double pct = a.getScore() / ev.getTotalScore();
+            if (pct >= 0.5) {
+                passedEvaluationIds.add(ev.getId());
+            }
+        }
+        int passedCount = passedEvaluationIds.size();
+        boolean eligible = passedCount >= 5;
+        return new CertificateEligibilityResponse(eligible, passedCount);
     }
 }

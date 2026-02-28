@@ -8,6 +8,7 @@ import { ChatComponent } from './chat/chat.component';
 import { EvaluationsListComponent } from './evaluations-list/evaluations-list.component';
 import { TakeEvaluationComponent } from './take-evaluation/take-evaluation.component';
 import { EvaluationResultsComponent } from './evaluation-results/evaluation-results.component';
+import { CertificateComponent } from './certificate/certificate.component';
 
 const routes: Routes = [
   {
@@ -21,7 +22,8 @@ const routes: Routes = [
       { path: 'chat', component: ChatComponent },
       { path: 'evaluations', component: EvaluationsListComponent },
       { path: 'evaluations/:id/take', component: TakeEvaluationComponent },
-      { path: 'evaluations/:id/results', component: EvaluationResultsComponent }
+      { path: 'evaluations/:id/results', component: EvaluationResultsComponent },
+      { path: 'certificate', component: CertificateComponent }
     ]
   }
 ];

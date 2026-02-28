@@ -114,4 +114,12 @@ export class EvaluationApiService {
   getUsers(): Observable<User[]> {
     return this.http.get<User[]>(`${API_URL}/users`);
   }
+
+  getUserById(id: number): Observable<User> {
+    return this.http.get<User>(`${API_URL}/users/${id}`);
+  }
+
+  getCertificateEligibility(userId: number): Observable<{ eligible: boolean; passedCount: number }> {
+    return this.http.get<{ eligible: boolean; passedCount: number }>(`${API_URL}/certificate/eligibility/${userId}`);
+  }
 }

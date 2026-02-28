@@ -11,6 +11,7 @@ import { LayoutComponent } from './layout/layout.component';
 import { EvaluationsListComponent } from './evaluations-list/evaluations-list.component';
 import { TakeEvaluationComponent } from './take-evaluation/take-evaluation.component';
 import { EvaluationResultsComponent } from './evaluation-results/evaluation-results.component';
+import { CertificateComponent } from './certificate/certificate.component';
 import { SharedModule } from '../shared/shared.module';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -25,7 +26,8 @@ import { MatSelectModule } from '@angular/material/select';
     LayoutComponent,
     EvaluationsListComponent,
     TakeEvaluationComponent,
-    EvaluationResultsComponent
+    EvaluationResultsComponent,
+    CertificateComponent
   ],
   imports: [
     CommonModule,
