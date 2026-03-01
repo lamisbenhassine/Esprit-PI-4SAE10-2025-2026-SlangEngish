@@ -2,14 +2,18 @@ package esprit.inscription.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payment")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
@@ -19,18 +23,25 @@ public class Payment {
     private Long id;
 
     @Column(name = "order_id")
-    private Long orderId;
+    @Builder.Default
+    private Long orderId = 0L;
 
-    private Double amount;
+    @Column(name = "amount", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal amount = BigDecimal.ZERO;
 
-    private String method;
+    @Builder.Default
+    private String method = "credit_card"; // credit_card, paypal, bank_transfer
 
-    private String status; // pending, completed, failed
+    @Builder.Default
+    private String status = "pending"; // pending, completed, failed
 
-    private LocalDateTime date;
+    @Builder.Default
+    private LocalDateTime date = LocalDateTime.now();
 
     @Column(name = "transaction_id", unique = true)
-    private String transactionId;
+    @Builder.Default
+    private String transactionId = "";
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

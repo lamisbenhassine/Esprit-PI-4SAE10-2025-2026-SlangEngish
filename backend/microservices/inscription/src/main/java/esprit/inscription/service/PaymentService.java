@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,7 +45,7 @@ public class PaymentService {
 
         Payment payment = new Payment();
         payment.setOrderId(orderId);
-        payment.setAmount(amount);
+        payment.setAmount(BigDecimal.valueOf(amount));
         payment.setMethod(method);
         payment.setStatus("pending");
         payment.setTransactionId(generateTransactionId());

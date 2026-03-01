@@ -7,6 +7,7 @@ import esprit.inscription.repository.SubscriptionPlanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -26,9 +27,9 @@ public class StatisticsService {
         LocalDateTime todayStart = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
         LocalDateTime monthStart = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
 
-        Double totalRevenue = paymentRepository.sumCompletedAmount();
-        Double revenueToday = paymentRepository.sumCompletedAmountAfter(todayStart);
-        Double revenueThisMonth = paymentRepository.sumCompletedAmountAfter(monthStart);
+        BigDecimal totalRevenue = paymentRepository.sumCompletedAmount();
+        BigDecimal revenueToday = paymentRepository.sumCompletedAmountAfter(todayStart);
+        BigDecimal revenueThisMonth = paymentRepository.sumCompletedAmountAfter(monthStart);
 
         long totalOrders = orderRepository.count();
         long completedPayments = paymentRepository.countByStatus("completed");
@@ -48,9 +49,9 @@ public class StatisticsService {
         return DashboardStatsDTO.builder()
                 .totalOrders(totalOrders)
                 .totalPayments(completedPayments)
-                .totalRevenue(totalRevenue != null ? totalRevenue : 0.0)
-                .revenueToday(revenueToday != null ? revenueToday : 0.0)
-                .revenueThisMonth(revenueThisMonth != null ? revenueThisMonth : 0.0)
+                .totalRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO)
+                .revenueToday(revenueToday != null ? revenueToday : BigDecimal.ZERO)
+                .revenueThisMonth(revenueThisMonth != null ? revenueThisMonth : BigDecimal.ZERO)
                 .newSubscriptionsToday(orderRepository.countByCreatedAtAfter(todayStart))
                 .newSubscriptionsThisMonth(orderRepository.countByCreatedAtAfter(monthStart))
                 .completedPayments(completedPayments)

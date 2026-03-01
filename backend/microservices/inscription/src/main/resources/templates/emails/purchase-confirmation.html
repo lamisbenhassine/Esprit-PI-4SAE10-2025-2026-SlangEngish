@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Confirmation - English Academy</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #10b981;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .order-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .order-item {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 15px 0;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #10b981;
+            text-align: right;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #10b981;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: transform 0.3s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+            font-size: 14px;
+        }
+        .success-icon {
+            font-size: 48px;
+            color: #10b981;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">EA</div>
+            <div class="success-icon">✓</div>
+            <h1>Purchase Confirmed!</h1>
+            <p>Thank you for your purchase, {{firstName}}!</p>
+        </div>
+
+        <div class="content">
+            <p>Dear {{firstName}},</p>
+            
+            <p>We're excited to confirm your purchase! Your order has been successfully processed and your {{englishLevel}} level course is now active.</p>
+            
+            <div class="order-details">
+                <h3>Order Details</h3>
+                <p><strong>Order Number:</strong> #{{orderNumber}}</p>
+                <p><strong>Payment Method:</strong> {{paymentMethod}}</p>
+                <p><strong>Date:</strong> {{orderDate}}</p>
+                
+                <div class="order-item">
+                    <h4>{{itemName}}</h4>
+                    <p>Duration: {{durationDays}} days</p>
+                    <p>Plan Type: {{planType}}</p>
+                    <p>Price: €{{unitPrice}}</p>
+                </div>
+                
+                <div class="total">
+                    Total: €{{totalAmount}}
+                </div>
+            </div>
+
+            <h3>What's Next?</h3>
+            <ul>
+                <li>✅ Your course is now available in your dashboard</li>
+                <li>✅ Access your lessons anytime, anywhere</li>
+                <li>✅ Track your progress in real-time</li>
+                <li>✅ Join our community forums</li>
+            </ul>
+
+            <p>Ready to start your English learning journey?</p>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="https://english-academy.com/dashboard?user={{id}}" class="cta-button">
+                Go to My Dashboard 🚀
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>Best regards,<br>The English Academy Team</p>
+            <p>
+                <small>
+                    Need help? Contact us at support@english-academy.com<br>
+                    View your order history: <a href="https://english-academy.com/orders">My Orders</a>
+                </small>
+            </p>
+            <p style="margin-top: 20px; font-size: 12px; color: #999;">
+                You received this email because you made a purchase at English Academy.<br>
+                <a href="https://english-academy.com/unsubscribe?email={{email}}">Unsubscribe</a> | 
+                <a href="https://english-academy.com/privacy">Privacy Policy</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

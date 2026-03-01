@@ -6,7 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -29,8 +31,8 @@ public class PromoCodeService {
      * Validates the promo code for the given cart/order amount and returns the discount amount.
      * Does not increment usedCount (that happens when order is created).
      */
-    public Optional<PromoCodeValidationResult> validate(String code, Double orderAmount) {
-        if (code == null || code.isBlank() || orderAmount == null || orderAmount <= 0) {
+    public Optional<PromoCodeValidationResult> validate(String code, BigDecimal orderAmount) {
+        if (code == null || code.isBlank() || orderAmount == null || orderAmount.compareTo(BigDecimal.ZERO) <= 0) {
             return Optional.empty();
         }
         Optional<PromoCode> opt = promoCodeRepository.findByCodeIgnoreCaseAndActiveTrue(code.trim());
@@ -48,18 +50,17 @@ public class PromoCodeService {
         // Sécuriser usedCount nul (anciens enregistrements) pour éviter les NullPointerException
         int usedCount = promo.getUsedCount() == null ? 0 : promo.getUsedCount();
         if (promo.getMaxUses() != null && usedCount >= promo.getMaxUses()) {
-            return Optional.of(PromoCodeValidationResult.invalid("Ce code a atteint sa limite d'utilisation."));
+            return Optional.of(PromoCodeValidationResult.invalid("Ce code a atteint son nombre d'utilisations maximal."));
         }
-        if (promo.getMinPurchaseAmount() != null && orderAmount < promo.getMinPurchaseAmount()) {
+        if (promo.getMinPurchaseAmount() != null && orderAmount.compareTo(promo.getMinPurchaseAmount()) < 0) {
             return Optional.of(PromoCodeValidationResult.invalid(
                 "Montant minimum requis: " + String.format("%.2f", promo.getMinPurchaseAmount()) + " €."));
         }
-
-        double discount = computeDiscount(promo, orderAmount);
-        if (discount <= 0) {
-            return Optional.of(PromoCodeValidationResult.invalid("Aucune réduction appliquée."));
+        BigDecimal discountAmount = BigDecimal.valueOf(calculateDiscountAmount(promo, orderAmount));
+        if (discountAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return Optional.of(PromoCodeValidationResult.invalid("Ce code n'offre aucune réduction pour ce montant."));
         }
-        return Optional.of(PromoCodeValidationResult.valid(promo.getCode(), discount, orderAmount - discount));
+        return Optional.of(PromoCodeValidationResult.valid(promo.getCode(), discountAmount));
     }
 
     /** Call this when an order is successfully created with this promo code. */
@@ -72,14 +73,33 @@ public class PromoCodeService {
         });
     }
 
-    private double computeDiscount(PromoCode promo, Double orderAmount) {
+    private double calculateDiscountAmount(PromoCode promo, BigDecimal orderAmount) {
         if ("FIXED_AMOUNT".equalsIgnoreCase(promo.getDiscountType())) {
-            double fixed = promo.getDiscountValue() == null ? 0 : promo.getDiscountValue();
-            return Math.min(fixed, orderAmount);
+            double fixed = promo.getDiscountValue() == null ? 0 : promo.getDiscountValue().doubleValue();
+            return Math.min(fixed, orderAmount.doubleValue());
         }
         // PERCENTAGE
-        double pct = promo.getDiscountValue() == null ? 0 : promo.getDiscountValue();
-        return Math.round(orderAmount * (pct / 100.0) * 100.0) / 100.0;
+        double percentage = promo.getDiscountValue() == null ? 0 : promo.getDiscountValue().doubleValue();
+        return orderAmount.doubleValue() * (percentage / 100.0);
+    }
+
+    private double computeDiscount(PromoCode promo, BigDecimal orderAmount) {
+        return calculateDiscountAmount(promo, orderAmount);
+    }
+
+    public List<PromoCode> getAllPromoCodes() {
+        return promoCodeRepository.findByActiveTrue();
+    }
+
+    public Optional<PromoCode> getPromoCodeById(Long id) {
+        return promoCodeRepository.findById(id);
+    }
+
+    public void deletePromoCode(Long id) {
+        if (!promoCodeRepository.existsById(id)) {
+            throw new RuntimeException("Promo code not found: " + id);
+        }
+        promoCodeRepository.deleteById(id);
     }
 
     @lombok.Data
@@ -88,15 +108,15 @@ public class PromoCodeService {
         private boolean valid;
         private String message;
         private String code;
-        private Double discountAmount;
-        private Double totalAfterDiscount;
+        private BigDecimal discountAmount;
+        private BigDecimal totalAfterDiscount;
 
         public static PromoCodeValidationResult invalid(String message) {
-            return new PromoCodeValidationResult(false, message, null, 0.0, null);
+            return new PromoCodeValidationResult(false, message, null, BigDecimal.ZERO, null);
         }
 
-        public static PromoCodeValidationResult valid(String code, Double discountAmount, Double totalAfterDiscount) {
-            return new PromoCodeValidationResult(true, null, code, discountAmount, totalAfterDiscount);
+        public static PromoCodeValidationResult valid(String code, BigDecimal discountAmount) {
+            return new PromoCodeValidationResult(true, null, code, discountAmount, null);
         }
     }
 }

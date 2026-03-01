@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promotion Spéciale - English Academy</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #ffc107;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffc107;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .promo-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .promo-code {
+            font-size: 24px;
+            font-weight: bold;
+            background-color: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .features {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            background-color: #ffc107;
+            color: #333;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .countdown {
+            font-size: 18px;
+            font-weight: bold;
+            color: #dc3545;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎓 English Academy</div>
+            <h1>🔥 OFFRE SPÉCIALE LIMITÉE!</h1>
+        </div>
+        
+        <div class="content">
+            <p>Bonjour ${firstName},</p>
+            
+            <p>Nous avons une offre spéciale pour vous! Profitez de notre promotion exclusive avant qu'elle ne disparaisse.</p>
+            
+            <div class="promo-box">
+                <h2>🎁 RÉDUCTION DE 30%</h2>
+                <div class="promo-code">PROMO30</div>
+                <p>Valable sur tous nos plans d'abonnement</p>
+                <div class="countdown">
+                    ⏰ Plus que ${daysLeft} jours pour profiter!
+                </div>
+            </div>
+            
+            <div class="features">
+                <h3>🌟 Ce que vous obtenez:</h3>
+                <ul>
+                    <li>✅ Accès illimité à tous les cours</li>
+                    <li>✅ Support personnalisé 24/7</li>
+                    <li>✅ Certificat de fin de formation</li>
+                    <li>✅ Annulation à tout moment</li>
+                </ul>
+            </div>
+            
+            <p>N'hésitez pas! Cette offre est unique et ne durera pas longtemps.</p>
+            
+            <div style="text-align: center;">
+                <a href="${promoUrl}" class="button">
+                    PROFITER DE L'OFFRE MAINTENANT
+                </a>
+            </div>
+            
+            <p><small>*Offre valable jusqu'au ${expiryDate}. Non cumulable avec d'autres promotions.</small></p>
+        </div>
+        
+        <div class="footer">
+            <p>Cet email a été envoyé automatiquement par English Academy.</p>
+            <p>Pour vous désinscrire: <a href="${unsubscribeUrl}">cliquez ici</a></p>
+            <p>&copy; 2024 English Academy. Tous droits réservés.</p>
+        </div>
+    </div>
+</body>
+</html>

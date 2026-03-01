@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +23,9 @@ public class DashboardStatsDTO {
     // ── Overview KPIs ──────────────────────────────────────────────
     private long totalOrders;
     private long totalPayments;
-    private double totalRevenue;
-    private double revenueToday;
-    private double revenueThisMonth;
+    private BigDecimal totalRevenue;
+    private BigDecimal revenueToday;
+    private BigDecimal revenueThisMonth;
     private long newSubscriptionsToday;
     private long newSubscriptionsThisMonth;
 

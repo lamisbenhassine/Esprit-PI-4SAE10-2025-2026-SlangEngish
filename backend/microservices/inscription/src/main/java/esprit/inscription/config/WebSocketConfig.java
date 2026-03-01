@@ -22,7 +22,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Frontend connects to ws://localhost:8030/ws with SockJS fallback
+        // Frontend connects to ws://localhost:8081/ws with SockJS fallback
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
                 .withSockJS();

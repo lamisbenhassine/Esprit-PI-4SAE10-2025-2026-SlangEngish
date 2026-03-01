@@ -2,6 +2,8 @@
 
 Idées de fonctionnalités à ajouter au module inscription / Slang-English, au-delà du **code promo** déjà implémenté.
 
+> **Voir aussi** : [ANALYSE_MODULE_INSCRIPTION.md](./ANALYSE_MODULE_INSCRIPTION.md) pour l’analyse détaillée du code (architecture, flux, manques) et des **idées métier avancées** complémentaires (abonnements actifs, bundles, parrainage, facturation, stats réelles, etc.).
+
 ---
 
 ## Déjà implémenté

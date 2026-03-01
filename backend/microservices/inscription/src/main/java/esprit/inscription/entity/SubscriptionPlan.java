@@ -3,15 +3,19 @@ package esprit.inscription.entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "subscription_plan")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubscriptionPlan {
@@ -21,33 +25,63 @@ public class SubscriptionPlan {
     private Long id;
 
     @Column(name = "plan_type")
-    private String planType;
+    @Builder.Default
+    private String planType = "BASIC";
 
     @Column(name = "name")
-    private String name;
+    @Builder.Default
+    private String name = "Basic Plan";
 
     @Column(name = "price", precision = 12, scale = 2)
-    private BigDecimal price;
+    @Builder.Default
+    private BigDecimal price = BigDecimal.ZERO;
 
     @Column(name = "currency", length = 8)
-    private String currency;
+    @Builder.Default
+    private String currency = "EUR";
 
     @Column(name = "duration_days")
-    private Integer durationDays;
+    @Builder.Default
+    private Integer durationDays = 30;
 
     @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
+    @Builder.Default
+    private String description = "";
 
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate date;
+    @Builder.Default
+    private LocalDate date = LocalDate.now();
 
     @Column(name = "user_id")
-    private Long userId;
+    @Builder.Default
+    private Long userId = 0L;
 
     @Column(name = "course_id")
-    private Long courseId;
+    @Builder.Default
+    private Long courseId = 0L;
 
     // Use MEDIUMTEXT to safely store base64 images (up to 16MB)
     @Column(name = "image_url", columnDefinition = "MEDIUMTEXT")
-    private String imageUrl;
+    @Builder.Default
+    private String imageUrl = "";
+    
+    @Column(name = "is_active", columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @Builder.Default
+    private Boolean isActive = true;
+    
+    @Column(name = "trial_ends_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime trialEndsAt;
+    
+    @Column(name = "created_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdAt;
+    
+    @Column(name = "updated_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updatedAt;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private User user;
 }
