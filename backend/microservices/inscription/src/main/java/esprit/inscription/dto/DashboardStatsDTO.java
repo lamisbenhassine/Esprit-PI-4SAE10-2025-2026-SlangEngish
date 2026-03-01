@@ -6,9 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Statistics DTO — sent both as HTTP response and via WebSocket push.
@@ -35,6 +33,8 @@ public class DashboardStatsDTO {
 
     // ── Revenue Over Time (last 7 days) ────────────────────────────
     private List<DailyRevenueDTO> revenueChart; // [{date, revenue}]
+    // Métier avancé 3 : revenu reconnu par mois (année courante côté backend)
+    private List<MonthlyRevenueRecognitionDTO> recognizedRevenueByMonth;
 
     // ── Conversion Metrics ─────────────────────────────────────────
     private long completedPayments;

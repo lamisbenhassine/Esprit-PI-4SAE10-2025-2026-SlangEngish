@@ -23,6 +23,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   recentActivities: any[] = [];
   isLoading = true;
   lastUpdated: string | null = null;
+  recognizedRevenueChart: Array<{ label: string; amount: number; ratio: number }> = [];
   topCourses = [
     { name: 'Introduction to Angular', students: 1250, rating: 4.8, progress: 92 },
     { name: 'Advanced CSS Techniques', students: 890, rating: 4.7, progress: 85 },
@@ -106,10 +107,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private updateStatsUI(data: DashboardStats) {
     this.lastUpdated = data.lastUpdated;
+    const currencySuffix = ' TND';
     this.stats = [
       {
         title: 'Total Revenue',
-        value: (data.totalRevenue || 0).toLocaleString() + ' €',
+        value: (data.totalRevenue || 0).toLocaleString() + currencySuffix,
         icon: 'payments',
         change: 15.4, // We could calculate this if we had history
         changeType: 'positive',
@@ -133,13 +135,31 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       {
         title: 'Monthly Revenue',
-        value: (data.revenueThisMonth || 0).toLocaleString() + ' €',
+        value: (data.revenueThisMonth || 0).toLocaleString() + currencySuffix,
         icon: 'bar_chart',
         change: 12.8,
         changeType: 'positive',
         color: 'orange'
       }
     ];
+
+    // Build advanced metric chart from recognized revenue by month (Métier 3)
+    const series = data.recognizedRevenueByMonth || [];
+    if (series.length) {
+      const mapped = series.map(m => {
+        const label = new Date(m.year, m.month - 1, 1).toLocaleString('default', { month: 'short' });
+        const amount = m.recognizedAmount || 0;
+        return { label, amount };
+      });
+      const max = Math.max(...mapped.map(m => m.amount), 1);
+      this.recognizedRevenueChart = mapped.map(m => ({
+        label: m.label,
+        amount: m.amount,
+        ratio: Math.round((m.amount / max) * 100)
+      }));
+    } else {
+      this.recognizedRevenueChart = [];
+    }
   }
 
   getActivityIcon(type: string): string {

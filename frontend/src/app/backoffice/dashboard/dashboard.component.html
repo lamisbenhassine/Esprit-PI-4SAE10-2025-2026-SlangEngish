@@ -49,6 +49,25 @@
     </div>
   </div>
 
+  <!-- Advanced Business Metrics: Revenue Recognition -->
+  <div class="advanced-metrics" *ngIf="recognizedRevenueChart.length">
+    <div class="section-card">
+      <div class="section-header">
+        <h2>Advanced Business Metrics</h2>
+        <span class="section-subtitle">Recognized revenue per month (TND)</span>
+      </div>
+      <div class="revenue-bars">
+        <div class="revenue-bar" *ngFor="let m of recognizedRevenueChart">
+          <div class="bar-outer">
+            <div class="bar-inner" [style.height.%]="m.ratio"></div>
+          </div>
+          <span class="bar-label">{{ m.label }}</span>
+          <span class="bar-value">{{ m.amount | number:'1.0-0' }} TND</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Content Grid -->
   <div class="content-grid">
     <!-- Recent Activity -->

@@ -1,6 +1,7 @@
 package esprit.inscription.service;
 
 import esprit.inscription.dto.DashboardStatsDTO;
+import esprit.inscription.dto.MonthlyRevenueRecognitionDTO;
 import esprit.inscription.repository.OrderRepository;
 import esprit.inscription.repository.PaymentRepository;
 import esprit.inscription.repository.SubscriptionPlanRepository;
@@ -9,11 +10,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +22,12 @@ public class StatisticsService {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final SubscriptionPlanRepository planRepository;
+    private final RevenueRecognitionService revenueRecognitionService;
 
     public DashboardStatsDTO getDashboardStats() {
-        LocalDateTime todayStart = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
-        LocalDateTime monthStart = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime todayStart = now.withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime monthStart = now.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
 
         BigDecimal totalRevenue = paymentRepository.sumCompletedAmount();
         BigDecimal revenueToday = paymentRepository.sumCompletedAmountAfter(todayStart);
@@ -46,6 +48,10 @@ public class StatisticsService {
         planStats.add(new DashboardStatsDTO.PlanStatDTO("B2", 8, 1032.0));
         planStats.add(new DashboardStatsDTO.PlanStatDTO("C1", 5, 795.0));
 
+        int currentYear = Year.now().getValue();
+        List<MonthlyRevenueRecognitionDTO> recognizedRevenueByMonth =
+                revenueRecognitionService.getMonthlyRevenue(currentYear);
+
         return DashboardStatsDTO.builder()
                 .totalOrders(totalOrders)
                 .totalPayments(completedPayments)
@@ -59,8 +65,9 @@ public class StatisticsService {
                 .failedPayments(failedPayments)
                 .conversionRate(conversionRate)
                 .planStats(planStats)
+                .recognizedRevenueByMonth(recognizedRevenueByMonth)
                 .mostPopularPlan("A1 Discovery")
-                .lastUpdated(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .lastUpdated(now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
                 .build();
     }
 }

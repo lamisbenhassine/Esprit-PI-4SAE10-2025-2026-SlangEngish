@@ -17,6 +17,12 @@ export interface DashboardStats {
     failedPayments: number;
     conversionRate: number;
     lastUpdated: string;
+    recognizedRevenueByMonth?: Array<{
+        year: number;
+        month: number;
+        recognizedAmount: number;
+        orders: number;
+    }>;
 }
 
 @Injectable({
