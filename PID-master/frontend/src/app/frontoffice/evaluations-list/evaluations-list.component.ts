@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
+import { MatDialog } from '@angular/material/dialog';
 import { Evaluation } from '../../core/models';
 import { EvaluationApiService } from '../../core/services/evaluation-api.service';
 import { CurrentUserService } from '../../core/services/current-user.service';
 import { getDisplayUploadUrl } from '../../core/utils/upload-url.util';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { DeadlineWarningDialogComponent } from './deadline-warning-dialog.component';
 
 const PLACEHOLDER_GRADIENT = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
 
@@ -29,7 +31,8 @@ export class EvaluationsListComponent implements OnInit {
     private currentUser: CurrentUserService,
     private router: Router,
     private snackBar: MatSnackBar,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private dialog: MatDialog
   ) {}
 
   /** Safe style for card background (uploaded photo or placeholder). */
@@ -166,5 +169,14 @@ export class EvaluationsListComponent implements OnInit {
   onPageChange(event: { pageIndex: number; pageSize: number }): void {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
+  }
+
+  /** Open popup with list of evaluations (names + time left). */
+  openDeadlineDialog(title: string, evaluations: Evaluation[], zone: 'danger' | 'prepared'): void {
+    this.dialog.open(DeadlineWarningDialogComponent, {
+      data: { title, evaluations, zone },
+      width: 'min(440px, 95vw)',
+      maxHeight: '90vh'
+    });
   }
 }

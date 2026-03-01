@@ -9,6 +9,7 @@ import { CoursesComponent } from './courses/courses.component';
 import { ChatComponent } from './chat/chat.component';
 import { LayoutComponent } from './layout/layout.component';
 import { EvaluationsListComponent } from './evaluations-list/evaluations-list.component';
+import { DeadlineWarningDialogComponent } from './evaluations-list/deadline-warning-dialog.component';
 import { TakeEvaluationComponent } from './take-evaluation/take-evaluation.component';
 import { EvaluationResultsComponent } from './evaluation-results/evaluation-results.component';
 import { CertificateComponent } from './certificate/certificate.component';
@@ -17,6 +18,7 @@ import { SharedModule } from '../shared/shared.module';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDialogModule } from '@angular/material/dialog';
 import { QRCodeModule } from 'angularx-qrcode';
 
 @NgModule({
@@ -27,6 +29,7 @@ import { QRCodeModule } from 'angularx-qrcode';
     ChatComponent,
     LayoutComponent,
     EvaluationsListComponent,
+    DeadlineWarningDialogComponent,
     TakeEvaluationComponent,
     EvaluationResultsComponent,
     CertificateComponent,
@@ -41,6 +44,7 @@ import { QRCodeModule } from 'angularx-qrcode';
     MatProgressBarModule,
     MatPaginatorModule,
     MatSelectModule,
+    MatDialogModule,
     QRCodeModule
   ]
 })

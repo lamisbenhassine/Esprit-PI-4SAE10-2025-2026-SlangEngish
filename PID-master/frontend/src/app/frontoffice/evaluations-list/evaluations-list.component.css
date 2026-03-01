@@ -128,7 +128,59 @@
   color: white;
 }
 
-/* ----- Deadline warnings ----- */
+/* ----- Deadline warnings: small clickable bars ----- */
+.deadline-warning-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 20px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #b45309;
+  text-align: left;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.deadline-warning-bar:hover {
+  background: #fef3c7;
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+}
+
+.deadline-warning-bar mat-icon {
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.deadline-warning-bar span {
+  flex: 1;
+}
+
+.deadline-count {
+  flex: 0 0 auto !important;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.deadline-warning-bar.deadline-warning-urgent {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #f87171;
+  color: #b91c1c;
+}
+
+.deadline-warning-bar.deadline-warning-urgent:hover {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  box-shadow: 0 2px 8px rgba(248, 113, 113, 0.25);
+}
+
+/* Legacy full warning blocks (kept for reference; not used when bars are shown) */
 .deadline-warning {
   background: #fffbeb;
   border: 1px solid #fcd34d;

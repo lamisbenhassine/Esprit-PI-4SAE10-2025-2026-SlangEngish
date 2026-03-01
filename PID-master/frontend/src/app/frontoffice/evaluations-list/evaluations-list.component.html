@@ -19,32 +19,23 @@
     </div>
   </div>
 
-  <!-- Urgent: evaluations ending in 3 days or less (red warning with names) -->
-  <div class="deadline-warning deadline-warning-urgent" *ngIf="!loading && evaluationsDeadlineUnder3Days.length > 0">
-    <div class="deadline-warning-header">
-      <mat-icon>error</mat-icon>
-      <span>Ending in 3 days or less</span>
-    </div>
-    <p class="deadline-warning-intro">The following evaluations are due very soon:</p>
-    <ul class="deadline-warning-list">
-      <li *ngFor="let e of evaluationsDeadlineUnder3Days">
-        <strong>{{ e.title }}</strong> — {{ getTimeLeftDisplay(e.dateEnd) }} (until {{ formatDate(e.dateEnd) }})
-      </li>
-    </ul>
-  </div>
+  <!-- Urgent: evaluations ending in 3 days or less (small clickable bar → popup) -->
+  <button type="button" class="deadline-warning-bar deadline-warning-urgent"
+    *ngIf="!loading && evaluationsDeadlineUnder3Days.length > 0"
+    (click)="openDeadlineDialog('Ending in 3 days or less', evaluationsDeadlineUnder3Days, 'danger')">
+    <mat-icon>error</mat-icon>
+    <span>Ending in 3 days or less</span>
+    <span class="deadline-count">({{ evaluationsDeadlineUnder3Days.length }})</span>
+  </button>
 
-  <!-- Warning: evaluations ending in less than 7 days -->
-  <div class="deadline-warning" *ngIf="!loading && evaluationsDeadlineUnder7Days.length > 0">
-    <div class="deadline-warning-header">
-      <mat-icon>warning</mat-icon>
-      <span>Evaluations ending in less than 7 days</span>
-    </div>
-    <ul class="deadline-warning-list">
-      <li *ngFor="let e of evaluationsDeadlineUnder7Days">
-        <strong>{{ e.title }}</strong> — {{ getTimeLeftDisplay(e.dateEnd) }} (until {{ formatDate(e.dateEnd) }})
-      </li>
-    </ul>
-  </div>
+  <!-- Warning: evaluations ending in less than 7 days (small clickable bar → popup) -->
+  <button type="button" class="deadline-warning-bar"
+    *ngIf="!loading && evaluationsDeadlineUnder7Days.length > 0"
+    (click)="openDeadlineDialog('Evaluations ending in less than 7 days', evaluationsDeadlineUnder7Days, 'prepared')">
+    <mat-icon>warning</mat-icon>
+    <span>Ending in less than 7 days</span>
+    <span class="deadline-count">({{ evaluationsDeadlineUnder7Days.length }})</span>
+  </button>
 
   <div class="toolbar" *ngIf="!loading && evaluations.length > 0">
     <mat-form-field appearance="outline" class="search-field">
