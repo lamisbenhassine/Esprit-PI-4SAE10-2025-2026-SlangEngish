@@ -1,0 +1,115 @@
+<mat-toolbar [class]="'navbar ' + theme" color="default">
+  <!-- Left Section -->
+  <div class="navbar-left">
+    <button *ngIf="showSidebarToggle" mat-icon-button (click)="toggleSidebar()" class="sidebar-toggle"
+      [matTooltip]="'Toggle Sidebar'" aria-label="Toggle Sidebar">
+      <mat-icon>menu</mat-icon>
+    </button>
+
+    <div class="logo">
+      <img src="assets/logo1.png" alt="Slang-logo" class="logo-image">
+      <span class="logo-text">Slang-English</span>
+    </div>
+  </div>
+
+  <!-- Center Section - Search Bar -->
+  <div class="navbar-center">
+    <div class="search-container">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input type="text" placeholder="Search courses, topics..." class="search-input">
+    </div>
+  </div>
+
+  <!-- Right Section -->
+  <div class="navbar-right">
+
+    <!-- ===== NOTIFICATIONS BELL ===== -->
+    <button mat-icon-button class="nav-btn notif-btn" [matMenuTriggerFor]="notifMenu" (click)="markAsRead()"
+      matTooltip="{{ isAdmin ? 'Admin Alerts' : 'Notifications' }}" aria-label="Notifications">
+      <mat-icon [matBadge]="unreadCount > 0 ? unreadCount : null" matBadgeColor="warn"
+        [matBadgeHidden]="unreadCount === 0" aria-hidden="false">
+        {{ isAdmin ? 'admin_panel_settings' : 'notifications' }}
+      </mat-icon>
+    </button>
+
+    <mat-menu #notifMenu="matMenu" class="notif-menu">
+      <!-- Header -->
+      <div class="notif-header" (click)="$event.stopPropagation()">
+        <div class="notif-title-row">
+          <mat-icon class="header-icon">{{ isAdmin ? 'admin_panel_settings' : 'notifications' }}</mat-icon>
+          <span>{{ isAdmin ? 'Admin Alerts' : 'Recent Notifications' }}</span>
+        </div>
+        <div class="notif-actions">
+          <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }} new</span>
+          <button mat-icon-button class="clear-btn" *ngIf="notifications.length > 0"
+            (click)="clearAll(); $event.stopPropagation()" matTooltip="Clear all">
+            <mat-icon>clear_all</mat-icon>
+          </button>
+        </div>
+      </div>
+      <mat-divider></mat-divider>
+
+      <!-- Notification list -->
+      <div class="notif-scroll" *ngIf="notifications.length > 0" (click)="$event.stopPropagation()">
+        <div class="notif-item" *ngFor="let notif of notifications"
+          [class]="'notif-item notif-' + notif.type?.toLowerCase()">
+          <div class="notif-icon-wrap" [class]="'icon-' + notif.type?.toLowerCase()">
+            <mat-icon>{{ getNotifIcon(notif.type) }}</mat-icon>
+          </div>
+          <div class="notif-content">
+            <span class="notif-title">{{ notif.title }}</span>
+            <span class="notif-msg">{{ notif.message }}</span>
+            <span class="notif-time" *ngIf="notif.timestamp">
+              {{ notif.timestamp | date:'shortTime' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="notif-empty" *ngIf="notifications.length === 0" (click)="$event.stopPropagation()">
+        <mat-icon>notifications_off</mat-icon>
+        <p>No {{ isAdmin ? 'admin alerts' : 'notifications' }} yet</p>
+      </div>
+    </mat-menu>
+
+    <!-- Cart Icon (frontoffice only) -->
+    <button mat-icon-button class="cart-btn" (click)="onCart()" matTooltip="View Cart" aria-label="Shopping Cart"
+      *ngIf="!isAdmin">
+      <mat-icon [matBadge]="cartCount$ | async" matBadgeColor="warn" [matBadgeHidden]="(cartCount$ | async) === 0"
+        aria-hidden="false">
+        shopping_cart
+      </mat-icon>
+    </button>
+
+    <!-- User Profile -->
+    <div class="user-profile" [matMenuTriggerFor]="profileMenu">
+      <div class="user-info">
+        <span class="username">{{ username }}</span>
+        <span class="user-role" *ngIf="isAdmin">Admin</span>
+        <div class="avatar">
+          <img [src]="userAvatar || 'https://ui-avatars.com/api/?name=' + username + '&background=667eea&color=fff'"
+            [alt]="username">
+        </div>
+      </div>
+      <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+    </div>
+
+    <mat-menu #profileMenu="matMenu" class="profile-menu">
+      <button mat-menu-item (click)="onProfile()">
+        <mat-icon>person</mat-icon>
+        <span>Profile</span>
+      </button>
+      <button mat-menu-item (click)="onSettings()">
+        <mat-icon>settings</mat-icon>
+        <span>Settings</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="onLogout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
+  </div>
+
+</mat-toolbar>

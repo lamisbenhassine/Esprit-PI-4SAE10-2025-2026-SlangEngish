@@ -1,0 +1,27 @@
+.dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 450px;
+    padding-top: 10px;
+}
+
+.row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.half {
+    flex: 1;
+}
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+}
+
+mat-form-field {
+    width: 100%;
+}

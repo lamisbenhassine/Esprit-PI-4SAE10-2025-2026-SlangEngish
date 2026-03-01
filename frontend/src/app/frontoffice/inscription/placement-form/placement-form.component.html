@@ -1,0 +1,90 @@
+<div class="placement-container">
+    <div class="step-indicator">
+        <div class="step active"><span>1</span> Personal Info</div>
+        <div class="step-line"></div>
+        <div class="step"><span>2</span> Choose Plan</div>
+        <div class="step-line"></div>
+        <div class="step"><span>3</span> Checkout</div>
+    </div>
+
+    <div class="form-header">
+        <h1>Start Your Adventure</h1>
+        <p>Tell us a bit about yourself so we can suggest the best plan for you.</p>
+    </div>
+
+    <div class="form-card">
+        <form [formGroup]="placementForm" (ngSubmit)="onSubmit()">
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>First Name</mat-label>
+                    <input matInput formControlName="firstName" placeholder="John">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Last Name</mat-label>
+                    <input matInput formControlName="lastName" placeholder="Doe">
+                </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Email Address</mat-label>
+                <input matInput formControlName="email" placeholder="john.doe@example.com" type="email">
+            </mat-form-field>
+
+            <div class="level-selector">
+                <label>What is your current English level?</label>
+                <div class="level-grid">
+                    <div *ngFor="let level of levels" class="level-item"
+                        [class.selected]="placementForm.get('estimatedLevel')?.value === level.value"
+                        (click)="placementForm.get('estimatedLevel')?.setValue(level.value)">
+                        <mat-icon>{{ level.icon }}</mat-icon>
+                        <span class="level-label">{{ level.label }}</span>
+                    </div>
+                </div>
+
+                <!-- Offer Preview Section -->
+                <div class="offer-preview" *ngIf="placementForm.get('estimatedLevel')?.value as selectedVal">
+                    <ng-container *ngFor="let level of levels">
+                        <div class="preview-card" *ngIf="level.value === selectedVal" [@fadeIn]>
+                            <div class="preview-info">
+                                <h3>{{ level.label }} Offer Example</h3>
+                                <p>{{ level.description }}</p>
+                                <ul class="benefits-preview">
+                                    <li *ngFor="let benefit of level.benefits">
+                                        <mat-icon>done</mat-icon> {{ benefit }}
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="preview-price">
+                                <span>Starting from</span>
+                                <strong>{{ level.examplePrice }}</strong>
+                            </div>
+                        </div>
+                    </ng-container>
+                </div>
+
+                <mat-error
+                    *ngIf="placementForm.get('estimatedLevel')?.touched && placementForm.get('estimatedLevel')?.errors?.['required']">
+                    Please select your level
+                </mat-error>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Your Learning Goals (Optional)</mat-label>
+                <textarea matInput formControlName="goals" rows="3"
+                    placeholder="I want to improve my speaking skills for work..."></textarea>
+            </mat-form-field>
+
+            <div class="form-actions">
+                <button mat-raised-button color="primary" type="submit" [disabled]="placementForm.invalid"
+                    class="submit-btn">
+                    Find the Best Plan
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+                <p class="link-to-offers">
+                    Ou <a routerLink="/frontoffice/inscription/offers">voir tous les plans</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>

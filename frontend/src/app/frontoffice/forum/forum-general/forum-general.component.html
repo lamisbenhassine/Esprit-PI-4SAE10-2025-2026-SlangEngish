@@ -1,0 +1,98 @@
+<div class="forum-container">
+    <div class="forum-header">
+        <h1>Discussion Forum</h1>
+        <p class="subtitle">Join the conversation and improve your English with the community</p>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+
+    <div *ngIf="filteredTopics.length === 0 && !loading && topics.length === 0" class="empty-state">
+        <div class="empty-icon">💬</div>
+        <h3>No discussions yet</h3>
+        <p>Be the first to start a topic!</p>
+    </div>
+
+    <div *ngIf="filteredTopics.length === 0 && !loading && topics.length > 0" class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h3>No topics match your search criteria</h3>
+        <button mat-button (click)="searchQuery = ''; onSearchChange()">Clear filters</button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-section" *ngIf="totalPages > 1 && !loading">
+        <div class="pagination-info">
+            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, topics.length) }} of {{ topics.length }} topics
+        </div>
+        <div class="pagination-controls">
+            <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+                <mat-icon>chevron_left</mat-icon>
+            </button>
+            <button *ngFor="let page of getPageNumbers()" 
+                    mat-button 
+                    [class.active]="page === currentPage"
+                    (click)="goToPage(page)">
+                {{ page }}
+            </button>
+            <button mat-icon-button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+                <mat-icon>chevron_right</mat-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="filter-section" *ngIf="!loading && topics.length > 0">
+        <div class="search-box">
+            <mat-form-field appearance="outline" class="search-field">
+                <mat-label>Search topics</mat-label>
+                <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" placeholder="Search by title, description, or category">
+                <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+        </div>
+        <div class="sort-controls">
+            <mat-form-field appearance="outline" class="sort-field">
+                <mat-label>Sort by</mat-label>
+                <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
+                    <mat-option value="createdAt">Date Created</mat-option>
+                    <mat-option value="title">Title</mat-option>
+                    <mat-option value="category">Category</mat-option>
+                    <mat-option value="views">Views</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <button mat-icon-button [class.active]="sortOrder === 'asc'" (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()" matTooltip="Toggle sort order">
+                <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </button>
+        </div>
+    </div>
+
+    <div class="topics-list" *ngIf="!loading">
+        <a *ngFor="let topic of filteredTopics" [routerLink]="['/frontoffice/forum/topic', topic.id]" class="topic-card">
+            <div class="topic-content">
+                <div class="topic-badges">
+                    <span class="badge category" [class]="topic.category.toLowerCase()">{{ topic.category }}</span>
+                    <span class="badge date">{{ topic.createdAt | date:'mediumDate' }}</span>
+                </div>
+                <h2 class="topic-title">{{ topic.title }}</h2>
+                <p class="topic-description">{{ topic.description | slice:0:150 }}{{ topic.description.length > 150 ?
+                    '...' : '' }}</p>
+
+                <div class="topic-meta">
+                    <div class="author">
+                        <div class="avatar-circle">{{ topic.authorId }}</div>
+                        <span>User #{{ topic.authorId }}</span>
+                    </div>
+                    <div class="stats">
+                        <span class="stat"><i class="fas fa-eye"></i> {{ topic.views }} views</span>
+                        <span class="stat"><i class="fas fa-comment"></i> View discussion</span>
+                    </div>
+                </div>
+            </div>
+            <div class="topic-action">
+                <i class="fas fa-chevron-right"></i>
+            </div>
+        </a>
+    </div>
+</div>

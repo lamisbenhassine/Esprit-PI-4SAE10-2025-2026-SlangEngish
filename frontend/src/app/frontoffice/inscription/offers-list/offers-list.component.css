@@ -1,0 +1,820 @@
+.pricing-container {
+    padding: 2rem 2rem 4rem;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* Step Indicator */
+.step-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 50px;
+    gap: 15px;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #a0aec0;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.step span {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #edf2f7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.step.active {
+    color: #4361ee;
+}
+
+.step.active span {
+    background: #4361ee;
+    color: white;
+}
+
+.step-line {
+    width: 40px;
+    height: 2px;
+    background: #edf2f7;
+}
+
+.step-line.active {
+    background: #4361ee;
+}
+
+/* Recommended Section Styles */
+.recommended-section {
+    max-width: 1200px;
+    margin: 0 auto 60px;
+}
+
+.section-badge {
+    display: inline-block;
+    background: #ecfdf5;
+    color: #059669;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    border: 1px solid #10b981;
+}
+
+.pricing-card.recommended {
+    border: 2px solid #4361ee;
+    background: white;
+    box-shadow: 0 25px 50px -12px rgba(67, 97, 238, 0.15);
+    transform: none;
+    cursor: pointer;
+}
+
+.recommended-layout {
+    display: flex;
+    overflow: hidden;
+    height: auto;
+}
+
+.recommended-layout .card-image {
+    width: 35%;
+    background-color: #f7fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-content-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-ribbon {
+    position: absolute;
+    top: 20px;
+    right: -35px;
+    background: #4361ee;
+    color: white;
+    padding: 8px 45px;
+    transform: rotate(45deg);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+}
+
+.recommended-layout .card-header {
+    text-align: left;
+    padding: 30px 40px;
+    background: white;
+}
+
+.recommended-layout .plan-price {
+    justify-content: flex-start;
+}
+
+.recommended-layout .card-body {
+    padding: 0 40px 10px;
+    flex: 1;
+}
+
+.recommended-layout .description {
+    font-size: 15px;
+    color: #4a5568;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.recommended-layout .features-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.recommended-layout .features-list li {
+    font-weight: 600;
+    font-size: 13px;
+    gap: 8px;
+    color: #4a5568;
+}
+
+.card-footer-recommended {
+    padding: 0 40px 40px;
+}
+
+.cta-button-large {
+    width: 100%;
+    padding: 16px 30px;
+    font-size: 18px;
+    font-weight: 700;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 15px -3px rgba(67, 97, 238, 0.3);
+}
+
+.cta-button-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(67, 97, 238, 0.4);
+    filter: brightness(1.1);
+}
+
+.cta-button-large mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+/* Others Divider */
+.others-divider {
+    max-width: 1200px;
+    margin: 0 auto 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.others-divider h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    color: #2d3748;
+    white-space: nowrap;
+}
+
+.others-divider .line {
+    flex: 1;
+    height: 2px;
+    background: #edf2f7;
+}
+
+@media (max-width: 900px) {
+    .recommended-layout {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .recommended-layout .card-image {
+        width: 100%;
+        height: 250px;
+    }
+
+    .recommended-layout .features-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pricing-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.pricing-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 1rem;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: #718096;
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.pricing-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.pricing-card.featured {
+    border: 2px solid #667eea;
+    transform: scale(1.05);
+}
+
+.pricing-card.featured:hover {
+    transform: scale(1.05) translateY(-5px);
+}
+
+.card-header {
+    padding: 2rem;
+    text-align: center;
+    background: linear-gradient(to bottom, #ffffff, #f7fafc);
+    border-bottom: 1px solid #edf2f7;
+}
+
+.plan-name {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #4a5568;
+    margin-bottom: 1rem;
+}
+
+.plan-price {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    color: #2d3748;
+}
+
+.currency {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-right: 2px;
+}
+
+.amount {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.period {
+    color: #718096;
+    font-size: 1rem;
+    margin-left: 5px;
+}
+
+.card-body {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.features-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem 0;
+    flex: 1;
+}
+
+.features-list li {
+    margin-bottom: 1rem;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+}
+
+.features-list li i {
+    color: #48bb78;
+    margin-right: 10px;
+}
+
+.cta-button {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+
+.cta-button:hover {
+    opacity: 0.9;
+}
+
+.plan-date {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #a0aec0;
+}
+
+.loading-state {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+.card-image {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background: #f0f0f0;
+}
+
+.card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Filter Section */
+.filter-section {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    align-items: flex-end;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 300px;
+}
+
+.search-field {
+    width: 100%;
+}
+
+.sort-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sort-field {
+    width: 180px;
+}
+
+.sort-controls button.active {
+    background-color: #667eea;
+    color: white;
+}
+
+/* Pagination Section */
+.pagination-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.pagination-info {
+    font-size: 14px;
+    color: #666;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.pagination-controls button {
+    min-width: 40px;
+    height: 40px;
+}
+
+.pagination-controls button.active {
+    background-color: #667eea;
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 0;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .sort-controls {
+        width: 100%;
+    }
+
+    .sort-field {
+        flex: 1;
+    }
+
+    .pagination-section {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .category-chips {
+        flex-wrap: wrap;
+    }
+}
+
+/* ==============================
+   PROFESSION CATEGORY FILTER
+   ============================== */
+.category-filter {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 28px 0;
+    flex-wrap: wrap;
+}
+
+.category-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.category-chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    border: 2px solid #e2e8f0;
+    background: white;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #4a5568;
+}
+
+.chip:hover {
+    border-color: #4361ee;
+    color: #4361ee;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(67, 97, 238, 0.15);
+}
+
+.chip.active {
+    background: #4361ee;
+    border-color: #4361ee;
+    color: white;
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.35);
+}
+
+.chip.medical.active {
+    background: #e53e3e;
+    border-color: #e53e3e;
+    box-shadow: 0 4px 12px rgba(229, 62, 62, 0.35);
+}
+
+.chip.engineering.active {
+    background: #d69e2e;
+    border-color: #d69e2e;
+    box-shadow: 0 4px 12px rgba(214, 158, 46, 0.35);
+}
+
+.chip.business.active {
+    background: #2d6a4f;
+    border-color: #2d6a4f;
+    box-shadow: 0 4px 12px rgba(45, 106, 79, 0.35);
+}
+
+/* Demo mode warning banner */
+.alert.alert-danger {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+    padding: 12px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 13px;
+}
+
+/* Section offres : comparaison annuelle et tarif famille */
+.pricing-highlights {
+    max-width: 1200px;
+    margin: 0 auto 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Comparaison annuelle */
+.annual-comparison-banner {
+    max-width: 1200px;
+    margin: 0 auto 24px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1px solid #10b981;
+    border-radius: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.annual-comparison-banner .banner-label {
+    font-weight: 700;
+    color: #065f46;
+}
+.annual-comparison-banner .banner-detail {
+    color: #047857;
+    font-size: 14px;
+}
+
+.family-price-banner {
+    max-width: 1200px;
+    margin: 0 auto 24px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #3b82f6;
+    border-radius: 12px;
+}
+.family-price-banner .banner-label {
+    font-weight: 700;
+    color: #1e40af;
+}
+.family-price-banner .banner-detail {
+    color: #1d4ed8;
+    font-size: 14px;
+    margin-left: 8px;
+}
+
+.sibling-discount-banner {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%);
+    border: 1px solid #c026d3;
+    border-radius: 12px;
+}
+.sibling-discount-banner .banner-label {
+    font-weight: 700;
+    color: #701a75;
+}
+.sibling-discount-banner .banner-detail {
+    color: #86198f;
+    font-size: 14px;
+    margin-left: 8px;
+}
+
+/* Family pack: single block, aligned with page */
+.family-pack-card {
+    max-width: 1200px;
+    margin: 0 auto 32px;
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.family-pack-card .family-pack-title {
+    margin: 0 0 8px;
+    font-size: 1.1rem;
+    color: #1e293b;
+}
+.family-pack-card .family-pack-desc {
+    margin: 0 0 20px;
+    font-size: 14px;
+    color: #64748b;
+}
+.family-pack-card .family-pack-form .form-row-inline {
+    margin-bottom: 12px;
+}
+.family-pack-card .family-pack-form .form-row-inline label {
+    display: block;
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 4px;
+}
+.family-pack-card .family-pack-form .form-row-inline select,
+.family-pack-card .family-pack-form .form-row-inline input {
+    width: 100%;
+    max-width: 280px;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+}
+.family-pack-card .calc-btn {
+    margin-top: 12px;
+}
+.family-pack-card .add-cart-block {
+    margin-top: 14px;
+}
+.family-pack-card .add-cart-btn {
+    max-width: 320px;
+}
+.family-pack-card .result-box {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+}
+.family-pack-card .result-box strong {
+    color: #0369a1;
+}
+
+/* Prorata upgrade/downgrade (métier avancé 2) */
+.prorata-card {
+    max-width: 1200px;
+    margin: 0 auto 32px;
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.prorata-card .prorata-title {
+    margin: 0 0 8px;
+    font-size: 1.1rem;
+    color: #1e293b;
+}
+.prorata-card .prorata-desc {
+    margin: 0 0 20px;
+    font-size: 14px;
+    color: #64748b;
+}
+.prorata-card .prorata-form .form-row-inline {
+    margin-bottom: 12px;
+}
+.prorata-card .prorata-form .form-row-inline label {
+    display: block;
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 4px;
+}
+.prorata-card .prorata-form .form-row-inline select,
+.prorata-card .prorata-form .form-row-inline input {
+    width: 100%;
+    max-width: 280px;
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+}
+.prorata-card .calc-btn {
+    margin-top: 12px;
+}
+.prorata-card .prorata-result {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+}
+.prorata-card .prorata-result p {
+    margin: 0 0 8px;
+}
+.prorata-card .prorata-result p:last-child {
+    margin-bottom: 0;
+}
+.prorata-card .prorata-result .amount-to-pay {
+    color: #0369a1;
+    font-weight: 600;
+}
+.prorata-card .prorata-result .refund {
+    color: #059669;
+    font-weight: 600;
+}
+
+/* Métier avancé 1 : recommandation (scoring) */
+.recommendation-widget {
+    max-width: 1200px;
+    margin: 0 auto 28px;
+    padding: 18px 22px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.recommendation-widget .recommendation-header {
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+.recommendation-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.recommendation-form .reco-input {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    width: 100px;
+}
+.recommendation-result {
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+}
+.recommendation-result .reco-score {
+    font-weight: 600;
+    color: #4361ee;
+    display: block;
+    margin-bottom: 6px;
+}
+.recommendation-result .reco-message {
+    margin: 0 0 8px;
+    color: #475569;
+    font-size: 14px;
+}
+.recommendation-result .reco-plan {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Métier avancé 1 : coût par mois sur les cartes */
+.cost-per-month {
+    margin-top: 6px;
+}
+.cost-per-month-label {
+    font-size: 13px;
+    color: #059669;
+    font-weight: 500;
+}

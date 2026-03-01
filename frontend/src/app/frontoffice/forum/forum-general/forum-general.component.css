@@ -1,0 +1,261 @@
+.forum-container {
+    padding: 4rem 2rem;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.forum-header {
+    margin-bottom: 3rem;
+}
+
+.forum-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: #718096;
+}
+
+.topic-card {
+    display: flex;
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    align-items: center;
+}
+
+.topic-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e0;
+}
+
+.topic-content {
+    flex: 1;
+}
+
+.topic-badges {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 0.75rem;
+    align-items: center;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge.category {
+    background: #ebf4ff;
+    color: #5a67d8;
+}
+
+.badge.category.general {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.badge.category.level_1 {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.badge.category.level_2 {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.badge.category.level_3 {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.badge.date {
+    color: #a0aec0;
+    background: transparent;
+    padding: 0;
+    font-weight: 400;
+}
+
+.topic-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.topic-description {
+    color: #4a5568;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.topic-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #edf2f7;
+    padding-top: 1rem;
+}
+
+.author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #4a5568;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.stats {
+    display: flex;
+    gap: 15px;
+    font-size: 0.85rem;
+    color: #718096;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.topic-action {
+    margin-left: 2rem;
+    color: #cbd5e0;
+    font-size: 1.5rem;
+}
+
+.topic-card:hover .topic-action {
+    color: #667eea;
+}
+
+.loading-state,
+.empty-state {
+    text-align: center;
+    padding: 4rem 0;
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+/* Filter Section */
+.filter-section {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    align-items: flex-end;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 300px;
+}
+
+.search-field {
+    width: 100%;
+}
+
+.sort-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sort-field {
+    width: 180px;
+}
+
+.sort-controls button.active {
+    background-color: #667eea;
+    color: white;
+}
+
+/* Pagination Section */
+.pagination-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-info {
+    font-size: 14px;
+    color: #666;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.pagination-controls button {
+    min-width: 40px;
+    height: 40px;
+}
+
+.pagination-controls button.active {
+    background-color: #667eea;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .sort-controls {
+        width: 100%;
+    }
+    
+    .sort-field {
+        flex: 1;
+    }
+    
+    .pagination-section {
+        flex-direction: column;
+        gap: 16px;
+    }
+}

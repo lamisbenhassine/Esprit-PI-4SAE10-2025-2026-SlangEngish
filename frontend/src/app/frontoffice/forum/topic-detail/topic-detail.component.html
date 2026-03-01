@@ -1,0 +1,119 @@
+<div class="topic-detail-container" *ngIf="topic">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="custom-breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a routerLink="/frontoffice/forum/general">Forum</a></li>
+            <li class="breadcrumb-item active">{{ topic.title }}</li>
+        </ol>
+    </nav>
+
+    <!-- Main Topic Card -->
+    <div class="topic-main-card">
+        <div class="topic-header">
+            <div class="topic-badges">
+                <span class="badge category" [class]="topic.category.toLowerCase()">{{ topic.category }}</span>
+                <span class="topic-date">Published on {{ topic.createdAt | date:'longDate' }}</span>
+            </div>
+            <h1 class="topic-title">{{ topic.title }}</h1>
+            <div class="topic-author">
+                <div class="avatar-circle large">{{ topic.authorId }}</div>
+                <div class="author-info">
+                    <span class="author-name">User #{{ topic.authorId }}</span>
+                    <span class="author-role">Member</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="topic-body">
+            <p>{{ topic.description }}</p>
+        </div>
+
+        <div class="topic-footer">
+            <div class="stats">
+                <span><i class="fas fa-eye"></i> {{ topic.views }} views</span>
+                <span><i class="fas fa-comment"></i> {{ messages.length }} replies</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="comments-section">
+        <h3 class="section-title">Discussion ({{ messages.length }})</h3>
+
+        <!-- Message List -->
+        <div class="message-list">
+            <div class="message-card" *ngFor="let message of messages">
+                <div class="message-avatar">
+                    <div class="avatar-circle">{{ message.authorId }}</div>
+                </div>
+                <div class="message-content-wrapper">
+                    <div class="message-header">
+                        <span class="message-author">User #{{ message.authorId }}</span>
+                        <span class="message-date">{{ message.createdAt | date:'medium' }}</span>
+                    </div>
+                    <div class="message-body">
+                        <p *ngIf="editingMessageId !== message.id">{{ message.content }}</p>
+                        <div *ngIf="editingMessageId === message.id" class="edit-msg-form">
+                            <textarea [(ngModel)]="editContent" rows="2" class="form-control mb-2"></textarea>
+                            <div class="edit-actions">
+                                <button class="btn-cancel sm" (click)="editingMessageId = null">Cancel</button>
+                                <button class="btn-submit sm" (click)="saveEdit(message.id!)">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-actions" *ngIf="editingMessageId !== message.id">
+                        <button class="btn-reply" (click)="replyTo(message.id!)">
+                            <i class="fas fa-reply"></i> Reply
+                        </button>
+                        <ng-container *ngIf="message.authorId === currentUserId">
+                            <button class="btn-edit" (click)="startEdit(message)">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn-delete" (click)="deleteMessage(message.id!)">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </ng-container>
+                    </div>
+
+                    <!-- Replies -->
+                    <div class="replies-list"
+                        *ngIf="messageReplies[message.id!] && messageReplies[message.id!].length > 0">
+                        <div class="reply-card" *ngFor="let reply of messageReplies[message.id!]">
+                            <div class="reply-avatar">
+                                <div class="avatar-circle small">{{ reply.authorId }}</div>
+                            </div>
+                            <div class="reply-content">
+                                <div class="reply-header">
+                                    <span class="reply-author">User #{{ reply.authorId }}</span>
+                                    <span class="reply-date">{{ reply.createdAt | date:'short' }}</span>
+                                </div>
+                                <p>{{ reply.content }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reply Form -->
+                    <div class="reply-form" *ngIf="replyingTo === message.id">
+                        <textarea [(ngModel)]="replyContent" placeholder="Your reply..." rows="2"></textarea>
+                        <div class="form-actions">
+                            <button class="btn-cancel" (click)="replyingTo = null">Cancel</button>
+                            <button class="btn-submit" (click)="submitReply(message.id!)">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Message Form -->
+        <div class="new-message-card">
+            <h3>Join the discussion</h3>
+            <div class="new-message-form">
+                <textarea [(ngModel)]="newMessageContent" placeholder="Write your message here..." rows="4"></textarea>
+                <button class="btn-submit-main" (click)="postMessage()" [disabled]="!newMessageContent.trim()">
+                    Post my reply
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,126 @@
+<div class="courses-management">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Forum Management</h1>
+            <p class="header-subtitle">Manage all forum topics and discussions</p>
+        </div>
+        <div class="header-actions">
+            <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
+                <mat-icon>add_comment</mat-icon>
+                <span>Create Topic</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="filter-section">
+        <div class="search-box">
+            <mat-form-field appearance="outline" class="search-field">
+                <mat-label>Search topics</mat-label>
+                <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+                    placeholder="Search by title, description, or category">
+                <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+        </div>
+        <div class="sort-controls">
+            <mat-form-field appearance="outline" class="sort-field">
+                <mat-label>Sort by</mat-label>
+                <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
+                    <mat-option value="createdAt">Date Created</mat-option>
+                    <mat-option value="title">Title</mat-option>
+                    <mat-option value="category">Category</mat-option>
+                    <mat-option value="views">Views</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <button mat-icon-button [class.active]="sortOrder === 'asc'"
+                (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()"
+                matTooltip="Toggle sort order">
+                <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Topics Grid -->
+    <div class="subscription-grid">
+        <div class="subscription-card" *ngFor="let topic of filteredTopics">
+            <div class="card-header">
+                <div class="plan-badge" [class]="topic.category.toLowerCase()">{{ topic.category }}</div>
+                <h3 class="plan-title">{{ topic.title }}</h3>
+            </div>
+
+            <div class="image-wrapper">
+                <img [src]="getTopicImage(topic)" [alt]="topic.title">
+                <div class="image-overlay">
+                    <div class="price-tag"><mat-icon>visibility</mat-icon> {{ topic.views }}</div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <p class="plan-description">{{ topic.description | slice:0:100 }}{{ topic.description.length > 100 ?
+                    '...' : '' }}</p>
+
+                <div class="info-row">
+                    <mat-icon>{{ topic.isPublic ? 'public' : 'lock' }}</mat-icon>
+                    <span>Status: <strong>{{ topic.isPublic ? 'Public' : 'Private' }}</strong></span>
+                </div>
+
+                <div class="meta-tags">
+                    <span class="tag user">Author #{{ topic.authorId }}</span>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <button mat-button class="edit-btn" (click)="editTopic(topic)">
+                    <mat-icon>edit_note</mat-icon>
+                    Edit
+                </button>
+                <button mat-button class="delete-btn" (click)="deleteTopic(topic.id!)">
+                    <mat-icon>delete_sweep</mat-icon>
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="filteredTopics.length === 0 && !loading && topics.length === 0">
+        <mat-icon>forum</mat-icon>
+        <h3>No forum topics found</h3>
+        <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
+            <mat-icon>add_comment</mat-icon>
+            Create Your First Topic
+        </button>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredTopics.length === 0 && !loading && topics.length > 0">
+        <mat-icon>search_off</mat-icon>
+        <h3>No topics match your search criteria</h3>
+        <button mat-button (click)="searchQuery = ''; onSearchChange()">Clear filters</button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-section" *ngIf="totalPages > 1 && !loading">
+        <div class="pagination-info">
+            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} -
+            {{ currentPage * itemsPerPage < topics.length ? currentPage * itemsPerPage : topics.length }} of {{
+                topics.length }} topics </div>
+                <div class="pagination-controls">
+                    <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                    <button *ngFor="let page of getPageNumbers()" mat-button [class.active]="page === currentPage"
+                        (click)="goToPage(page)">
+                        {{ page }}
+                    </button>
+                    <button mat-icon-button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="loading">
+            <mat-spinner diameter="50"></mat-spinner>
+        </div>
+    </div>
