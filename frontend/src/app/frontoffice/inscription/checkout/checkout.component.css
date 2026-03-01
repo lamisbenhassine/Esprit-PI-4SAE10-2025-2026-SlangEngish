@@ -280,42 +280,102 @@
     background: #38a169;
 }
 
-/* Success */
+/* Success – Payment successful screen */
+.step-success {
+    max-width: 480px;
+    margin: 0 auto;
+}
+
 .success-card {
-    background: white;
-    padding: 3rem 2rem;
-    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    padding: 2.5rem 2rem;
+    border-radius: 20px;
     text-align: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 40px rgba(72, 187, 120, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(72, 187, 120, 0.2);
 }
 
-.success-icon {
-    font-size: 4rem;
-    color: #48bb78;
-    margin-bottom: 1.5rem;
+.success-badge {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.5rem;
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(72, 187, 120, 0.35);
 }
 
-.transaction-info {
-    background: #f7fafc;
-    padding: 1rem;
-    border-radius: 8px;
-    display: inline-block;
-    margin: 1.5rem 0;
+.success-badge i {
+    font-size: 2rem;
+    color: white;
 }
 
-.transaction-info code {
-    display: block;
-    margin-top: 5px;
+.success-title {
+    font-size: 1.75rem;
     font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.02em;
+}
+
+.success-message {
+    color: #4a5568;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0 0 1.75rem;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.success-details {
+    background: #f7fafc;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.75rem;
+    text-align: left;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #edf2f7;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-size: 0.9rem;
+    color: #718096;
+    font-weight: 500;
+}
+
+.detail-value {
+    font-size: 0.95rem;
+    font-weight: 600;
     color: #2d3748;
+}
+
+.detail-value code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.85rem;
+    background: #edf2f7;
+    padding: 2px 8px;
+    border-radius: 6px;
 }
 
 .success-actions {
     display: flex;
-    gap: 16px;
+    gap: 12px;
     justify-content: center;
     flex-wrap: wrap;
-    margin-top: 10px;
+    margin-top: 0;
 }
 
 .btn-home {

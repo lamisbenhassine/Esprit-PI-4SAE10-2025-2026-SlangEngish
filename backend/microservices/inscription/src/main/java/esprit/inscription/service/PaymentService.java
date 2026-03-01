@@ -5,11 +5,20 @@ import esprit.inscription.entity.Payment;
 import esprit.inscription.repository.OrderRepository;
 import esprit.inscription.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import com.stripe.Stripe;
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Event;
+import com.stripe.model.checkout.Session;
+import com.stripe.net.Webhook;
+import com.stripe.param.checkout.SessionCreateParams;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +28,15 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+
+    @Value("${stripe.secret-key:}")
+    private String stripeSecretKey;
+
+    @Value("${stripe.webhook-secret:}")
+    private String stripeWebhookSecret;
+
+    @Value("${stripe.currency:eur}")
+    private String stripeCurrency;
 
     public Optional<Payment> getPaymentById(Long id) {
         return paymentRepository.findById(id);
@@ -74,6 +92,118 @@ public class PaymentService {
                     Optional<Payment> payment = paymentRepository.findByOrderId(order.getId());
                     return payment.isPresent() && "completed".equals(payment.get().getStatus());
                 });
+    }
+
+    /**
+     * Create a Stripe Checkout Session for a given order.
+     * IMPORTANT: you must set STRIPE_SECRET_KEY (or stripe.secret-key property) with your own key.
+     */
+    public Session createStripeCheckoutSession(Long orderId, String successUrl, String cancelUrl) throws StripeException {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+
+        String secretKey = System.getenv("STRIPE_SECRET_KEY");
+        if (secretKey == null || secretKey.isBlank()) secretKey = stripeSecretKey;
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalStateException(
+                    "Stripe secret key is not configured. Set STRIPE_SECRET_KEY env var or stripe.secret-key property.");
+        }
+        if (!secretKey.startsWith("sk_")) {
+            throw new IllegalStateException(
+                    "Invalid Stripe secret key. Backend key must start with sk_ (not pk_ or rk_).");
+        }
+        Stripe.apiKey = secretKey;
+
+        BigDecimal amount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+        // Stripe amounts are in the smallest currency unit (e.g. cents).
+        long amountInCents = amount.multiply(BigDecimal.valueOf(100L)).longValue();
+
+        String currency = stripeCurrency != null && !stripeCurrency.isBlank() ? stripeCurrency.toLowerCase() : "eur";
+
+        SessionCreateParams params =
+                SessionCreateParams.builder()
+                        .setMode(SessionCreateParams.Mode.PAYMENT)
+                        .setSuccessUrl(successUrl)
+                        .setCancelUrl(cancelUrl)
+                        .putMetadata("orderId", String.valueOf(orderId))
+                        .addLineItem(SessionCreateParams.LineItem.builder()
+                                .setQuantity(1L)
+                                .setPriceData(
+                                        SessionCreateParams.LineItem.PriceData.builder()
+                                                .setCurrency(currency)
+                                                .setUnitAmount(amountInCents)
+                                                .setProductData(
+                                                        SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                                .setName("Order #" + order.getOrderNumber())
+                                                                .build()
+                                                )
+                                                .build()
+                                )
+                                .build())
+                        .build();
+
+        return Session.create(params);
+    }
+
+    /**
+     * Handles Stripe webhook event (e.g. checkout.session.completed).
+     * Verifies signature with STRIPE_WEBHOOK_SECRET and marks payment as completed.
+     */
+    @Transactional
+    public void handleStripeWebhookEvent(String payload, String stripeSignature) {
+        String webhookSecret = System.getenv("STRIPE_WEBHOOK_SECRET");
+        if (webhookSecret == null || webhookSecret.isBlank()) webhookSecret = stripeWebhookSecret;
+        if (webhookSecret == null || webhookSecret.isBlank()) {
+            throw new IllegalStateException(
+                    "Stripe webhook secret is not configured. Set STRIPE_WEBHOOK_SECRET env var or stripe.webhook-secret property.");
+        }
+        if (!webhookSecret.startsWith("whsec_")) {
+            throw new IllegalStateException(
+                    "Invalid Stripe webhook secret. It must start with whsec_.");
+        }
+        Event event;
+        try {
+            event = Webhook.constructEvent(payload, stripeSignature, webhookSecret);
+        } catch (SignatureVerificationException e) {
+            throw new IllegalArgumentException("Invalid Stripe webhook signature", e);
+        }
+        if (!"checkout.session.completed".equals(event.getType())) {
+            return;
+        }
+        Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (session == null) return;
+        Map<String, String> metadata = session.getMetadata();
+        if (metadata == null || !metadata.containsKey("orderId")) return;
+        long orderId = Long.parseLong(metadata.get("orderId"));
+        String transactionId = session.getPaymentIntent() != null && !session.getPaymentIntent().isEmpty()
+                ? session.getPaymentIntent() : session.getId();
+        markOrderPaymentCompletedFromStripe(orderId, transactionId);
+    }
+
+    /**
+     * Marks payment as completed for an order (create or update) after Stripe checkout.
+     */
+    @Transactional
+    public Payment markOrderPaymentCompletedFromStripe(Long orderId, String stripeTransactionId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        Optional<Payment> existing = paymentRepository.findByOrderId(orderId);
+        Payment payment;
+        if (existing.isPresent()) {
+            payment = existing.get();
+            payment.setStatus("completed");
+            payment.setTransactionId(stripeTransactionId);
+            payment.setMethod("Stripe");
+        } else {
+            payment = Payment.builder()
+                    .orderId(orderId)
+                    .amount(order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO)
+                    .method("Stripe")
+                    .status("completed")
+                    .transactionId(stripeTransactionId)
+                    .build();
+        }
+        return paymentRepository.save(payment);
     }
 
     private String generateTransactionId() {

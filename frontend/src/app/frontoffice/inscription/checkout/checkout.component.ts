@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { OrderService, CreateOrderRequest } from '../../../core/services/order.service';
-import { PaymentService, ProcessPaymentRequest } from '../../../core/services/payment.service';
+import { PaymentService } from '../../../core/services/payment.service';
 import { CartService, Cart } from '../../../core/services/cart.service';
 import { PromoService, PromoValidationResult } from '../../../core/services/promo.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute, Params } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
@@ -13,7 +13,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class CheckoutComponent implements OnInit {
   step = 1;
-  paymentMethod = 'Credit Card';
+  paymentMethod = 'Stripe';
   orderId = 0;
   orderNumber = '';
   orderAmount = 0;
@@ -28,12 +28,15 @@ export class CheckoutComponent implements OnInit {
   appliedPromo: PromoValidationResult | null = null;
   promoApplying = false;
 
+  private stripePublishableKey = '';
+
   constructor(
     private orderService: OrderService,
     private paymentService: PaymentService,
     private cartService: CartService,
     private promoService: PromoService,
     private router: Router,
+    private route: ActivatedRoute,
     private snackBar: MatSnackBar
   ) {
     const navState = this.router.getCurrentNavigation()?.extras?.state;
@@ -48,6 +51,52 @@ export class CheckoutComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Load Stripe publishable key from backend config
+    this.paymentService.getStripeConfig().subscribe({
+      next: (cfg) => {
+        this.stripePublishableKey = cfg.publishableKey;
+      },
+      error: () => {
+        // Keep silent here; errors will be shown when user clicks Pay.
+      }
+    });
+
+    // Handle return from Stripe: success or canceled
+    this.route.queryParams.subscribe((params: Params) => {
+      const success = params['success'] === 'true';
+      const canceled = params['canceled'] === 'true';
+      const qOrderId = params['orderId'];
+      const qOrderNumber = params['orderNumber'];
+
+      if (canceled && qOrderId) {
+        this.orderId = +qOrderId;
+        this.orderNumber = qOrderNumber || '';
+        this.orderAmount = 0; // will be shown from order if needed
+        this.step = 2;
+        this.snackBar.open('Paiement annulé. Vous pouvez réessayer ou modifier votre commande.', 'OK', {
+          duration: 5000,
+          panelClass: ['warning-snackbar']
+        });
+        this.clearQueryParams();
+        return;
+      }
+      if (success && qOrderId) {
+        this.orderId = +qOrderId;
+        this.orderNumber = qOrderNumber || '';
+        this.step = 3;
+        this.orderAmount = 0;
+        // Fetch payment to get transactionId (after webhook has run)
+        this.paymentService.getPaymentByOrderId(this.orderId).subscribe({
+          next: (payment) => {
+            this.transactionId = payment.transactionId || '';
+            this.orderAmount = payment.amount != null ? payment.amount : 0;
+          }
+        });
+        this.clearQueryParams();
+        return;
+      }
+    });
+
     // Always sync cart from backend so displayed cart = backend cart (fixes "cart is empty" on Confirm Order)
     this.cartService.getCartByUserId(this.currentUserId).subscribe({
       next: (cart) => {
@@ -57,6 +106,14 @@ export class CheckoutComponent implements OnInit {
       error: () => {
         this.cartLoading = false;
       }
+    });
+  }
+
+  private clearQueryParams(): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {},
+      queryParamsHandling: ''
     });
   }
 
@@ -170,36 +227,62 @@ export class CheckoutComponent implements OnInit {
     if (this.isProcessing) return;
     this.isProcessing = true;
 
-    const request: ProcessPaymentRequest = {
-      orderId: this.orderId,
-      amount: this.orderAmount,
-      method: this.paymentMethod
-    };
+    // Stripe Checkout: ask backend for a Checkout Session, then redirect with Stripe.js
+    const successUrl = window.location.origin + '/frontoffice/inscription/checkout?success=true&orderId=' + this.orderId + '&orderNumber=' + encodeURIComponent(this.orderNumber || '');
+    const cancelUrl = window.location.origin + '/frontoffice/inscription/checkout?canceled=true&orderId=' + this.orderId + '&orderNumber=' + encodeURIComponent(this.orderNumber || '');
 
-    this.paymentService.processPayment(request).subscribe({
-      next: (payment) => {
-        this.transactionId = payment.transactionId;
-        this.isProcessing = false;
-        this.cart = null;
-        this.step = 3; // ✅ Move to confirmation step
+    this.paymentService.createStripeCheckoutSession(this.orderId, successUrl, cancelUrl).subscribe({
+      next: async (res) => {
+        const stripePublicKey = this.stripePublishableKey;
+        if (!stripePublicKey) {
+          this.isProcessing = false;
+          this.snackBar.open('Stripe publishable key is not configured on backend (stripe.publishable-key).', 'OK', {
+            duration: 7000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
 
-        this.snackBar.open('🎉 Payment successful! Your subscription is now active.', '', {
-          duration: 5000,
-          panelClass: ['success-snackbar']
-        });
+        const stripe = await this.loadStripe(stripePublicKey);
+        if (!stripe) {
+          this.isProcessing = false;
+          this.snackBar.open('Unable to initialize Stripe.', 'OK', { duration: 4000 });
+          return;
+        }
+        await stripe.redirectToCheckout({ sessionId: res.sessionId });
       },
       error: (err) => {
         this.isProcessing = false;
-        console.error('Payment error:', err);
-        let msg = 'Payment failed. Please try again.';
-        if (err.status === 0) {
-          msg = 'Cannot reach the server. Please make sure the backend is running.';
-        }
-        this.snackBar.open(msg, 'RETRY', {
-          duration: 5000,
+        console.error('Stripe checkout error:', err);
+        const msg = err?.error?.error || 'Payment initialization failed. Please try again.';
+        this.snackBar.open(msg, 'OK', {
+          duration: 7000,
           panelClass: ['error-snackbar']
         });
       }
+    });
+  }
+
+  private loadStripe(publishableKey: string): Promise<any> {
+    const w = window as any;
+    if (w.Stripe) return Promise.resolve(w.Stripe(publishableKey));
+
+    return new Promise((resolve) => {
+      const existing = document.querySelector('script[data-stripejs="true"]') as HTMLScriptElement | null;
+      if (existing) {
+        existing.addEventListener('load', () => resolve(w.Stripe ? w.Stripe(publishableKey) : null));
+        existing.addEventListener('error', () => resolve(null));
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://js.stripe.com/v3/';
+      script.async = true;
+      script.defer = true;
+      script.dataset['stripejs'] = 'true';
+      script.onload = () => resolve(w.Stripe ? w.Stripe(publishableKey) : null);
+      script.onerror = () => resolve(null);
+      document.head.appendChild(script);
     });
   }
 

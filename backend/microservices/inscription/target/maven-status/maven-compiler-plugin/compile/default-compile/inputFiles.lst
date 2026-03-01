@@ -1,5 +1,6 @@
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\client\ForumServiceClient.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\client\UserServiceClient.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\DefaultPromoInitializer.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\MailConfig.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\MailingConfig.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\SchedulerConfig.java
@@ -12,6 +13,8 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\PaymentController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\PromoCodeController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\PromoTestController.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\ProrataController.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\RevenueRecognitionController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\StatisticsController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\SubscriptionPlanController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\UserController.java
@@ -19,9 +22,13 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\AnnualComparisonDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\CostPerMonthDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\DashboardStatsDTO.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\MonthlyRevenueRecognitionDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\NotificationDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\PricePerUserDTO.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\ProrataCalculateRequest.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\ProrataCalculateResponse.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\RecommendationDTO.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\SiblingDiscountDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\Cart.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\CartItem.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\EmailCampaign.java
@@ -55,7 +62,9 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\OrderService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\PaymentService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\PromoCodeService.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\ProrataService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\RealTimeStatsService.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\RevenueRecognitionService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\StatisticsService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\SubscriptionPlanService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\SubscriptionPricingService.java

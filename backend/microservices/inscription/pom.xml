@@ -21,6 +21,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<spring-cloud.version>2025.1.0</spring-cloud.version>
+		<stripe.version>26.4.0</stripe.version>
 	</properties>
 
 	<dependencyManagement>
@@ -125,6 +126,13 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<!-- Stripe Java SDK (for real payments) -->
+		<dependency>
+			<groupId>com.stripe</groupId>
+			<artifactId>stripe-java</artifactId>
+			<version>${stripe.version}</version>
 		</dependency>
 
 	</dependencies>

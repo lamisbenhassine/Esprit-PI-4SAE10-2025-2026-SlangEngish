@@ -19,6 +19,14 @@ export interface ProcessPaymentRequest {
     method: string;
 }
 
+export interface StripeCheckoutSessionResponse {
+    sessionId: string;
+}
+
+export interface StripeConfigResponse {
+    publishableKey: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -29,7 +37,27 @@ export class PaymentService {
         return this.http.post<Payment>(`${API_URL}/process`, request);
     }
 
+    /**
+     * Create a Stripe Checkout Session for a given order.
+     * The backend returns a sessionId that we pass to Stripe.js.
+     */
+    createStripeCheckoutSession(orderId: number, successUrl: string, cancelUrl: string): Observable<StripeCheckoutSessionResponse> {
+        return this.http.post<StripeCheckoutSessionResponse>(`${API_URL}/stripe/checkout-session`, {
+            orderId,
+            successUrl,
+            cancelUrl
+        });
+    }
+
+    getStripeConfig(): Observable<StripeConfigResponse> {
+        return this.http.get<StripeConfigResponse>(`${API_URL}/stripe/config`);
+    }
+
     verifyUserPayment(userId: number): Observable<boolean> {
         return this.http.get<boolean>(`${API_URL}/verify/${userId}`);
+    }
+
+    getPaymentByOrderId(orderId: number): Observable<Payment> {
+        return this.http.get<Payment>(`${API_URL}/order/${orderId}`);
     }
 }
