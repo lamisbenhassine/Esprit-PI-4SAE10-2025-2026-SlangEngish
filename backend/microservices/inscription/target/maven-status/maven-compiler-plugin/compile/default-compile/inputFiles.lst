@@ -11,6 +11,7 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\EmailTrackingController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\OrderController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\PaymentController.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\PlacementController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\PromoCodeController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\PromoTestController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\ProrataController.java
@@ -20,6 +21,7 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\UserController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\WebSocketController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\AnnualComparisonDTO.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\CertificateAnalysisDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\CostPerMonthDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\DashboardStatsDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\MonthlyRevenueRecognitionDTO.java

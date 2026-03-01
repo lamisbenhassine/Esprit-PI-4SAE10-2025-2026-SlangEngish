@@ -32,6 +32,7 @@ export class OffersListComponent implements OnInit {
   itemsPerPage: number = 6;
   totalPages: number = 1;
   recommendedPlan: SubscriptionPlan | null = null;
+  recommendedPlanIdFromQuery: number | null = null;
 
   // Métier avancé 1 (Duolingo) : coût par mois, comparaison annuelle, recommandation
   costPerMonthByPlanId: Record<number, CostPerMonthDTO> = {};
@@ -74,6 +75,10 @@ export class OffersListComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       if (params['level']) {
         this.searchQuery = params['level'];
+      }
+      if (params['planId']) {
+        const id = Number(params['planId']);
+        this.recommendedPlanIdFromQuery = isNaN(id) ? null : id;
       }
       this.loadPlans();
     });
@@ -444,8 +449,18 @@ export class OffersListComponent implements OnInit {
       filtered = filtered.filter(p => (p.category || 'general') === this.selectedCategory);
     }
 
-    // 1. Identify recommended plan (exact match with level/searchQuery)
-    if (this.searchQuery.trim()) {
+    // 1. Identify recommended plan
+    // 1.a If a specific planId was provided in query params, use it first
+    if (this.recommendedPlanIdFromQuery != null) {
+      const idx = filtered.findIndex(p => p.id === this.recommendedPlanIdFromQuery);
+      if (idx !== -1) {
+        this.recommendedPlan = filtered[idx];
+        filtered.splice(idx, 1);
+      }
+    }
+
+    // 1.b Otherwise, use level/searchQuery to pick a recommended plan
+    if (!this.recommendedPlan && this.searchQuery.trim()) {
       const query = this.searchQuery.toUpperCase();
       const recommendedIndex = filtered.findIndex(p => p.planType.toUpperCase() === query);
 

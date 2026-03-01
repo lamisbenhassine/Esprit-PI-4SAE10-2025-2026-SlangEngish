@@ -97,67 +97,96 @@
     width: 100%;
 }
 
-.level-selector {
-    margin: 20px 0 30px;
-}
-
-.level-selector label {
-    display: block;
-    font-weight: 600;
-    color: #4a5568;
-    margin-bottom: 20px;
-}
-
-.level-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 12px;
-}
-
-.level-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px 10px;
-    border: 2px solid #edf2f7;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Certificate upload area (replaces manual level selector) */
+.certificate-upload {
+    margin: 30px 0 30px;
+    padding: 24px 22px;
     background: #f8fafc;
+    border-radius: 20px;
+    border: 1px dashed #cbd5e0;
 }
 
-.level-item:hover {
-    border-color: #cbd5e0;
-    transform: translateY(-4px);
+.upload-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0 0 6px;
 }
 
-.level-item.selected {
-    background: #eff6ff;
-    border-color: #3b82f6;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+.upload-subtitle {
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: #718096;
 }
 
-.level-item mat-icon {
-    font-size: 32px;
-    width: 32px;
-    height: 32px;
-    margin-bottom: 12px;
-    color: #a0aec0;
+.upload-dropzone {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: white;
+    border-radius: 16px;
+    border: 1px dashed #a0aec0;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.level-item.selected mat-icon {
+.upload-dropzone:hover {
+    border-color: #4c6fff;
+    box-shadow: 0 6px 16px rgba(76, 111, 255, 0.12);
+}
+
+.upload-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #ebf4ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #3b82f6;
 }
 
-.level-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #4a5568;
-    text-align: center;
+.upload-icon mat-icon {
+    font-size: 24px;
 }
 
-.level-item.selected .level-label {
-    color: #1e40af;
+.upload-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.upload-primary {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.upload-secondary {
+    font-size: 12px;
+    color: #718096;
+}
+
+.upload-file-info {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #4a5568;
+}
+
+.upload-file-info mat-icon {
+    color: #4c6fff;
+}
+
+.file-name {
+    font-weight: 600;
+}
+
+.file-hint {
+    font-size: 12px;
+    color: #718096;
 }
 
 /* Offer Preview Styles */

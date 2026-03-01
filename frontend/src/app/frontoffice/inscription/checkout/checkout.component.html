@@ -75,26 +75,10 @@
                 </div>
             </div>
 
-            <!-- Payment Method Selection -->
+            <!-- Confirm Order: directly creates order then redirects to Stripe Checkout -->
             <div class="card-checkout">
-                <h2>Payment Method</h2>
-                <p class="text-muted">Choose how you want to pay for your order.</p>
-
-                <div class="payment-methods">
-                    <label class="method-card" [class.selected]="paymentMethod === 'Credit Card'"
-                        (click)="selectMethod('Credit Card')">
-                        <input type="radio" name="payment" value="Credit Card" [(ngModel)]="paymentMethod">
-                        <div class="method-icon"><i class="fas fa-credit-card"></i></div>
-                        <span class="method-name">Credit Card</span>
-                    </label>
-
-                    <label class="method-card" [class.selected]="paymentMethod === 'PayPal'"
-                        (click)="selectMethod('PayPal')">
-                        <input type="radio" name="payment" value="PayPal" [(ngModel)]="paymentMethod">
-                        <div class="method-icon"><i class="fab fa-paypal"></i></div>
-                        <span class="method-name">PayPal</span>
-                    </label>
-                </div>
+                <h2>Payment</h2>
+                <p class="text-muted">When you confirm, you will be redirected to our secure Stripe payment page.</p>
 
                 <div class="action-footer">
                     <button class="btn-next" (click)="createOrder()" [disabled]="isProcessing">
@@ -106,58 +90,6 @@
         </div>
     </div>
 
-
-    <!-- STEP 2: Simulated Payment Form -->
-    <div class="checkout-content" *ngIf="step === 2">
-        <div class="order-summary">
-            <h3>Order Summary</h3>
-            <div class="summary-row">
-                <span>Order #</span>
-                <strong>{{ orderNumber }}</strong>
-            </div>
-            <div class="summary-row total">
-                <span>Total to pay</span>
-                <strong class="amount">{{ orderAmount }} €</strong>
-            </div>
-        </div>
-
-        <div class="card-checkout">
-            <h2>Secure Payment</h2>
-
-            <div class="payment-form">
-                <div class="form-group">
-                    <label>Name on Card</label>
-                    <input type="text" placeholder="John Doe">
-                </div>
-
-                <div class="form-group">
-                    <label>Card Number</label>
-                    <div class="input-icon">
-                        <i class="fas fa-credit-card"></i>
-                        <input type="text" placeholder="0000 0000 0000 0000">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group half">
-                        <label>Expiry</label>
-                        <input type="text" placeholder="MM/YY">
-                    </div>
-                    <div class="form-group half">
-                        <label>CVC</label>
-                        <input type="text" placeholder="123">
-                    </div>
-                </div>
-            </div>
-
-            <div class="action-footer">
-                <button class="btn-pay" (click)="processPayment()" [disabled]="isProcessing">
-                    <span *ngIf="!isProcessing"><i class="fas fa-lock"></i> Pay {{ orderAmount }} €</span>
-                    <span *ngIf="isProcessing"><i class="fas fa-spinner fa-spin"></i> Processing payment...</span>
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- STEP 3: Payment successful -->
     <div class="checkout-content step-success" *ngIf="step === 3">

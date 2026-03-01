@@ -13,7 +13,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 })
 export class CheckoutComponent implements OnInit {
   step = 1;
-  paymentMethod = 'Stripe';
   orderId = 0;
   orderNumber = '';
   orderAmount = 0;
@@ -71,8 +70,8 @@ export class CheckoutComponent implements OnInit {
       if (canceled && qOrderId) {
         this.orderId = +qOrderId;
         this.orderNumber = qOrderNumber || '';
-        this.orderAmount = 0; // will be shown from order if needed
-        this.step = 2;
+        this.orderAmount = 0;
+        this.step = 1;
         this.snackBar.open('Paiement annulé. Vous pouvez réessayer ou modifier votre commande.', 'OK', {
           duration: 5000,
           panelClass: ['warning-snackbar']
@@ -161,7 +160,7 @@ export class CheckoutComponent implements OnInit {
 
     const request: CreateOrderRequest = {
       userId: this.currentUserId,
-      paymentMethod: this.paymentMethod,
+      paymentMethod: 'Stripe',
       promoCode: this.appliedPromo?.valid ? this.appliedPromo.code : undefined
     };
 
@@ -171,8 +170,14 @@ export class CheckoutComponent implements OnInit {
           this.orderId = order.id ?? 0;
           this.orderNumber = order.orderNumber;
           this.orderAmount = order.totalAmount ?? 0;
+          // Sync cart (should now be empty) so navbar badge clears
+          this.cartService.clearCart(this.currentUserId).subscribe({
+            next: () => {},
+            error: () => {}
+          });
           this.isProcessing = false;
-          this.step = 2;
+          // Immediately launch Stripe Checkout
+          this.processPayment();
         },
         error: (err) => this.handleOrderError(err)
       });
@@ -284,10 +289,6 @@ export class CheckoutComponent implements OnInit {
       script.onerror = () => resolve(null);
       document.head.appendChild(script);
     });
-  }
-
-  selectMethod(method: string) {
-    this.paymentMethod = method;
   }
 
   goToDashboard() {
