@@ -1,6 +1,12 @@
 <div class="profile-container" *ngIf="user as user">
   <div class="profile-header">
-    <h1>My Profile</h1>
+    <div class="title-wrap">
+      <mat-icon class="title-icon">person</mat-icon>
+      <div>
+        <h1>My Profile</h1>
+        <p class="subtitle">View and update your personal information and security.</p>
+      </div>
+    </div>
   </div>
 
   <div class="profile-content">
@@ -14,7 +20,7 @@
         </div>
         <div class="user-details">
           <h2>{{ user.firstName }} {{ user.lastName }}</h2>
-          <p>{{ user.email }}</p>
+          <p class="email">{{ user.email }}</p>
           <span class="role">{{ user.role }}</span>
         </div>
       </div>
@@ -83,9 +89,25 @@
 
             <mat-form-field appearance="outline" class="form-field full-width">
               <mat-label>Nouveau mot de passe</mat-label>
-              <input matInput [(ngModel)]="passwordData.new" name="new" type="password" placeholder="Au moins 8 caractères">
+              <input
+                matInput
+                [(ngModel)]="passwordData.new"
+                name="new"
+                type="password"
+                placeholder="Au moins 8 caractères"
+                (ngModelChange)="onNewPasswordInput($event)">
               <mat-icon matSuffix>lock_outline</mat-icon>
             </mat-form-field>
+
+            <div *ngIf="passwordStrengthLabel" class="password-strength">
+              <span [ngClass]="{
+                'weak': passwordStrengthLevel === 'weak',
+                'medium': passwordStrengthLevel === 'medium',
+                'strong': passwordStrengthLevel === 'strong'
+              }">
+                {{ passwordStrengthLabel }}
+              </span>
+            </div>
 
             <mat-form-field appearance="outline" class="form-field full-width">
               <mat-label>Confirmer le nouveau mot de passe</mat-label>

@@ -19,6 +19,9 @@ export class ProfileComponent implements OnInit {
     confirm: ''
   };
 
+  passwordStrengthLabel = '';
+  passwordStrengthLevel: 'weak' | 'medium' | 'strong' | '' = '';
+
   constructor(
     private userService: UserService,
     private authService: AuthService
@@ -80,6 +83,38 @@ export class ProfileComponent implements OnInit {
 
   cancelEdit() {
     console.log('Edit cancelled');
+  }
+
+  onNewPasswordInput(value: string): void {
+    this.passwordData.new = value;
+    this.updatePasswordStrength(value);
+  }
+
+  private updatePasswordStrength(password: string): void {
+    if (!password) {
+      this.passwordStrengthLabel = '';
+      this.passwordStrengthLevel = '';
+      return;
+    }
+
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 2) {
+      this.passwordStrengthLevel = 'weak';
+      this.passwordStrengthLabel = 'Mot de passe faible';
+    } else if (score <= 4) {
+      this.passwordStrengthLevel = 'medium';
+      this.passwordStrengthLabel = 'Mot de passe moyen';
+    } else {
+      this.passwordStrengthLevel = 'strong';
+      this.passwordStrengthLabel = 'Mot de passe fort';
+    }
   }
 
   changePassword() {

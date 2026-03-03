@@ -2,10 +2,15 @@
   <div class="auth-card">
     <div class="auth-header">
       <div class="logo">
-        <mat-icon>school</mat-icon>
-        <h1>Join E-Learning</h1>
+        <div class="logo-circle">
+          <mat-icon>school</mat-icon>
+        </div>
+        <div class="logo-text">
+          <h1>Join Slang English</h1>
+          <p class="brand-subtitle">Create your account and start learning today.</p>
+        </div>
       </div>
-      <p class="subtitle">Create your account and start learning today!</p>
+      <p class="subtitle">Fill in your information below to get started.</p>
     </div>
 
     <form class="auth-form" (ngSubmit)="onSignUp()">
@@ -15,18 +20,18 @@
           <input 
             matInput 
             [(ngModel)]="signUpData.firstName" 
-            name="firstName" 
-            placeholder="John"
+            name="firstName"
+            autocomplete="given-name"
             required>
         </mat-form-field>
-
+        
         <mat-form-field appearance="outline" class="form-field">
           <mat-label>Last Name</mat-label>
           <input 
             matInput 
             [(ngModel)]="signUpData.lastName" 
-            name="lastName" 
-            placeholder="Doe"
+            name="lastName"
+            autocomplete="family-name"
             required>
         </mat-form-field>
       </div>
@@ -39,7 +44,7 @@
           name="email" 
           type="email"
           (blur)="onEmailBlur()"
-          placeholder="john.doe@example.com"
+          autocomplete="email"
           required>
         <mat-icon matSuffix>email</mat-icon>
       </mat-form-field>
@@ -56,7 +61,7 @@
           [(ngModel)]="signUpData.phone"
           name="phone"
           type="tel"
-          placeholder="+216 12 345 678"
+          autocomplete="tel"
           required>
         <mat-icon matSuffix>phone</mat-icon>
       </mat-form-field>
@@ -68,7 +73,7 @@
           [(ngModel)]="signUpData.address"
           name="address"
           rows="2"
-          placeholder="City, Country"></textarea>
+          autocomplete="street-address"></textarea>
         <mat-icon matSuffix>location_on</mat-icon>
       </mat-form-field>
 

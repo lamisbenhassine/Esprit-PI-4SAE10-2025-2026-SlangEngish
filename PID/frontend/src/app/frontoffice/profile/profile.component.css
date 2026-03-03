@@ -1,6 +1,7 @@
 .profile-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 24px 16px 40px;
   animation: fadeInUp 0.5s ease-out;
 }
 
@@ -20,24 +21,36 @@
   margin-bottom: 32px;
 }
 
-.profile-header h1 {
+.title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.title-icon {
   font-size: 32px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.5);
+}
+
+.profile-header h1 {
+  font-size: 28px;
   font-weight: 700;
   color: #333;
   margin: 0;
-  position: relative;
-  display: inline-block;
 }
 
-.profile-header h1::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 0;
-  width: 60px;
-  height: 4px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 2px;
+.profile-header .subtitle {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #666;
 }
 
 /* Profile Content Grid */
@@ -131,6 +144,10 @@
   margin: 0 0 8px 0;
 }
 
+.user-details .email {
+  word-break: break-all;
+}
+
 .user-details .role {
   display: inline-block;
   padding: 6px 16px;
@@ -142,6 +159,24 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 8px;
+}
+
+.password-strength {
+  margin-top: -8px;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+
+.password-strength .weak {
+  color: #e53935;
+}
+
+.password-strength .medium {
+  color: #fb8c00;
+}
+
+.password-strength .strong {
+  color: #43a047;
 }
 
 /* Profile Form Section */

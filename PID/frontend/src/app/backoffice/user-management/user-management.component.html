@@ -2,8 +2,13 @@
   <!-- Page Header -->
   <div class="page-header">
     <div class="header-content">
-      <h1>User Management</h1>
-      <p class="header-subtitle">Manage all users, their roles, and permissions</p>
+      <div class="header-title">
+        <mat-icon class="header-icon">groups</mat-icon>
+        <div>
+          <h1>User Management</h1>
+          <p class="header-subtitle">Manage all users, their roles, and permissions</p>
+        </div>
+      </div>
     </div>
     <div class="header-actions">
       <button
@@ -52,6 +57,15 @@
         </mat-select>
       </mat-form-field>
     </div>
+  </div>
+
+  <div class="status-legend">
+    <span class="legend-item">
+      <span class="dot active"></span> Actif
+    </span>
+    <span class="legend-item">
+      <span class="dot inactive"></span> Bloqué
+    </span>
   </div>
 
   <!-- Users Table -->
