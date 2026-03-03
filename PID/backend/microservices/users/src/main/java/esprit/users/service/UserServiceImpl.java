@@ -28,6 +28,7 @@ public class UserServiceImpl implements UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final PasswordResetEmailService passwordResetEmailService;
     private final PasswordResetWhatsAppService passwordResetWhatsAppService;
+    private final AccountStatusEmailService accountStatusEmailService;
 
     /** Bloque certains domaines d'email considérés comme non réels / de test. */
     private boolean isBlockedEmailDomain(String email) {
@@ -387,7 +388,21 @@ public class UserServiceImpl implements UserService {
         }
 
         target.setStatus(status);
-        return userRepository.save(target);
+        User saved = userRepository.save(target);
+
+        // Si le compte vient d'être bloqué, envoyer un email d'information à l'utilisateur.
+        if (status == Status.INACTIVE && saved.getEmail() != null && !saved.getEmail().isBlank()) {
+            String fullName = (saved.getFirstName() == null ? "" : saved.getFirstName()) +
+                    " " +
+                    (saved.getLastName() == null ? "" : saved.getLastName());
+            accountStatusEmailService.sendAccountBlockedEmail(
+                    saved.getEmail(),
+                    fullName.trim(),
+                    actor.getRole().name()
+            );
+        }
+
+        return saved;
     }
 }
 
