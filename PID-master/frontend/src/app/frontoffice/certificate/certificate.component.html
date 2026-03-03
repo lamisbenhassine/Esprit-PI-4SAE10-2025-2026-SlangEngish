@@ -21,6 +21,16 @@
               <p class="certificate-label">This is to certify that</p>
               <h1 class="student-name">{{ studentName || 'Certificate Holder' }}</h1>
               <p class="congrats-message">{{ congratulationMessage }}</p>
+              <p class="certificate-level" *ngIf="certificateLevel">
+                <span class="level-label">Level achieved:</span>
+                <strong class="level-value">{{ certificateLevel }}</strong>
+              </p>
+              <div class="passed-evaluations" *ngIf="passedEvaluationTitles.length > 0">
+                <p class="passed-evaluations-label">Passed evaluations (required for this certificate):</p>
+                <ul class="passed-evaluations-list">
+                  <li *ngFor="let title of passedEvaluationTitles">{{ title }}</li>
+                </ul>
+              </div>
               <p class="certificate-date">{{ certificateDate }}</p>
             </div>
             <div class="certificate-footer">

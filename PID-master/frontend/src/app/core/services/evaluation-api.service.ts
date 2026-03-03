@@ -3,6 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import type { Evaluation, Question, Option, Blank, EvaluationAttempt, StudentAnswer, User } from '../models';
 
+export interface CertificateEligibilityResponse {
+  eligible: boolean;
+  passedCount: number;
+  passedEvaluationTitles?: string[];
+  certificateScore?: number;
+  level?: string;
+}
+
 const API_URL = 'http://localhost:8080/api';
 
 @Injectable({ providedIn: 'root' })
@@ -119,7 +127,7 @@ export class EvaluationApiService {
     return this.http.get<User>(`${API_URL}/users/${id}`);
   }
 
-  getCertificateEligibility(userId: number): Observable<{ eligible: boolean; passedCount: number }> {
-    return this.http.get<{ eligible: boolean; passedCount: number }>(`${API_URL}/certificate/eligibility/${userId}`);
+  getCertificateEligibility(userId: number): Observable<CertificateEligibilityResponse> {
+    return this.http.get<CertificateEligibilityResponse>(`${API_URL}/certificate/eligibility/${userId}`);
   }
 }

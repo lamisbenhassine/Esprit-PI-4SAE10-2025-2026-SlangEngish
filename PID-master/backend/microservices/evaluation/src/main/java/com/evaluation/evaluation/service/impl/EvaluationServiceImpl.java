@@ -25,6 +25,9 @@ public class EvaluationServiceImpl implements EvaluationService {
     public Evaluation createEvaluation(Evaluation evaluation) {
         evaluation.setCreatedAt(LocalDateTime.now());
         evaluation.setUpdatedAt(LocalDateTime.now());
+        if (evaluation.getCertificateEvaluation() == null) {
+            evaluation.setCertificateEvaluation(false);
+        }
         return evaluationRepository.save(evaluation);
     }
 
@@ -63,6 +66,9 @@ public class EvaluationServiceImpl implements EvaluationService {
         evaluation.setDurationMinutes(evaluationDetails.getDurationMinutes());
         evaluation.setNumberOfAttempts(evaluationDetails.getNumberOfAttempts());
         evaluation.setTotalScore(evaluationDetails.getTotalScore());
+        if (evaluationDetails.getCertificateEvaluation() != null) {
+            evaluation.setCertificateEvaluation(evaluationDetails.getCertificateEvaluation());
+        }
 
         evaluation.setUpdatedAt(LocalDateTime.now());
         return evaluationRepository.save(evaluation);

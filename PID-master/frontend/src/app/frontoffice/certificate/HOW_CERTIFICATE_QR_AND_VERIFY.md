@@ -8,11 +8,11 @@ This document explains the **QR code on the certificate** and the **verification
 
 | File | Role |
 |------|------|
-| `frontend/src/app/frontoffice/certificate/certificate.component.ts` | Adds getter `verificationUrl`: builds the URL for the QR code (origin + `/frontoffice/certificate/verify?name=...&date=...`). |
+| `frontend/src/app/frontoffice/certificate/certificate.component.ts` | Adds getter `verificationUrl`: builds the URL for the QR code (origin + `/frontoffice/certificate/verify?name=...&date=...` and optionally `&level=...` when the certificate has a level). |
 | `frontend/src/app/frontoffice/certificate/certificate.component.html` | Renders the QR code in the certificate footer (next to the seal) using `<qrcode>`, and the text "Scan to verify". |
 | `frontend/src/app/frontoffice/certificate/certificate.component.css` | Styles for `.footer-row`, `.qrcode-block`, `.qrcode-hint` so the seal and QR sit side by side. |
-| `frontend/src/app/frontoffice/certificate/certificate-verify.component.ts` | CertificateVerifyComponent: reads query params `name` and `date`, sets `studentName` and `certificateDate` for the template. |
-| `frontend/src/app/frontoffice/certificate/certificate-verify.component.html` | Verification page content: SlangEnglish logo, paragraph "We are SlangEnglish. We certify that [name] passed the evaluation successfully.", date, signature line, seal. |
+| `frontend/src/app/frontoffice/certificate/certificate-verify.component.ts` | CertificateVerifyComponent: reads query params `name`, `date`, and optionally `level`; sets `studentName`, `certificateDate`, and `level` for the template. |
+| `frontend/src/app/frontoffice/certificate/certificate-verify.component.html` | Verification page content: SlangEnglish logo, paragraph "We certify that [name] passed the evaluation successfully.", optional "Level achieved: X", date, signature line, seal. |
 | `frontend/src/app/frontoffice/certificate/certificate-verify.component.css` | Full-page layout and card styles for the verify view (logo, statement, signature, seal). |
 | `frontend/src/app/frontoffice/frontoffice-routing.module.ts` | Adds route `certificate/verify` (no layout) so the verify page is a standalone full page. |
 | `frontend/src/app/frontoffice/frontoffice.module.ts` | Declares `CertificateVerifyComponent` and imports `QRCodeModule` (angularx-qrcode). |
@@ -25,10 +25,11 @@ This document explains the **QR code on the certificate** and the **verification
 
 When someone scans the QR code on the certificate:
 
-1. Their device opens the URL encoded in the QR (e.g. `https://your-domain.com/frontoffice/certificate/verify?name=John+Doe&date=Monday%2C+February+23%2C+2025`).
+1. Their device opens the URL encoded in the QR (e.g. `https://your-domain.com/frontoffice/certificate/verify?name=John+Doe&date=Monday%2C+February+23%2C+2025` and optionally `&level=B2`).
 2. The **verification page** loads (no sidebar, full page) and shows:
    - **SlangEnglish** logo (same style as the certificate).
    - Paragraph: **"We are SlangEnglish. We certify that [student name] passed the evaluation successfully."**
+   - When the URL includes a `level` param (A1–C2), a line **"Level achieved: X"**.
    - The **certificate date**.
    - A **signature line** with the label "SlangEnglish Director" (cursive-style font).
    - The **SlangEnglish seal** (round badge with platform name).
@@ -44,12 +45,16 @@ So the QR code links to a short, public verification view that confirms the cert
 The QR code must point to a URL that includes the student name and date. We build that URL in a getter so it stays in sync with the current certificate data.
 
 ```typescript
-/** URL that the QR code points to: verification page with student name and date. */
+/** URL that the QR code points to: verification page with student name, date, and optional level. */
 get verificationUrl(): string {
   const base = typeof window !== 'undefined' ? window.location.origin : '';
   const name = encodeURIComponent(this.studentName || 'Certificate Holder');
   const date = encodeURIComponent(this.certificateDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
-  return `${base}/frontoffice/certificate/verify?name=${name}&date=${date}`;
+  let url = `${base}/frontoffice/certificate/verify?name=${name}&date=${date}`;
+  if (this.certificateLevel) {
+    url += `&level=${encodeURIComponent(this.certificateLevel)}`;
+  }
+  return url;
 }
 ```
 
@@ -57,7 +62,7 @@ get verificationUrl(): string {
 
 - `window.location.origin` is the site’s base URL (e.g. `https://example.com`). The check `typeof window !== 'undefined'` avoids errors in SSR or non-browser environments.
 - `encodeURIComponent` ensures the name and date are safe in the query string (spaces, commas, etc.).
-- The path `/frontoffice/certificate/verify` matches the route we added for the verification page. Query params `name` and `date` are read by the verify component.
+- The path `/frontoffice/certificate/verify` matches the route we added for the verification page. Query params `name`, `date`, and optionally `level` (A1–C2) are read by the verify component; when the certificate has a level, it is appended so the verify page can show "Level achieved: X".
 
 ---
 
@@ -152,6 +157,7 @@ const PLATFORM_NAME = 'SlangEnglish';
 export class CertificateVerifyComponent implements OnInit {
   studentName = '';
   certificateDate = '';
+  level = '';
   platformName = PLATFORM_NAME;
 
   constructor(private route: ActivatedRoute) {}
@@ -164,6 +170,7 @@ export class CertificateVerifyComponent implements OnInit {
         month: 'long',
         day: 'numeric'
       });
+      this.level = params['level'] || '';
     });
   }
 }
@@ -190,6 +197,7 @@ export class CertificateVerifyComponent implements OnInit {
     <p class="verify-statement">
       We certify that <strong>{{ studentName }}</strong> passed the evaluation successfully.
     </p>
+    <p class="verify-level" *ngIf="level">Level achieved: <strong>{{ level }}</strong></p>
     <p class="verify-date">{{ certificateDate }}</p>
     <div class="signature-block">
       <div class="signature-line"></div>
@@ -207,6 +215,7 @@ export class CertificateVerifyComponent implements OnInit {
 - **verify-logo:** Same platform name as on the certificate (SlangEnglish), styled as the main logo.
 - **verify-intro:** Short line "We are SlangEnglish."
 - **verify-statement:** The main sentence: "We certify that [student name] passed the evaluation successfully."
+- **verify-level:** When the URL has a `level` param (A1–C2), shows "Level achieved: X".
 - **verify-date:** The certificate date from the URL (or today).
 - **signature-block:** A horizontal line (signature line) and the label "SlangEnglish Director" in a cursive-style font to simulate a signature.
 - **verify-seal:** A circular seal with the platform name, matching the certificate’s seal style.
@@ -273,9 +282,9 @@ const routes: Routes = [
 
 | What | How |
 |------|-----|
-| QR on certificate | `<qrcode [qrdata]="verificationUrl" ...>` in the certificate footer; `verificationUrl` getter builds the URL with name and date. |
-| Verification URL | `origin + '/frontoffice/certificate/verify?name=' + encodeURIComponent(name) + '&date=' + encodeURIComponent(date)`. |
-| Verify page content | SlangEnglish logo, "We certify that [name] passed the evaluation successfully.", date, signature line ("SlangEnglish Director"), seal. |
+| QR on certificate | `<qrcode [qrdata]="verificationUrl" ...>` in the certificate footer; `verificationUrl` getter builds the URL with name, date, and optionally level. |
+| Verification URL | `origin + '/frontoffice/certificate/verify?name=' + encodeURIComponent(name) + '&date=' + encodeURIComponent(date)` + optional `'&level=' + encodeURIComponent(level)`. |
+| Verify page content | SlangEnglish logo, "We certify that [name] passed the evaluation successfully.", optional "Level achieved: X" when `level` is in the URL, date, signature line ("SlangEnglish Director"), seal. |
 | Verify page route | `certificate/verify` under frontoffice, no layout, so it’s a full-page view when opened from the QR. |
 | Signature | A horizontal line + label "SlangEnglish Director" in a cursive font (e.g. Dancing Script). |
 

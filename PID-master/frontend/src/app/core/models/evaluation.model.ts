@@ -7,6 +7,8 @@ export interface Evaluation {
   durationMinutes: number;
   numberOfAttempts: number;
   totalScore: number;
+  /** When true, this evaluation counts as one of the 5 required for the certificate. */
+  certificateEvaluation?: boolean;
   questions?: Question[];
   attempts?: EvaluationAttempt[];
 }

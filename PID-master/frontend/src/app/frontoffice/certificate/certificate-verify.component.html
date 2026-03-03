@@ -5,6 +5,7 @@
     <p class="verify-statement">
       We certify that <strong>{{ studentName }}</strong> passed the evaluation successfully.
     </p>
+    <p class="verify-level" *ngIf="level">Level achieved: <strong>{{ level }}</strong></p>
     <p class="verify-date">{{ certificateDate }}</p>
     <div class="signature-block">
       <div class="signature-line"></div>

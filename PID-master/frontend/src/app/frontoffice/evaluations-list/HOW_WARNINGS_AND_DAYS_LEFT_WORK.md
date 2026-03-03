@@ -1,6 +1,6 @@
 # How the Warnings and "Days Left" Work (Evaluations List)
 
-This file explains how the **warning boxes** (7 days / 3 days) and the **"X days left"** label on each evaluation card are implemented.
+This file explains how the **warning bars** (7 days / 3 days), the **popup dialog** (Danger zone / Prepare zone), and the **"X days left"** label on each evaluation card are implemented.
 
 ---
 
@@ -8,9 +8,12 @@ This file explains how the **warning boxes** (7 days / 3 days) and the **"X days
 
 | File | Role |
 |------|------|
-| `frontend/src/app/frontoffice/evaluations-list/evaluations-list.component.ts` | Loads evaluations, defines `getTimeLeftDisplay()`, getters `evaluationsDeadlineUnder7Days` and `evaluationsDeadlineUnder3Days`, `isDeadlineUnder3Days()`, and `filteredEvaluations` (sorted by `dateEnd`). |
-| `frontend/src/app/frontoffice/evaluations-list/evaluations-list.component.html` | Renders red/yellow warning boxes and each evaluation card; uses the getters and helpers above for "days left" and urgent styling. |
-| `frontend/src/app/frontoffice/evaluations-list/evaluations-list.component.css` | Styles for `.deadline-warning`, `.deadline-warning-urgent`, `.eval-card-urgent`, `.eval-time-left-urgent`, `.expired`. |
+| `evaluations-list/evaluations-list.component.ts` | Loads evaluations; defines `getTimeLeftDisplay()`, getters `evaluationsDeadlineUnder7Days` and `evaluationsDeadlineUnder3Days`, `isDeadlineUnder3Days()`, `filteredEvaluations`; opens the deadline dialog via `openDeadlineDialog(title, evaluations, zone)` with `zone: 'danger'` or `'prepared'`. |
+| `evaluations-list/evaluations-list.component.html` | Renders **small clickable bars** (red for 3 days, yellow for 7 days) that open the dialog; evaluation cards with "days left" and urgent styling. |
+| `evaluations-list/evaluations-list.component.css` | Styles for `.deadline-warning-bar`, `.deadline-warning-urgent`, `.eval-card-urgent`, `.eval-time-left-urgent`, `.expired`. |
+| `evaluations-list/deadline-warning-dialog.component.ts` | Dialog component: receives `title`, `evaluations`, `zone` ('danger' \| 'prepared'); shows list with `getTimeLeftDisplay()` and `formatDate()`; `goToEvaluation(e)` closes dialog and navigates to `/frontoffice/evaluations/:id/take`. |
+| `evaluations-list/deadline-warning-dialog.component.html` | Dialog template: header with zone badge (Danger zone / Prepare zone), list of evaluations (each clickable), Close button. |
+| `evaluations-list/deadline-warning-dialog.component.css` | Dialog styles: Danger zone (red theme) vs Prepare zone (amber theme), scrollable content, animations. |
 
 All logic uses **current time** and **evaluation.dateEnd**; no backend is involved.
 
@@ -117,33 +120,82 @@ This list = **evaluations due in 3 days or less** (names shown in the red warnin
 
 ## 5. How the template uses this (HTML)
 
-### 5.1 Red warning (3 days or less)
+### 5.1 Clickable warning bars (open popup)
 
-- Shown only when **not loading** and **there is at least one** evaluation in `evaluationsDeadlineUnder3Days`.
-- The box lists **each evaluation by name**, and for each we show the same “time left” text and the “until” date.
+Instead of full warning boxes, the page shows **two small clickable bars** when there are evaluations in the 3-day or 7-day window. Clicking a bar opens a **popup dialog** with the list of evaluations (Danger zone for 3 days, Prepare zone for 7 days). Each list item in the popup is clickable and navigates to that evaluation’s “take” page.
+
+**File:** `evaluations-list.component.html`
 
 ```html
-<!-- Urgent: evaluations ending in 3 days or less (red warning with names) -->
-<div class="deadline-warning deadline-warning-urgent"
-     *ngIf="!loading && evaluationsDeadlineUnder3Days.length > 0">
-  <div class="deadline-warning-header">
-    <mat-icon>error</mat-icon>
-    <span>Ending in 3 days or less</span>
-  </div>
-  <p class="deadline-warning-intro">The following evaluations are due very soon:</p>
-  <ul class="deadline-warning-list">
-    <li *ngFor="let e of evaluationsDeadlineUnder3Days">
-      <strong>{{ e.title }}</strong> — {{ getTimeLeftDisplay(e.dateEnd) }} (until {{ formatDate(e.dateEnd) }})
-    </li>
-  </ul>
-</div>
+<!-- Urgent: 3 days or less → opens Danger zone popup -->
+<button type="button" class="deadline-warning-bar deadline-warning-urgent"
+  *ngIf="!loading && evaluationsDeadlineUnder3Days.length > 0"
+  (click)="openDeadlineDialog('Ending in 3 days or less', evaluationsDeadlineUnder3Days, 'danger')">
+  <mat-icon>error</mat-icon>
+  <span>Ending in 3 days or less</span>
+  <span class="deadline-count">({{ evaluationsDeadlineUnder3Days.length }})</span>
+</button>
+
+<!-- 7 days → opens Prepare zone popup -->
+<button type="button" class="deadline-warning-bar"
+  *ngIf="!loading && evaluationsDeadlineUnder7Days.length > 0"
+  (click)="openDeadlineDialog('Evaluations ending in less than 7 days', evaluationsDeadlineUnder7Days, 'prepared')">
+  <mat-icon>warning</mat-icon>
+  <span>Ending in less than 7 days</span>
+  <span class="deadline-count">({{ evaluationsDeadlineUnder7Days.length }})</span>
+</button>
 ```
 
-So: **warning with red style** + **names** from `evaluationsDeadlineUnder3Days` + **days/hours left** from `getTimeLeftDisplay(e.dateEnd)`.
+**File:** `evaluations-list.component.ts`
 
-In addition, **every evaluation that has 3 days or less left** is also styled in **red in the list**: the evaluation card gets a red top strip, red border/shadow, and the "time left" badge on the card is red. So the warning lists the names, and the same evaluations are visually highlighted in red in the grid below.
+```typescript
+openDeadlineDialog(title: string, evaluations: Evaluation[], zone: 'danger' | 'prepared'): void {
+  this.dialog.open(DeadlineWarningDialogComponent, {
+    data: { title, evaluations, zone },
+    width: 'min(440px, 95vw)',
+    maxHeight: '90vh'
+  });
+}
+```
 
-### 5.2 Red styling on evaluation cards (3 days or less)
+- **Danger zone** (`zone: 'danger'`): red theme, “Danger zone” badge, subtitle “Due very soon — act now”.
+- **Prepare zone** (`zone: 'prepared'`): amber theme, “Prepare zone” badge, subtitle “Get ready — plan your time”.
+- The dialog content is **scrollable** when there are many evaluations; the **Close** button stays visible at the bottom.
+
+### 5.2 Popup dialog: click an evaluation to go to it
+
+**File:** `deadline-warning-dialog.component.ts`
+
+Each evaluation row in the dialog is clickable. Clicking it closes the dialog and navigates to the take page for that evaluation.
+
+```typescript
+goToEvaluation(e: Evaluation): void {
+  this.dialogRef.close();
+  if (e?.id) {
+    this.router.navigate(['/frontoffice/evaluations', e.id, 'take']);
+  }
+}
+```
+
+**File:** `deadline-warning-dialog.component.html` (list item)
+
+```html
+<li *ngFor="let e of evaluations; let i = index" ...
+    (click)="goToEvaluation(e)" role="button" tabindex="0"
+    (keydown.enter)="goToEvaluation(e)" (keydown.space)="goToEvaluation(e)">
+  <div class="item-icon">...</div>
+  <div class="item-body">
+    <strong>{{ e.title }}</strong>
+    <div class="item-meta">
+      <span class="time-pill">{{ getTimeLeftDisplay(e.dateEnd) }}</span>
+      <span class="until">Until {{ formatDate(e.dateEnd) }}</span>
+    </div>
+  </div>
+  <mat-icon class="item-go-icon">play_arrow</mat-icon>
+</li>
+```
+
+### 5.3 Red styling on evaluation cards (3 days or less)
 
 For each evaluation card we check if its deadline is in 3 days or less. If yes, we add the class `eval-card-urgent` to the card and `eval-time-left-urgent` to the "time left" badge. That way the card and the badge are shown in red, not only the warning box.
 
@@ -190,28 +242,6 @@ isDeadlineUnder3Days(e: Evaluation): boolean {
 
 So: the **same evaluations** that appear in the red warning (by name) are the ones that get the **red card** and **red "time left" badge** in the list.
 
-### 5.3 Yellow warning (less than 7 days)
-
-**File:** `evaluations-list.component.html`
-
-Same idea with the 7-day list and a yellow style (class `deadline-warning` only, no `deadline-warning-urgent`):
-
-```html
-<!-- Warning: evaluations ending in less than 7 days -->
-<div class="deadline-warning"
-     *ngIf="!loading && evaluationsDeadlineUnder7Days.length > 0">
-  <div class="deadline-warning-header">
-    <mat-icon>warning</mat-icon>
-    <span>Evaluations ending in less than 7 days</span>
-  </div>
-  <ul class="deadline-warning-list">
-    <li *ngFor="let e of evaluationsDeadlineUnder7Days">
-      <strong>{{ e.title }}</strong> — {{ getTimeLeftDisplay(e.dateEnd) }} (until {{ formatDate(e.dateEnd) }})
-    </li>
-  </ul>
-</div>
-```
-
 ### 5.4 "Days left" on each evaluation card
 
 **File:** `evaluations-list.component.html`
@@ -227,7 +257,7 @@ For **each card** we call `getTimeLeftDisplay(e.dateEnd)` and show it in a span.
 So:
 - **Same deadline** → same “time left” text (e.g. all with 1 day left show **"1 day left"**).
 - **Expired** → text is “Expired” and the badge uses the `expired` class (grey).
-- **3 days or less left** → the badge gets the `eval-time-left-urgent` class (red), and the card gets `eval-card-urgent` (red top strip and border). See section 5.2.
+- **3 days or less left** → the badge gets the `eval-time-left-urgent` class (red), and the card gets `eval-card-urgent` (red top strip and border). See section 5.3.
 
 ---
 
@@ -254,13 +284,15 @@ So evaluations with the **same** (or very close) **deadline** end up **next to e
 
 ## 7. Summary
 
-| What you see              | How it’s done |
-|---------------------------|---------------|
-| “1 day left” on a card    | `getTimeLeftDisplay(e.dateEnd)` in the card template. |
-| Red warning + names       | Getter `evaluationsDeadlineUnder3Days`; template shows it only when length > 0 and lists `e.title` + time left. |
+| What you see | How it’s done |
+|--------------|----------------|
+| “1 day left” on a card | `getTimeLeftDisplay(e.dateEnd)` in the card template. |
+| **Red bar** (3 days or less) | Clickable bar; `openDeadlineDialog(..., 'danger')` opens the **Danger zone** popup with the list. |
+| **Yellow bar** (under 7 days) | Clickable bar; `openDeadlineDialog(..., 'prepared')` opens the **Prepare zone** popup. |
+| **Popup list** | `DeadlineWarningDialogComponent`: shows evaluations with time left and “Until” date; scrollable when many; Close button at bottom. |
+| **Click an evaluation in the popup** | `goToEvaluation(e)` closes the dialog and navigates to `/frontoffice/evaluations/:id/take`. |
 | **Red card** (3 days or less) | `isDeadlineUnder3Days(e)` adds class `eval-card-urgent` (red top strip, border, shadow). |
 | **Red "time left" badge** on those cards | `isDeadlineUnder3Days(e)` adds class `eval-time-left-urgent` (red background). |
-| Yellow warning + names    | Getter `evaluationsDeadlineUnder7Days`; same idea in the template. |
 | Same deadline next to each other | `filteredEvaluations` is sorted by `dateEnd` (ascending). |
 
 All logic uses only **current time** and **evaluation.dateEnd**; no backend changes are required.

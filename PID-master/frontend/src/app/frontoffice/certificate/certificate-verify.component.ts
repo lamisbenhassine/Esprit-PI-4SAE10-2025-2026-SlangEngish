@@ -12,6 +12,7 @@ export class CertificateVerifyComponent implements OnInit {
   studentName = '';
   certificateDate = '';
   platformName = PLATFORM_NAME;
+  level = '';
 
   constructor(private route: ActivatedRoute) {}
 
@@ -23,6 +24,7 @@ export class CertificateVerifyComponent implements OnInit {
         month: 'long',
         day: 'numeric'
       });
+      this.level = params['level'] || '';
     });
   }
 }

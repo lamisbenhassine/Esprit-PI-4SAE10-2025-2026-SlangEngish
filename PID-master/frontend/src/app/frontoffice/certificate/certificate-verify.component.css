@@ -45,6 +45,16 @@
   color: #c9a227;
 }
 
+.verify-level {
+  font-size: 16px;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.verify-level strong {
+  color: #c9a227;
+}
+
 .verify-date {
   font-size: 14px;
   color: #666;

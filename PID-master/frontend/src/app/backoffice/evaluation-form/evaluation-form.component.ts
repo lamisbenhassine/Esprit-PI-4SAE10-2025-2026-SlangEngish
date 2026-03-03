@@ -37,7 +37,8 @@ export class EvaluationFormComponent implements OnInit {
       dateEndTime: ['17:00', Validators.required],
       durationMinutes: [60, [Validators.required, Validators.min(1)]],
       numberOfAttempts: [2, [Validators.required, Validators.min(1)]],
-      totalScore: [100, [Validators.required, Validators.min(0)]]
+      totalScore: [100, [Validators.required, Validators.min(0)]],
+      certificateEvaluation: [false]
     });
   }
 
@@ -65,7 +66,8 @@ export class EvaluationFormComponent implements OnInit {
           dateEndTime: end.time,
           durationMinutes: e.durationMinutes ?? 60,
           numberOfAttempts: e.numberOfAttempts ?? 2,
-          totalScore: e.totalScore ?? 100
+          totalScore: e.totalScore ?? 100,
+          certificateEvaluation: e.certificateEvaluation ?? false
         });
         if (e.imageUrl) this.imagePreviewUrl = getDisplayUploadUrl(e.imageUrl);
         this.loading = false;
@@ -170,7 +172,8 @@ export class EvaluationFormComponent implements OnInit {
       dateEnd,
       durationMinutes: v.durationMinutes,
       numberOfAttempts: v.numberOfAttempts,
-      totalScore: v.totalScore
+      totalScore: v.totalScore,
+      certificateEvaluation: !!v.certificateEvaluation
     };
     this.saving = true;
     if (this.id) {

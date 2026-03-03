@@ -20,8 +20,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -312,18 +315,49 @@ public class EvaluationAttemptServiceImpl implements EvaluationAttemptService {
     @Override
     public CertificateEligibilityResponse getCertificateEligibility(Long userId) {
         List<EvaluationAttempt> submitted = evaluationAttemptRepository.findByUserIdAndStatusWithEvaluation(userId, AttemptStatus.SUBMITTED);
-        java.util.Set<Long> passedEvaluationIds = new java.util.HashSet<>();
+        // Best score (as ratio 0..1) per evaluation id; order preserved for consistent list
+        Map<Long, Double> bestPctPerEval = new LinkedHashMap<>();
+        Map<Long, String> evalTitles = new LinkedHashMap<>();
+
         for (EvaluationAttempt a : submitted) {
             if (a.getScore() == null) continue;
             Evaluation ev = a.getEvaluation();
             if (ev == null || ev.getTotalScore() == null || ev.getTotalScore() <= 0) continue;
+            // Only count evaluations marked as "certificate evaluations" (one of the 5)
+            if (!Boolean.TRUE.equals(ev.getCertificateEvaluation())) continue;
             double pct = a.getScore() / ev.getTotalScore();
             if (pct >= 0.5) {
-                passedEvaluationIds.add(ev.getId());
+                Long id = ev.getId();
+                bestPctPerEval.merge(id, pct, Math::max);
+                evalTitles.putIfAbsent(id, ev.getTitle() != null ? ev.getTitle() : "Evaluation");
             }
         }
-        int passedCount = passedEvaluationIds.size();
+
+        int passedCount = bestPctPerEval.size();
         boolean eligible = passedCount >= 5;
-        return new CertificateEligibilityResponse(eligible, passedCount);
+
+        List<String> passedEvaluationTitles = new ArrayList<>(evalTitles.values());
+        double certificateScore = 0.0;
+        String level = null;
+
+        if (eligible && !bestPctPerEval.isEmpty()) {
+            certificateScore = bestPctPerEval.values().stream().mapToDouble(Double::doubleValue).average().orElse(0.0) * 100.0;
+            level = getLevelFromScore(certificateScore);
+        }
+
+        return new CertificateEligibilityResponse(eligible, passedCount, passedEvaluationTitles, certificateScore, level);
+    }
+
+    /**
+     * Map certificate score (0–100) to CEFR-style level.
+     * 0–39 A1, 40–54 A2, 55–69 B1, 70–83 B2, 84–91 C1, 92–100 C2.
+     */
+    private static String getLevelFromScore(double score) {
+        if (score >= 92) return "C2";
+        if (score >= 84) return "C1";
+        if (score >= 70) return "B2";
+        if (score >= 55) return "B1";
+        if (score >= 40) return "A2";
+        return "A1";
     }
 }

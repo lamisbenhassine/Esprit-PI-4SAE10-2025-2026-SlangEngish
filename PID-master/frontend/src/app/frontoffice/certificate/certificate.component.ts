@@ -23,6 +23,10 @@ export class CertificateComponent implements OnInit {
   studentName = '';
   certificateDate = '';
   exportingPdf = false;
+  /** Evaluations the user passed (≥50%); shown on certificate when eligible. */
+  passedEvaluationTitles: string[] = [];
+  /** Level A1–C2 from certificate score (0–100). */
+  certificateLevel = '';
   /** Only true in the browser; avoids SSR / NotYetImplemented from angularx-qrcode. */
   showQr = false;
 
@@ -48,6 +52,8 @@ export class CertificateComponent implements OnInit {
       next: (res) => {
         this.eligible = res.eligible;
         this.passedCount = res.passedCount;
+        this.passedEvaluationTitles = res.passedEvaluationTitles ?? [];
+        this.certificateLevel = res.level ?? '';
         this.certificateDate = new Date().toLocaleDateString('en-US', {
           weekday: 'long',
           year: 'numeric',
@@ -91,12 +97,13 @@ export class CertificateComponent implements OnInit {
     return REQUIRED_PASSED;
   }
 
-  /** URL that the QR code points to: verification page with student name and date. */
+  /** URL that the QR code points to: verification page with student name, date, and level. */
   get verificationUrl(): string {
     const base = typeof window !== 'undefined' ? window.location.origin : '';
     const name = encodeURIComponent(this.studentName || 'Certificate Holder');
     const date = encodeURIComponent(this.certificateDate || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
-    return `${base}/frontoffice/certificate/verify?name=${name}&date=${date}`;
+    const level = this.certificateLevel ? '&level=' + encodeURIComponent(this.certificateLevel) : '';
+    return `${base}/frontoffice/certificate/verify?name=${name}&date=${date}${level}`;
   }
 
   backToEvaluations(): void {

@@ -259,6 +259,21 @@
   min-width: 140px;
 }
 
+.certificate-toggle-wrap {
+  margin-top: 20px;
+  padding: 12px 0;
+}
+
+.certificate-toggle-wrap .certificate-toggle {
+  font-weight: 600;
+  color: #4c1d95;
+}
+
+.certificate-toggle-wrap .certificate-checkbox {
+  font-weight: 600;
+  color: #4c1d95;
+}
+
 /* Form actions */
 .form-actions {
   display: flex;

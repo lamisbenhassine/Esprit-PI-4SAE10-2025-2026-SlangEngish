@@ -129,6 +129,59 @@
   margin: 0 auto 20px auto;
 }
 
+.certificate-level {
+  font-size: 16px;
+  color: #1a1a2e;
+  margin: 0 0 16px 0;
+}
+
+.certificate-level .level-label {
+  color: #666;
+  margin-right: 6px;
+}
+
+.certificate-level .level-value {
+  color: #c9a227;
+  font-size: 1.25em;
+}
+
+.passed-evaluations {
+  margin: 0 0 20px 0;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.passed-evaluations-label {
+  font-size: 13px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 8px 0;
+}
+
+.passed-evaluations-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.6;
+}
+
+.passed-evaluations-list li {
+  padding: 2px 0;
+  padding-left: 1em;
+  text-indent: -1em;
+}
+
+.passed-evaluations-list li::before {
+  content: '✓ ';
+  color: #c9a227;
+  font-weight: bold;
+  margin-right: 4px;
+}
+
 .certificate-date {
   font-size: 15px;
   color: #666;

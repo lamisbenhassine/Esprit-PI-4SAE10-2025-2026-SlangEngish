@@ -8,17 +8,24 @@ This document explains **every part** of the SlangEnglish certificate: the rule,
 
 - A student **earns the certificate** when they have **passed at least 5 different evaluations** with **≥ 50%** in at least one **submitted** attempt per evaluation.
 - **“Passed”** = for that evaluation, the student has at least one attempt with `status = SUBMITTED` and `score / maxScore >= 0.5` (maxScore = evaluation’s totalScore).
-- **“5 different evaluations”** = we count **distinct evaluation IDs** that were passed, not total attempts. So 10 attempts on 2 evaluations still counts as 2.
+- **“5 different evaluations”** = we count **distinct evaluation IDs** that were passed, not total attempts. The certificate references **these same evaluations** (their titles are returned and shown on the certificate), not random ones.
+- **Level (A1–C2):** When eligible, the certificate shows a **level** based on the **certificate score** (0–100). The certificate score is the **average of the best attempt percentage** (score/maxScore × 100) for each passed evaluation. The level is then:
+  - **0–39** → A1  
+  - **40–54** → A2  
+  - **55–69** → B1  
+  - **70–83** → B2  
+  - **84–91** → C1  
+  - **92–100** → C2  
 
 ---
 
 ## 2. Backend – Overview
 
-The backend does three things:
+The backend does the following:
 
-1. **DTO**: Define the JSON we return (`eligible`, `passedCount`).
-2. **Repository**: Load all SUBMITTED attempts for a user **with** the evaluation entity (so we have `totalScore`).
-3. **Service**: From those attempts, compute how many distinct evaluations were “passed” (score ≥ 50% of totalScore), then set `eligible = (passedCount >= 5)`.
+1. **DTO**: Define the JSON we return: `eligible`, `passedCount`, `passedEvaluationTitles` (list of evaluation titles the user passed), `certificateScore` (0–100, average of best attempt % per passed evaluation), `level` (A1–C2).
+2. **Repository**: Load all SUBMITTED attempts for a user **with** the evaluation entity (so we have `totalScore` and `title`).
+3. **Service**: From those attempts, compute for each evaluation the **best** attempt percentage (score/totalScore); count as “passed” when ≥ 50%. Build the list of passed evaluation titles, set `eligible = (passedCount >= 5)`. When eligible, compute `certificateScore` = average of those best percentages × 100, and `level` from the score bands (0–39 A1, 40–54 A2, 55–69 B1, 70–83 B2, 84–91 C1, 92–100 C2).
 4. **Controller**: Expose `GET /api/certificate/eligibility/{userId}` and return the DTO.
 
 ---
@@ -28,28 +35,28 @@ The backend does three things:
 **File:** `backend/microservices/evaluation/src/main/java/com/evaluation/evaluation/dto/CertificateEligibilityResponse.java`
 
 ```java
-package com.evaluation.evaluation.dto;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CertificateEligibilityResponse {
     private boolean eligible;
     private int passedCount;
+    /** Titles of the evaluations the user passed (≥50%); used on the certificate. */
+    private List<String> passedEvaluationTitles;
+    /** Average score (0–100) across best attempt per passed evaluation; used for level. */
+    private Double certificateScore;
+    /** Level A1–C2 based on certificateScore: 0–39 A1, 40–54 A2, 55–69 B1, 70–83 B2, 84–91 C1, 92–100 C2. */
+    private String level;
 }
 ```
 
 **Explanation:**
 
-- This is the object sent back to the frontend.
 - `eligible`: `true` when the user has passed **at least 5** different evaluations with ≥ 50%.
-- `passedCount`: number of **distinct** evaluations the user has passed (with ≥ 50% in at least one submitted attempt).
-- Lombok generates getters/setters and constructors; Spring serializes this to JSON like:  
-  `{ "eligible": true, "passedCount": 5 }`.
+- `passedCount`: number of **distinct** evaluations the user has passed.
+- `passedEvaluationTitles`: list of **evaluation titles** for those passed evaluations (the same ones that count toward the 5); shown on the certificate so it’s clear which evaluations the certificate is for.
+- `certificateScore`: when eligible, the **average** of (best attempt score / maxScore × 100) for each passed evaluation, so a number between 0 and 100.
+- `level`: when eligible, one of **A1, A2, B1, B2, C1, C2** from the certificate score bands above.
 
 ---
 
@@ -99,44 +106,65 @@ import com.evaluation.evaluation.dto.CertificateEligibilityResponse;
 
 **Method implementation:**
 
+The service loads all SUBMITTED attempts with evaluation, then for each attempt with score ≥ 50% of that evaluation’s totalScore it tracks the **best** percentage per evaluation (using a map). It also keeps the evaluation title for each passed evaluation. Then:
+
+- `passedCount` = size of that map.
+- `eligible` = passedCount >= 5.
+- `passedEvaluationTitles` = list of titles (in stable order).
+- When eligible, `certificateScore` = average of the best percentages × 100.
+- `level` = from `getLevelFromScore(certificateScore)` using the bands: 0–39 A1, 40–54 A2, 55–69 B1, 70–83 B2, 84–91 C1, 92–100 C2.
+
 ```java
 @Override
 public CertificateEligibilityResponse getCertificateEligibility(Long userId) {
     List<EvaluationAttempt> submitted = evaluationAttemptRepository.findByUserIdAndStatusWithEvaluation(userId, AttemptStatus.SUBMITTED);
-    java.util.Set<Long> passedEvaluationIds = new java.util.HashSet<>();
+    Map<Long, Double> bestPctPerEval = new LinkedHashMap<>();
+    Map<Long, String> evalTitles = new LinkedHashMap<>();
+
     for (EvaluationAttempt a : submitted) {
         if (a.getScore() == null) continue;
         Evaluation ev = a.getEvaluation();
         if (ev == null || ev.getTotalScore() == null || ev.getTotalScore() <= 0) continue;
         double pct = a.getScore() / ev.getTotalScore();
         if (pct >= 0.5) {
-            passedEvaluationIds.add(ev.getId());
+            Long id = ev.getId();
+            bestPctPerEval.merge(id, pct, Math::max);
+            evalTitles.putIfAbsent(id, ev.getTitle() != null ? ev.getTitle() : "Evaluation");
         }
     }
-    int passedCount = passedEvaluationIds.size();
+
+    int passedCount = bestPctPerEval.size();
     boolean eligible = passedCount >= 5;
-    return new CertificateEligibilityResponse(eligible, passedCount);
+    List<String> passedEvaluationTitles = new ArrayList<>(evalTitles.values());
+    double certificateScore = 0.0;
+    String level = null;
+
+    if (eligible && !bestPctPerEval.isEmpty()) {
+        certificateScore = bestPctPerEval.values().stream().mapToDouble(Double::doubleValue).average().orElse(0.0) * 100.0;
+        level = getLevelFromScore(certificateScore);
+    }
+
+    return new CertificateEligibilityResponse(eligible, passedCount, passedEvaluationTitles, certificateScore, level);
+}
+
+/** 0–39 A1, 40–54 A2, 55–69 B1, 70–83 B2, 84–91 C1, 92–100 C2. */
+private static String getLevelFromScore(double score) {
+    if (score >= 92) return "C2";
+    if (score >= 84) return "C1";
+    if (score >= 70) return "B2";
+    if (score >= 55) return "B1";
+    if (score >= 40) return "A2";
+    return "A1";
 }
 ```
 
 **Explanation step by step:**
 
-1. **Load attempts:**  
-   `findByUserIdAndStatusWithEvaluation(userId, SUBMITTED)` returns all submitted attempts for that user, with evaluation loaded.
-
-2. **Collect passed evaluation IDs:**  
-   We use a `Set<Long>` so each evaluation is counted **once** even if the user passed it in multiple attempts.
-
-3. **For each attempt:**  
-   - Skip if `score` is null (shouldn’t happen for SUBMITTED, but safe).  
-   - Skip if evaluation or `totalScore` is null or ≤ 0 (avoid division by zero).  
-   - Compute `pct = score / totalScore`.  
-   - If `pct >= 0.5` (50% or more), add `ev.getId()` to the set.
-
-4. **Result:**  
-   - `passedCount` = number of distinct evaluations passed.  
-   - `eligible` = `passedCount >= 5`.  
-   - Return a new `CertificateEligibilityResponse(eligible, passedCount)`.
+1. Load all SUBMITTED attempts with evaluation.
+2. For each attempt with score ≥ 50% of evaluation totalScore: keep the **maximum** percentage per evaluation id (`bestPctPerEval`) and store the evaluation title (`evalTitles`).
+3. `passedCount` = number of distinct passed evaluations; `eligible` = passedCount >= 5.
+4. `passedEvaluationTitles` = list of titles (order from iteration).
+5. When eligible: `certificateScore` = average of best percentages × 100; `level` = result of `getLevelFromScore(certificateScore)`.
 
 ---
 
@@ -190,18 +218,26 @@ getUserById(id: number): Observable<User> {
   return this.http.get<User>(`${API_URL}/users/${id}`);
 }
 
-getCertificateEligibility(userId: number): Observable<{ eligible: boolean; passedCount: number }> {
-  return this.http.get<{ eligible: boolean; passedCount: number }>(`${API_URL}/certificate/eligibility/${userId}`);
+getCertificateEligibility(userId: number): Observable<CertificateEligibilityResponse> {
+  return this.http.get<CertificateEligibilityResponse>(`${API_URL}/certificate/eligibility/${userId}`);
 }
 ```
+
+**CertificateEligibilityResponse** (interface in the same service or types file):
+
+- `eligible: boolean`
+- `passedCount: number`
+- `passedEvaluationTitles?: string[]` – titles of the evaluations the user passed (shown on the certificate)
+- `certificateScore?: number` – average score 0–100 used for level
+- `level?: string` – A1, A2, B1, B2, C1, or C2
 
 **Explanation:**
 
 - **getUserById(id):**  
-  Used to get the current user’s `name` and `surname` for the certificate text. The backend already has `GET /api/users/{id}` (UserController).
+  Used to get the current user’s `name` and `surname` for the certificate text.
 
 - **getCertificateEligibility(userId):**  
-  Calls our new endpoint and returns an observable of `{ eligible, passedCount }`. The component will subscribe and set `eligible`, `passedCount`, and then show either the certificate or the “not yet eligible” view.
+  Calls the endpoint and returns an observable of the full response. The component sets `eligible`, `passedCount`, `passedEvaluationTitles`, `certificateLevel` (from `level`), and shows the certificate with the list of passed evaluations and “Level achieved: X” when eligible.
 
 ---
 
@@ -225,6 +261,8 @@ eligible = false;
 passedCount = 0;
 studentName = '';
 certificateDate = '';
+passedEvaluationTitles: string[] = [];
+certificateLevel = '';
 ```
 
 **Explanation:**
@@ -233,6 +271,11 @@ certificateDate = '';
 - `eligible` / `passedCount`: come from the API.
 - `studentName`: from `getUserById` (name + surname).
 - `certificateDate`: formatted “today” for the certificate (e.g. “Monday, February 23, 2025”).
+
+- `certificateDate`: formatted "today" for the certificate (e.g. "Monday, February 23, 2025").
+
+- `passedEvaluationTitles`: list of evaluation titles the user passed (the 5+ that count for the certificate); shown on the certificate.
+- `certificateLevel`: A1–C2 from the API when eligible; shown as "Level achieved: X".
 
 **ngOnInit:**
 
@@ -254,6 +297,8 @@ load(): void {
     next: (res) => {
       this.eligible = res.eligible;
       this.passedCount = res.passedCount;
+      this.passedEvaluationTitles = res.passedEvaluationTitles ?? [];
+      this.certificateLevel = res.level ?? '';
       this.certificateDate = new Date().toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
@@ -276,7 +321,7 @@ load(): void {
 
 - Gets `userId` from `CurrentUserService`.
 - Calls `getCertificateEligibility(userId)`. On success:  
-  - Sets `eligible` and `passedCount`.  
+  - Sets `eligible`, `passedCount`, `passedEvaluationTitles`, and `certificateLevel` (from `res.level`).  
   - Sets `certificateDate` to a long, readable date (e.g. “Monday, February 23, 2025”).  
   - Calls `loadStudentName(userId)` to fetch name/surname (async, so the certificate may show “Student” briefly then update).  
   - Sets `loading = false`.  
@@ -353,7 +398,7 @@ Used by both the certificate view and the “not eligible” view.
 
 2. **When not loading:**  
    - **If eligible:**  
-     - Show the certificate card (platform name, “Certificate of Achievement”, “This is to certify that”, student name, congratulation message, date, seal with SlangEnglish).  
+     - Show the certificate card (platform name, “Certificate of Achievement”, “This is to certify that”, student name, congratulation message, date, level achieved A1–C2 when present, list of passed evaluation titles, seal with SlangEnglish).  
      - Show “Back to evaluations” button.  
    - **If not eligible:**  
      - Show “Certificate not yet available”, the same congratulation message (X/5), a progress bar, hint “Pass N more…”, and “Go to evaluations” button.
@@ -371,7 +416,7 @@ Used by both the certificate view and the “not eligible” view.
 
 **Certificate (eligible):**
 
-The certificate div has `#certificateEl` so the component can pass it to html2pdf. The actions row has "Export PDF" and "Back to evaluations".
+The certificate div has `#certificateEl` so the component can pass it to html2pdf. When eligible it shows **Level achieved: X** (from `certificateLevel`, A1–C2) and **Passed evaluations (required for this certificate):** with a list of `passedEvaluationTitles`. The actions row has "Export PDF" and "Back to evaluations".
 
 ```html
 <div class="certificate-wrapper" *ngIf="eligible">
@@ -389,6 +434,16 @@ The certificate div has `#certificateEl` so the component can pass it to html2pd
           <p class="certificate-label">This is to certify that</p>
           <h1 class="student-name">{{ studentName }}</h1>
           <p class="congrats-message">{{ congratulationMessage }}</p>
+          <p class="certificate-level" *ngIf="certificateLevel">
+            <span class="level-label">Level achieved:</span>
+            <strong class="level-value">{{ certificateLevel }}</strong>
+          </p>
+          <div class="passed-evaluations" *ngIf="passedEvaluationTitles.length > 0">
+            <p class="passed-evaluations-label">Passed evaluations (required for this certificate):</p>
+            <ul class="passed-evaluations-list">
+              <li *ngFor="let title of passedEvaluationTitles">{{ title }}</li>
+            </ul>
+          </div>
           <p class="certificate-date">{{ certificateDate }}</p>
         </div>
         <div class="certificate-footer">
@@ -416,6 +471,8 @@ The certificate div has `#certificateEl` so the component can pass it to html2pd
 - **platformName** = “SlangEnglish” (header + seal).  
 - **studentName** = from API (name + surname).  
 - **congratulationMessage** = success or progress text.  
+- **certificateLevel** = A1–C2 from API when eligible; shown as "Level achieved: X".
+- **passedEvaluationTitles** = list of evaluation titles the user passed; shown as a bullet list.
 - **certificateDate** = long date set in `load()`.
 
 **Not eligible:**

@@ -43,6 +43,10 @@ public class Evaluation {
 
     private Double totalScore;
 
+    /** When true, this evaluation counts as one of the 5 required for the certificate. */
+    @Column(name = "certificate_evaluation")
+    private Boolean certificateEvaluation = false;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
