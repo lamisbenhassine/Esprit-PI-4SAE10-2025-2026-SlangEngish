@@ -42,6 +42,23 @@ export class UserManagementComponent implements OnInit {
     return u?.role === 'ADMIN';
   }
 
+  get isTutor(): boolean {
+    const u = this.authService.getCurrentUser();
+    return u?.role === 'TUTOR';
+  }
+
+  /**
+   * Un ADMIN peut gérer le statut de tous les utilisateurs sauf les ADMIN.
+   * Un TUTOR (prof) peut gérer uniquement les comptes STUDENT.
+   */
+  canManageStatus(user: User): boolean {
+    const current = this.authService.getCurrentUser();
+    if (!current || !user.id) return false;
+    if (current.role === 'ADMIN' && user.role !== 'ADMIN') return true;
+    if (current.role === 'TUTOR' && user.role === 'STUDENT') return true;
+    return false;
+  }
+
   ngOnInit(): void {
     this.loadUsers();
   }
@@ -137,7 +154,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   blockUser(user: User): void {
-    if (!user.id || !this.isAdmin) return;
+    if (!user.id || !this.canManageStatus(user)) return;
     const adminId = this.authService.getCurrentUser()?.id;
     if (!adminId) return;
     this.userService.setStatus(user.id, adminId, 'INACTIVE').subscribe({
@@ -153,7 +170,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   unblockUser(user: User): void {
-    if (!user.id || !this.isAdmin) return;
+    if (!user.id || !this.canManageStatus(user)) return;
     const adminId = this.authService.getCurrentUser()?.id;
     if (!adminId) return;
     this.userService.setStatus(user.id, adminId, 'ACTIVE').subscribe({

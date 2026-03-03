@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { UserService, Role, User } from '../../services/user.service';
@@ -42,6 +42,9 @@ import { UserService, Role, User } from '../../services/user.service';
           </mat-error>
           <mat-error *ngIf="userForm.get('email')?.hasError('email')">
             Please enter a valid email
+          </mat-error>
+          <mat-error *ngIf="userForm.get('email')?.hasError('forbiddenDomain')">
+            Please use a real email domain (e.g. nom.prenom&#64;gmail.com).
           </mat-error>
         </mat-form-field>
 
@@ -120,10 +123,38 @@ export class AddUserDialogComponent {
     this.userForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [Validators.required, Validators.email, this.forbiddenDomainValidator()]],
       password: ['', [Validators.required, Validators.minLength(8)]],
       role: ['STUDENT', Validators.required]
     });
+  }
+
+  /** Refuse certains domaines d'email de test (example.com, test.com, etc.) */
+  private forbiddenDomainValidator(): ValidatorFn {
+    const blockedDomains = [
+      'example.com',
+      'exemple.com',
+      'test.com',
+      'test.fr',
+      'mailinator.com',
+      'tempmail.com',
+      'yopmail.com'
+    ];
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = (control.value || '').toString();
+      if (!value) {
+        return null;
+      }
+      const atIndex = value.indexOf('@');
+      if (atIndex === -1) {
+        return null;
+      }
+      const domain = value.substring(atIndex + 1).toLowerCase();
+      if (blockedDomains.includes(domain)) {
+        return { forbiddenDomain: true };
+      }
+      return null;
+    };
   }
 
   onCancel(): void {

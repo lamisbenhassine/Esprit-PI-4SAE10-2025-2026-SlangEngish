@@ -29,8 +29,30 @@ public class UserServiceImpl implements UserService {
     private final PasswordResetEmailService passwordResetEmailService;
     private final PasswordResetWhatsAppService passwordResetWhatsAppService;
 
+    /** Bloque certains domaines d'email considérés comme non réels / de test. */
+    private boolean isBlockedEmailDomain(String email) {
+        if (email == null) {
+            return true;
+        }
+        String[] parts = email.split("@");
+        if (parts.length != 2) {
+            return true;
+        }
+        String domain = parts[1].toLowerCase();
+        return domain.equals("example.com")
+                || domain.equals("exemple.com")
+                || domain.equals("test.com")
+                || domain.equals("test.fr")
+                || domain.equals("mailinator.com")
+                || domain.equals("tempmail.com")
+                || domain.equals("yopmail.com");
+    }
+
     @Override
     public User createUser(User user) {
+        if (isBlockedEmailDomain(user.getEmail())) {
+            throw new IllegalArgumentException("Le domaine de l'email n'est pas autorisé. Utilisez une adresse email réelle.");
+        }
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new IllegalArgumentException("Email is already in use");
         }
@@ -46,6 +68,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User signup(SignupRequest request) {
+        if (isBlockedEmailDomain(request.getEmail())) {
+            throw new IllegalArgumentException("Le domaine de l'email n'est pas autorisé. Utilisez une adresse email réelle.");
+        }
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email is already in use");
         }
@@ -263,6 +288,9 @@ public class UserServiceImpl implements UserService {
         existing.setRole(user.getRole());
 
         if (!existing.getEmail().equals(user.getEmail())) {
+            if (isBlockedEmailDomain(user.getEmail())) {
+                throw new IllegalArgumentException("Le domaine de l'email n'est pas autorisé. Utilisez une adresse email réelle.");
+            }
             if (userRepository.existsByEmail(user.getEmail())) {
                 throw new IllegalArgumentException("Email is already in use");
             }
@@ -287,6 +315,9 @@ public class UserServiceImpl implements UserService {
         existing.setAddress(request.getAddress());
 
         if (!existing.getEmail().equals(request.getEmail())) {
+            if (isBlockedEmailDomain(request.getEmail())) {
+                throw new IllegalArgumentException("Le domaine de l'email n'est pas autorisé. Utilisez une adresse email réelle.");
+            }
             if (userRepository.existsByEmail(request.getEmail())) {
                 throw new IllegalArgumentException("Email is already in use");
             }
@@ -335,16 +366,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User setUserStatus(Long userId, Long adminId, Status status) {
-        User admin = userRepository.findById(adminId)
+        User actor = userRepository.findById(adminId)
                 .orElseThrow(() -> new EntityNotFoundException("Admin not found"));
-        if (admin.getRole() != Role.ADMIN) {
-            throw new IllegalArgumentException("Seul un administrateur peut bloquer ou débloquer un utilisateur.");
+
+        // ADMIN peut bloquer/débloquer tous les utilisateurs sauf les autres ADMIN.
+        // TUTOR (prof) peut activer/désactiver uniquement les comptes STUDENT.
+        if (actor.getRole() != Role.ADMIN && actor.getRole() != Role.TUTOR) {
+            throw new IllegalArgumentException("Seul un administrateur ou un professeur peut modifier le statut d'un utilisateur.");
         }
+
         User target = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
         if (target.getRole() == Role.ADMIN) {
             throw new IllegalArgumentException("Impossible de bloquer un administrateur.");
         }
+
+        if (actor.getRole() == Role.TUTOR && target.getRole() != Role.STUDENT) {
+            throw new IllegalArgumentException("Un professeur ne peut activer/désactiver que les comptes des étudiants.");
+        }
+
         target.setStatus(status);
         return userRepository.save(target);
     }

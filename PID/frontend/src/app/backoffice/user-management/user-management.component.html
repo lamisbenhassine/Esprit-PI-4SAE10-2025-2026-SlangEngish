@@ -6,7 +6,11 @@
       <p class="header-subtitle">Manage all users, their roles, and permissions</p>
     </div>
     <div class="header-actions">
-      <button mat-raised-button class="action-btn primary" (click)="addUser()">
+      <button
+        *ngIf="isAdmin"
+        mat-raised-button
+        class="action-btn primary"
+        (click)="addUser()">
         <mat-icon>person_add</mat-icon>
         <span>Add User</span>
       </button>
@@ -91,10 +95,15 @@
             <button mat-icon-button class="action-icon view" (click)="viewUser(user)" matTooltip="Voir">
               <mat-icon>visibility</mat-icon>
             </button>
-            <button mat-icon-button class="action-icon edit" (click)="editUser(user)" matTooltip="Modifier">
+            <button
+              *ngIf="isAdmin"
+              mat-icon-button
+              class="action-icon edit"
+              (click)="editUser(user)"
+              matTooltip="Modifier">
               <mat-icon>edit</mat-icon>
             </button>
-            <ng-container *ngIf="isAdmin && user.role !== 'ADMIN'">
+            <ng-container *ngIf="canManageStatus(user)">
               <button mat-icon-button class="action-icon block" (click)="blockUser(user)" *ngIf="(user.status ?? 'ACTIVE') !== 'INACTIVE'" matTooltip="Bloquer">
                 <mat-icon>block</mat-icon>
               </button>

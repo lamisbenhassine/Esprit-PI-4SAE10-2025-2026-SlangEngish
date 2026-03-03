@@ -39,7 +39,9 @@ public interface UserService {
 
     List<User> getAllUsers();
 
-    /** Seul un ADMIN peut bloquer/débloquer un utilisateur. */
+    /** Un ADMIN peut bloquer/débloquer n'importe quel utilisateur (sauf les ADMIN).
+     *  Un TUTOR (professeur) peut activer/désactiver uniquement les comptes STUDENT.
+     */
     User setUserStatus(Long userId, Long adminId, Status status);
 }
 

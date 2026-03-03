@@ -37,9 +37,12 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
     phone: '',
     address: ''
   };
+  emailTouched = false;
   hidePassword = true;
   hideConfirmPassword = true;
   agreeToTerms = false;
+  passwordStrengthLabel = '';
+  passwordStrengthLevel: 'weak' | 'medium' | 'strong' | '' = '';
   avatarPreview = '';
   /** Base64 sans préfixe data URL (envoyé au backend). */
   photoBase64 = '';
@@ -53,6 +56,42 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
     private router: Router,
     private authService: AuthService
   ) {}
+
+  onEmailBlur(): void {
+    this.emailTouched = true;
+  }
+
+  onPasswordInput(value: string): void {
+    this.signUpData.password = value;
+    this.updatePasswordStrength(value);
+  }
+
+  private updatePasswordStrength(password: string): void {
+    if (!password) {
+      this.passwordStrengthLabel = '';
+      this.passwordStrengthLevel = '';
+      return;
+    }
+
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/\d/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 2) {
+      this.passwordStrengthLevel = 'weak';
+      this.passwordStrengthLabel = 'Mot de passe faible';
+    } else if (score <= 4) {
+      this.passwordStrengthLevel = 'medium';
+      this.passwordStrengthLabel = 'Mot de passe moyen';
+    } else {
+      this.passwordStrengthLevel = 'strong';
+      this.passwordStrengthLabel = 'Mot de passe fort';
+    }
+  }
 
   ngAfterViewInit(): void {
     this.loadRecaptcha();
@@ -115,7 +154,26 @@ export class SignupComponent implements AfterViewInit, OnDestroy {
 
   isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    if (!emailRegex.test(email)) {
+      return false;
+    }
+
+    const blockedDomains = [
+      'example.com',
+      'exemple.com',
+      'test.com',
+      'test.fr',
+      'mailinator.com',
+      'tempmail.com',
+      'yopmail.com'
+    ];
+
+    const domain = email.split('@')[1]?.toLowerCase() || '';
+    if (blockedDomains.includes(domain)) {
+      return false;
+    }
+
+    return true;
   }
 
   isValidPhone(phone: string): boolean {

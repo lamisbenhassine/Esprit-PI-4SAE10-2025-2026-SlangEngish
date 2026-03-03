@@ -52,7 +52,7 @@ export class SigninComponent {
 
     this.authService.signin(this.signInData).subscribe({
       next: (user) => {
-        if (user.role === 'ADMIN' || user.role === 'CLUB_MANAGER') {
+        if (user.role === 'ADMIN' || user.role === 'CLUB_MANAGER' || user.role === 'TUTOR') {
           this.router.navigate(['/backoffice/users']);
         } else {
           this.router.navigate(['/frontoffice/dashboard']);
@@ -107,7 +107,7 @@ export class SigninComponent {
     this.isSubmitting = true;
     this.authService.googleSignin(idToken).subscribe({
       next: (user) => {
-        if (user.role === 'ADMIN' || user.role === 'CLUB_MANAGER') {
+        if (user.role === 'ADMIN' || user.role === 'CLUB_MANAGER' || user.role === 'TUTOR') {
           this.router.navigate(['/backoffice/users']);
         } else {
           this.router.navigate(['/frontoffice/dashboard']);
@@ -157,7 +157,7 @@ export class SigninComponent {
       this.isSubmitting = true;
       this.authService.facebookSignin(accessToken).subscribe({
         next: (user) => {
-          if (user.role === 'ADMIN' || user.role === 'CLUB_MANAGER') {
+          if (user.role === 'ADMIN' || user.role === 'CLUB_MANAGER' || user.role === 'TUTOR') {
             this.router.navigate(['/backoffice/users']);
           } else {
             this.router.navigate(['/frontoffice/dashboard']);

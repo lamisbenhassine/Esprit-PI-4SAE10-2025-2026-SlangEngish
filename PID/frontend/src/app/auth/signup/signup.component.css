@@ -81,6 +81,29 @@
   color: #666;
 }
 
+.field-error {
+  margin: -8px 0 12px 0;
+  font-size: 0.8rem;
+  color: #f44336;
+}
+
+.password-strength {
+  margin: -4px 0 8px 0;
+  font-size: 0.8rem;
+}
+
+.password-strength .weak {
+  color: #e53935;
+}
+
+.password-strength .medium {
+  color: #fb8c00;
+}
+
+.password-strength .strong {
+  color: #43a047;
+}
+
 /* Improved Material Form Field Styling - Fixed version */
 ::ng-deep .mat-mdc-form-field {
   width: 100% !important;

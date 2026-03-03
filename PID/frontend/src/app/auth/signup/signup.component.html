@@ -38,10 +38,16 @@
           [(ngModel)]="signUpData.email" 
           name="email" 
           type="email"
+          (blur)="onEmailBlur()"
           placeholder="john.doe@example.com"
           required>
         <mat-icon matSuffix>email</mat-icon>
       </mat-form-field>
+      <p 
+        *ngIf="emailTouched && !isValidEmail(signUpData.email)" 
+        class="field-error">
+        Veuillez saisir une adresse email valide (ex : nom.prenom&#64;gmail.com).
+      </p>
 
       <mat-form-field appearance="outline" class="form-field full-width">
         <mat-label>Phone Number</mat-label>
@@ -70,8 +76,9 @@
         <mat-label>Password</mat-label>
         <input 
           matInput 
-          [(ngModel)]="signUpData.password" 
+        [(ngModel)]="signUpData.password" 
           name="password" 
+        (ngModelChange)="onPasswordInput($event)"
           [type]="hidePassword ? 'password' : 'text'"
           placeholder="Min. 8 caractères, lettres et chiffres"
           required>
@@ -83,6 +90,15 @@
           <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
       </mat-form-field>
+      <div *ngIf="passwordStrengthLabel" class="password-strength">
+        <span [ngClass]="{
+          'weak': passwordStrengthLevel === 'weak',
+          'medium': passwordStrengthLevel === 'medium',
+          'strong': passwordStrengthLevel === 'strong'
+        }">
+          {{ passwordStrengthLabel }}
+        </span>
+      </div>
       <p class="password-hint">Le mot de passe doit contenir au moins 8 caractères, des lettres et des chiffres.</p>
 
       <mat-form-field appearance="outline" class="form-field full-width">
