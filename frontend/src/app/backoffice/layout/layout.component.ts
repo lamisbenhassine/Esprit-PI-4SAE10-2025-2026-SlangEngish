@@ -19,6 +19,7 @@ export class LayoutComponent {
     { id: 'clubs', label: 'Club Management', icon: 'groups', routerLink: '/backoffice/clubs' },
     { id: 'forum-mgmt', label: 'Forum Management', icon: 'chat', routerLink: '/backoffice/forum' },
     { id: 'sub-mgmt', label: 'Subscription Mgmt', icon: 'payment', routerLink: '/backoffice/subscription' },
+    { id: 'loyalty-accounts', label: 'Loyalty Accounts', icon: 'loyalty', routerLink: '/backoffice/loyalty-accounts' },
     { id: 'reports', label: 'Reports', icon: 'assessment', routerLink: '/backoffice/reports' },
     { id: 'settings', label: 'Settings', icon: 'settings', routerLink: '/backoffice/settings' }
   ];

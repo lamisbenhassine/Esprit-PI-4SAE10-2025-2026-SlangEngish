@@ -50,10 +50,14 @@ export class CheckoutComponent implements OnInit {
     if (navState?.['cart']) {
       this.cart = navState['cart'] as Cart;
       this.cartLoading = false;
+      // Loyalty summary depends on cart total
+      queueMicrotask(() => this.loadLoyaltySummary());
     }
     if (navState?.['appliedPromo']) {
       this.appliedPromo = navState['appliedPromo'];
       this.promoCodeInput = this.appliedPromo?.code ?? '';
+      // Promo affects totals → refresh loyalty max discount
+      queueMicrotask(() => this.loadLoyaltySummary());
     }
   }
 
@@ -109,6 +113,7 @@ export class CheckoutComponent implements OnInit {
       next: (cart) => {
         this.cart = cart;
         this.cartLoading = false;
+        this.loadLoyaltySummary();
       },
       error: () => {
         this.cartLoading = false;
@@ -145,6 +150,9 @@ export class CheckoutComponent implements OnInit {
       next: (result) => {
         this.promoApplying = false;
         this.appliedPromo = result;
+        // Promo changes total → recompute loyalty
+        this.loyaltyPreview = null;
+        this.loadLoyaltySummary();
         if (result.valid) {
           this.snackBar.open(`Code "${result.code}" appliqué : -${result.discountAmount?.toFixed(2)} €`, 'OK', {
             duration: 3000,
@@ -167,6 +175,8 @@ export class CheckoutComponent implements OnInit {
   removePromo(): void {
     this.appliedPromo = null;
     this.promoCodeInput = '';
+    this.loyaltyPreview = null;
+    this.loadLoyaltySummary();
   }
 
   loadLoyaltySummary(): void {
@@ -181,10 +191,11 @@ export class CheckoutComponent implements OnInit {
         this.loyaltySummary = summary;
         this.loyaltyLoading = false;
       },
-      error: () => {
+      error: (err) => {
         this.loyaltyLoading = false;
         this.loyaltySummary = null;
         this.loyaltyPreview = null;
+        console.warn('Loyalty API error:', err?.status, err?.statusText || err?.message, err?.url);
       }
     });
   }

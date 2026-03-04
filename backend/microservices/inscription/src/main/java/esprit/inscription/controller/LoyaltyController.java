@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/inscription/loyalty")
@@ -41,6 +42,15 @@ public class LoyaltyController {
                 request.getOrderTotal(),
                 request.getRequestedPoints());
         return ResponseEntity.ok(dto);
+    }
+
+    /**
+     * Vue admin : retourne la liste de tous les comptes de fidélité
+     * (userId, solde, lifetimePoints, tier).
+     */
+    @GetMapping("/admin/accounts")
+    public ResponseEntity<List<LoyaltySummaryDTO>> getAllAccounts() {
+        return ResponseEntity.ok(loyaltyService.getAllAccountsSummary());
     }
 
     @Data

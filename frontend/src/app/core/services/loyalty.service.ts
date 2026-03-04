@@ -2,7 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-const API_URL = 'http://localhost:8030/api/inscription/loyalty';
+/** Base URL : proxy (relative) en dev ng serve, direct (absolu) sinon */
+function getLoyaltyBaseUrl(): string {
+  if (typeof window !== 'undefined' && window.location.port === '4200') {
+    return '/api/inscription/loyalty';
+  }
+  return 'http://localhost:8030/api/inscription/loyalty';
+}
+
+const API_URL = getLoyaltyBaseUrl();
 
 export interface LoyaltySummary {
   userId: number;
@@ -44,6 +52,13 @@ export class LoyaltyService {
       orderTotal,
       requestedPoints
     });
+  }
+
+  /**
+   * Vue admin : liste de tous les comptes de fidélité.
+   */
+  getAllAccounts(): Observable<LoyaltySummary[]> {
+    return this.http.get<LoyaltySummary[]>(`${API_URL}/admin/accounts`);
   }
 }
 

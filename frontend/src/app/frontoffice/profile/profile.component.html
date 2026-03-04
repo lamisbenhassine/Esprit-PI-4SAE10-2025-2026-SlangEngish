@@ -18,6 +18,48 @@
           <span class="role">{{ user.role }}</span>
         </div>
       </div>
+
+      <!-- User Loyalty Profile -->
+      <div class="loyalty-profile-card">
+        <h3>
+          <mat-icon>loyalty</mat-icon>
+          Loyalty Program
+        </h3>
+        <div *ngIf="loyaltyLoading" class="loyalty-loading">
+          <mat-spinner diameter="32"></mat-spinner>
+          <span>Loading points...</span>
+        </div>
+        <ng-container *ngIf="!loyaltyLoading && loyaltySummary">
+          <div class="loyalty-balance">
+            <span class="balance-value">{{ loyaltySummary.balancePoints ?? 0 }}</span>
+            <span class="balance-label">Points</span>
+          </div>
+          <div class="loyalty-tier" [class]="'tier-' + (loyaltySummary.tier || 'BRONZE').toLowerCase()">
+            {{ loyaltySummary.tier || 'BRONZE' }}
+          </div>
+          <div class="loyalty-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="loyaltyProgressPercent"></div>
+            </div>
+            <span class="progress-label">{{ nextTierLabel }}</span>
+          </div>
+          <p class="loyalty-info">100 pts = 5 € • Max 30% off</p>
+          <div class="loyalty-actions">
+            <button mat-raised-button color="primary" (click)="goToCheckout()">
+              <mat-icon>redeem</mat-icon>
+              Redeem Points
+            </button>
+            <button mat-stroked-button (click)="viewRewards()">
+              <mat-icon>card_giftcard</mat-icon>
+              View Rewards
+            </button>
+          </div>
+        </ng-container>
+        <div *ngIf="!loyaltyLoading && !loyaltySummary" class="loyalty-unavailable">
+          <mat-icon>info</mat-icon>
+          <span>Start the Inscription backend to see loyalty points</span>
+        </div>
+      </div>
     </div>
 
     <div class="profile-form">

@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.math.BigDecimal.ZERO;
 
@@ -38,7 +40,7 @@ public class LoyaltyService {
 
     // ─── Lecture / résumé du compte ──────────────────────────────────────────────
 
-    @Transactional(readOnly = true)
+    @Transactional
     public LoyaltySummaryDTO getSummary(Long userId, BigDecimal orderTotal) {
         LoyaltyAccount account = getOrCreateAccount(userId);
         String tier = computeTier(account.getLifetimePoints());
@@ -57,6 +59,24 @@ public class LoyaltyService {
                 .maxDiscountPercent(MAX_DISCOUNT_PERCENT)
                 .discountPer100Points(DISCOUNT_PER_100_POINTS)
                 .build();
+    }
+
+    /**
+     * Vue admin : liste de tous les comptes de fidélité avec leur palier.
+     * Cette méthode ne calcule pas de réduction max (dépend d'une commande),
+     * elle renvoie donc uniquement les informations de compte + tier.
+     */
+    @Transactional(readOnly = true)
+    public List<LoyaltySummaryDTO> getAllAccountsSummary() {
+        return accountRepository.findAll()
+                .stream()
+                .map(acc -> LoyaltySummaryDTO.builder()
+                        .userId(acc.getUserId())
+                        .balancePoints(acc.getBalancePoints())
+                        .lifetimePoints(acc.getLifetimePoints())
+                        .tier(computeTier(acc.getLifetimePoints()))
+                        .build())
+                .collect(Collectors.toList());
     }
 
     // ─── Gain de points après paiement confirmé ─────────────────────────────────
@@ -99,7 +119,7 @@ public class LoyaltyService {
 
     // ─── Prévisualisation d'une réduction par points ────────────────────────────
 
-    @Transactional(readOnly = true)
+    @Transactional
     public LoyaltyRedemptionPreviewDTO previewRedemption(Long userId, BigDecimal orderTotal, long requestedPoints) {
         LoyaltyAccount account = getOrCreateAccount(userId);
         if (orderTotal == null || orderTotal.compareTo(ZERO) <= 0 || requestedPoints <= 0) {

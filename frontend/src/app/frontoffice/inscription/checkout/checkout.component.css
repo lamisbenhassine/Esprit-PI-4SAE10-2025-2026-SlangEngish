@@ -520,3 +520,119 @@
     font-size: 1.2rem;
     color: #667eea;
 }
+
+/* ===== Loyalty Checkout Card ===== */
+.loyalty-checkout-card {
+    margin-bottom: 1.5rem;
+}
+
+.loyalty-loading-inline,
+.loyalty-unavailable-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 1rem;
+    font-size: 0.95rem;
+}
+
+.loyalty-loading-inline {
+    color: #667eea;
+}
+
+.loyalty-unavailable-inline {
+    background: #fff8e1;
+    border-radius: 10px;
+    color: #856404;
+}
+
+.loyalty-unavailable-inline i {
+    flex-shrink: 0;
+}
+
+.loyalty-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    margin-bottom: 1rem;
+}
+
+.loyalty-balance-badge {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    font-weight: 700;
+}
+
+.loyalty-tier-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.loyalty-tier-badge.tier-bronze {
+    background: linear-gradient(135deg, #cd7f32 0%, #a0522d 100%);
+    color: white;
+}
+
+.loyalty-tier-badge.tier-silver {
+    background: linear-gradient(135deg, #c0c0c0 0%, #a8a8a8 100%);
+    color: white;
+}
+
+.loyalty-tier-badge.tier-gold {
+    background: linear-gradient(135deg, #ffd700 0%, #ffa500 100%);
+    color: #333;
+}
+
+.loyalty-max-discount {
+    font-size: 0.9rem;
+    color: #4a5568;
+}
+
+.loyalty-row {
+    margin-bottom: 1rem;
+}
+
+.loyalty-row label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #4a5568;
+    margin-bottom: 6px;
+}
+
+.loyalty-input {
+    width: 100%;
+    max-width: 140px;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+.loyalty-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.loyalty-preview {
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.loyalty-preview .preview-line {
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+}
+
+.loyalty-preview .preview-line.total {
+    margin-top: 8px;
+    font-size: 1.1rem;
+    color: #667eea;
+}

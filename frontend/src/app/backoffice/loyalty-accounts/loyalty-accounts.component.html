@@ -1,0 +1,73 @@
+<div class="loyalty-admin-container">
+  <div class="header-row">
+    <div>
+      <h1>Loyalty Accounts</h1>
+      <p class="subtitle">
+        Vue globale des comptes de fidélité (points disponibles, points cumulés et palier).
+      </p>
+    </div>
+    <button mat-stroked-button color="primary" (click)="loadAccounts()">
+      <mat-icon>refresh</mat-icon>
+      Refresh
+    </button>
+  </div>
+
+  <div class="status-row" *ngIf="isLoading">
+    <mat-spinner diameter="32"></mat-spinner>
+    <span>Chargement des comptes fidélité...</span>
+  </div>
+
+  <div class="status-row error" *ngIf="!isLoading && error">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ error }}</span>
+  </div>
+
+  <div class="table-card" *ngIf="!isLoading && !error">
+    <table mat-table [dataSource]="accounts" class="mat-elevation-z2 loyalty-table">
+
+      <!-- User ID -->
+      <ng-container matColumnDef="userId">
+        <th mat-header-cell *matHeaderCellDef>User ID</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="user-id">#{{ row.userId }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Tier -->
+      <ng-container matColumnDef="tier">
+        <th mat-header-cell *matHeaderCellDef>Tier</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="tier-badge" [ngClass]="'tier-' + row.tierColor">
+            {{ row.tier }}
+          </span>
+        </td>
+      </ng-container>
+
+      <!-- Balance -->
+      <ng-container matColumnDef="balancePoints">
+        <th mat-header-cell *matHeaderCellDef>Points disponibles</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="points-badge">{{ row.balancePoints }}</span>
+        </td>
+      </ng-container>
+
+      <!-- Lifetime -->
+      <ng-container matColumnDef="lifetimePoints">
+        <th mat-header-cell *matHeaderCellDef>Points cumulés</th>
+        <td mat-cell *matCellDef="let row">
+          {{ row.lifetimePoints }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+      <tr class="empty-row" *ngIf="accounts.length === 0">
+        <td colspan="4">
+          Aucun compte fidélité trouvé. Les comptes sont créés automatiquement à la première commande payée.
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+

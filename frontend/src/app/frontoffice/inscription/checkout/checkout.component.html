@@ -76,22 +76,32 @@
             </div>
 
             <!-- Loyalty points (Métier 6) -->
-            <div class="card-checkout" *ngIf="loyaltySummary">
-                <h3><i class="fas fa-gift"></i> Loyalty points</h3>
-                <p class="text-muted">
-                    You have <strong>{{ loyaltySummary.balancePoints }}</strong> points (tier:
-                    <strong>{{ loyaltySummary.tier }}</strong>).
-                    Max discount for this order: <strong>{{ loyaltySummary.maxDiscountAmount | number:'1.2-2' }} €</strong>.
-                </p>
-                <div class="loyalty-row">
-                    <label>Points to use</label>
-                    <input type="number" min="0" [max]="loyaltySummary.balancePoints"
-                           [(ngModel)]="loyaltyPointsToUse" (ngModelChange)="previewLoyalty()">
+            <div class="card-checkout loyalty-checkout-card">
+                <h3><i class="fas fa-gift"></i> Loyalty Points</h3>
+                <div *ngIf="loyaltyLoading" class="loyalty-loading-inline">
+                    <i class="fas fa-spinner fa-spin"></i> Chargement de vos points...
                 </div>
-                <div class="loyalty-preview" *ngIf="loyaltyPreview">
-                    <p>Discount: <strong>{{ loyaltyPreview.discountAmount | number:'1.2-2' }} €</strong></p>
-                    <p>New total: <strong>{{ loyaltyPreview.finalTotal | number:'1.2-2' }} €</strong></p>
+                <div *ngIf="!loyaltyLoading && !loyaltySummary" class="loyalty-unavailable-inline">
+                    <i class="fas fa-info-circle"></i>
+                    Le service fidélité est temporairement indisponible. Assurez-vous que le backend Inscription (port 8030) est démarré.
                 </div>
+                <ng-container *ngIf="!loyaltyLoading && loyaltySummary">
+                    <div class="loyalty-summary-row">
+                        <span class="loyalty-balance-badge">{{ loyaltySummary.balancePoints }} pts</span>
+                        <span class="loyalty-tier-badge" [class]="'tier-' + (loyaltySummary.tier || 'BRONZE').toLowerCase()">{{ loyaltySummary.tier || 'BRONZE' }}</span>
+                        <span class="loyalty-max-discount">Réduction max: {{ loyaltySummary.maxDiscountAmount | number:'1.2-2' }} €</span>
+                    </div>
+                    <div class="loyalty-row">
+                        <label>Points à utiliser</label>
+                        <input type="number" min="0" [max]="loyaltySummary.balancePoints"
+                               [(ngModel)]="loyaltyPointsToUse" (ngModelChange)="previewLoyalty()"
+                               placeholder="0" class="loyalty-input">
+                    </div>
+                    <div class="loyalty-preview" *ngIf="loyaltyPreview">
+                        <div class="preview-line">Réduction: <strong>-{{ loyaltyPreview.discountAmount | number:'1.2-2' }} €</strong></div>
+                        <div class="preview-line total">Nouveau total: <strong>{{ loyaltyPreview.finalTotal | number:'1.2-2' }} €</strong></div>
+                    </div>
+                </ng-container>
             </div>
 
             <!-- Confirm Order: directly creates order then redirects to Stripe Checkout -->
