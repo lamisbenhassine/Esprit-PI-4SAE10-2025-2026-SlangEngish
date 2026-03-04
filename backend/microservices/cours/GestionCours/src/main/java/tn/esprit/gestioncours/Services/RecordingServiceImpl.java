@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.esprit.gestioncours.DTO.RecordingRequestDto;
 import tn.esprit.gestioncours.DTO.RecordingResponseDto;
+import tn.esprit.gestioncours.Entities.NotificationType;
 import tn.esprit.gestioncours.Entities.Recording;
 import tn.esprit.gestioncours.Entities.RecordingStatus;
 import tn.esprit.gestioncours.Repositories.RecordingRepository;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 public class RecordingServiceImpl implements IRecordingService {
 
     private final RecordingRepository recordingRepository;
+    private final INotificationService notificationService;
 
     @Override
     public RecordingResponseDto createRecording(RecordingRequestDto request) {
@@ -31,6 +33,10 @@ public class RecordingServiceImpl implements IRecordingService {
         }
 
         Recording saved = recordingRepository.save(recording);
+
+        String message = "Nouvel enregistrement disponible : " + saved.getTitle();
+        notificationService.createNotificationForUser(1L, message, NotificationType.RECORDING);
+
         return mapToResponseDto(saved);
     }
 

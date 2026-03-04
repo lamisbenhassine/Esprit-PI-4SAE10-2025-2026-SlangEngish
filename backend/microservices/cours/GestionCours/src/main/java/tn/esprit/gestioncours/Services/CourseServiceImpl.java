@@ -2,8 +2,11 @@ package tn.esprit.gestioncours.Services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.gestioncours.Entities.Course;
+import tn.esprit.gestioncours.Entities.NotificationType;
 import tn.esprit.gestioncours.Repositories.CourseRepository;
+import tn.esprit.gestioncours.Repositories.ProgressionRepository;
 
 import java.util.List;
 
@@ -12,10 +15,19 @@ import java.util.List;
 public class CourseServiceImpl implements ICourseService {
 
     private final CourseRepository courseRepository;
+    private final ProgressionRepository progressionRepository;
+    private final INotificationService notificationService;
 
     @Override
     public Course addCourse(Course course) {
-        return courseRepository.save(course);
+        Course saved = courseRepository.save(course);
+
+        // Ici, on notifie un utilisateur générique (ex: 1L). Plus tard, on pourra
+        // cibler des utilisateurs précis (étudiants inscrits, etc.).
+        String message = "Nouveau cours disponible : " + saved.getName();
+        notificationService.createNotificationForUser(1L, message, NotificationType.COURSE);
+
+        return saved;
     }
 
     @Override
@@ -24,7 +36,9 @@ public class CourseServiceImpl implements ICourseService {
     }
 
     @Override
+    @Transactional
     public void deleteCourse(Long id) {
+        progressionRepository.deleteByChapter_Course_IdCourse(id);
         courseRepository.deleteById(id);
     }
 

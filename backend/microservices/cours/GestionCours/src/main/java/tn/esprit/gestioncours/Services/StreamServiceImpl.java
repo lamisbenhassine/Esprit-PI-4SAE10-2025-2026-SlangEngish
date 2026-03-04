@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.esprit.gestioncours.DTO.StreamRequestDto;
 import tn.esprit.gestioncours.DTO.StreamResponseDto;
+import tn.esprit.gestioncours.Entities.NotificationType;
 import tn.esprit.gestioncours.Entities.Stream;
 import tn.esprit.gestioncours.Entities.StreamStatus;
 import tn.esprit.gestioncours.Repositories.StreamRepository;
@@ -18,6 +19,7 @@ public class StreamServiceImpl implements IStreamService {
     private static final String JITSI_BASE_URL = "https://meet.jit.si/GestionCours_Stream_";
 
     private final StreamRepository streamRepository;
+    private final INotificationService notificationService;
 
     @Override
     public StreamResponseDto createStream(StreamRequestDto request) {
@@ -33,6 +35,10 @@ public class StreamServiceImpl implements IStreamService {
 
         // Deuxième sauvegarde avec le lien Jitsi
         stream = streamRepository.save(stream);
+
+        // Notification
+        String message = "Nouveau live planifié : " + stream.getTitle();
+        notificationService.createNotificationForUser(1L, message, NotificationType.STREAM);
 
         return mapToResponseDto(stream);
     }
