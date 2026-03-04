@@ -40,13 +40,14 @@ export class PaymentService {
     /**
      * Create a Stripe Checkout Session for a given order.
      * The backend returns a sessionId that we pass to Stripe.js.
+     * Optionally sends loyaltyPoints to apply a real discount.
      */
-    createStripeCheckoutSession(orderId: number, successUrl: string, cancelUrl: string): Observable<StripeCheckoutSessionResponse> {
-        return this.http.post<StripeCheckoutSessionResponse>(`${API_URL}/stripe/checkout-session`, {
-            orderId,
-            successUrl,
-            cancelUrl
-        });
+    createStripeCheckoutSession(orderId: number, successUrl: string, cancelUrl: string, loyaltyPoints?: number): Observable<StripeCheckoutSessionResponse> {
+        const body: any = { orderId, successUrl, cancelUrl };
+        if (loyaltyPoints && loyaltyPoints > 0) {
+            body.loyaltyPoints = Math.floor(loyaltyPoints);
+        }
+        return this.http.post<StripeCheckoutSessionResponse>(`${API_URL}/stripe/checkout-session`, body);
     }
 
     getStripeConfig(): Observable<StripeConfigResponse> {

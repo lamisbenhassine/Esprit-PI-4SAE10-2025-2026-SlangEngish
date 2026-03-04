@@ -93,3 +93,78 @@
   font-size: 14px;
 }
 
+.content-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.details-card {
+  margin-top: 16px;
+}
+
+.details-card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.loyalty-detail-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 20px 18px;
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.45);
+}
+
+.loyalty-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.points-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+.points-pill .value {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.points-pill .label {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.user-id-label {
+  margin: 0 0 4px;
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+.lifetime {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.rules {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+@media (max-width: 960px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

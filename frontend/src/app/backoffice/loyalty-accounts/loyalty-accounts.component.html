@@ -22,8 +22,9 @@
     <span>{{ error }}</span>
   </div>
 
-  <div class="table-card" *ngIf="!isLoading && !error">
-    <table mat-table [dataSource]="accounts" class="mat-elevation-z2 loyalty-table">
+  <div class="content-grid" *ngIf="!isLoading && !error">
+    <div class="table-card">
+      <table mat-table [dataSource]="accounts" class="mat-elevation-z2 loyalty-table">
 
       <!-- User ID -->
       <ng-container matColumnDef="userId">
@@ -59,15 +60,38 @@
         </td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectAccount(row)"></tr>
 
-      <tr class="empty-row" *ngIf="accounts.length === 0">
-        <td colspan="4">
-          Aucun compte fidélité trouvé. Les comptes sont créés automatiquement à la première commande payée.
-        </td>
-      </tr>
-    </table>
+        <tr class="empty-row" *ngIf="accounts.length === 0">
+          <td colspan="4">
+            Aucun compte fidélité trouvé. Les comptes sont créés automatiquement à la première commande payée.
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="details-card" *ngIf="selected">
+      <h2>Détails du compte</h2>
+      <div class="loyalty-detail-card">
+        <div class="loyalty-header">
+          <div class="points-pill">
+            <span class="value">{{ selected.balancePoints }}</span>
+            <span class="label">Points</span>
+          </div>
+          <span class="tier-badge" [ngClass]="'tier-' + selected.tierColor">
+            {{ selected.tier }}
+          </span>
+        </div>
+        <p class="user-id-label">Utilisateur #{{ selected.userId }}</p>
+        <p class="lifetime">
+          Points cumulés : <strong>{{ selected.lifetimePoints }}</strong>
+        </p>
+        <p class="rules">
+          10 pts / 1 TND — 100 pts = 5 TND — max 30 % du panier.
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 

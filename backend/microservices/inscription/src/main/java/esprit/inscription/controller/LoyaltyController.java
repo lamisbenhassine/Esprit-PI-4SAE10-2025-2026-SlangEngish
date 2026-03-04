@@ -53,6 +53,14 @@ public class LoyaltyController {
         return ResponseEntity.ok(loyaltyService.getAllAccountsSummary());
     }
 
+    /**
+     * Seed de comptes de fidélité de démonstration pour le backoffice.
+     */
+    @PostMapping("/admin/seed-demo")
+    public ResponseEntity<List<LoyaltySummaryDTO>> seedDemoAccounts() {
+        return ResponseEntity.ok(loyaltyService.seedDemoAccounts());
+    }
+
     @Data
     public static class LoyaltyRedemptionRequest {
         private Long userId;

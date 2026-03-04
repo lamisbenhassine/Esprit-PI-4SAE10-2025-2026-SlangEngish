@@ -103,8 +103,9 @@ public class PaymentService {
     /**
      * Create a Stripe Checkout Session for a given order.
      * IMPORTANT: you must set STRIPE_SECRET_KEY (or stripe.secret-key property) with your own key.
+     * Optionally applies a loyalty discount (requestedPoints) to reduce the charged amount.
      */
-    public Session createStripeCheckoutSession(Long orderId, String successUrl, String cancelUrl) throws StripeException {
+    public Session createStripeCheckoutSession(Long orderId, String successUrl, String cancelUrl, Long loyaltyPoints) throws StripeException {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
 
@@ -121,18 +122,33 @@ public class PaymentService {
         Stripe.apiKey = secretKey;
 
         BigDecimal amount = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
+        long appliedPoints = 0L;
+        if (loyaltyPoints != null && loyaltyPoints > 0L) {
+            var preview = loyaltyService.previewRedemption(order.getUserId(), amount, loyaltyPoints);
+            if (preview != null && preview.getFinalTotal() != null) {
+                amount = preview.getFinalTotal();
+                appliedPoints = preview.getAppliedPoints() != null ? preview.getAppliedPoints() : 0L;
+            }
+        }
         // Stripe amounts are in the smallest currency unit (e.g. cents).
         long amountInCents = amount.multiply(BigDecimal.valueOf(100L)).longValue();
 
         String currency = stripeCurrency != null && !stripeCurrency.isBlank() ? stripeCurrency.toLowerCase() : "eur";
 
-        SessionCreateParams params =
+        SessionCreateParams.Builder builder =
                 SessionCreateParams.builder()
                         .setMode(SessionCreateParams.Mode.PAYMENT)
                         .setSuccessUrl(successUrl)
                         .setCancelUrl(cancelUrl)
-                        .putMetadata("orderId", String.valueOf(orderId))
-                        .addLineItem(SessionCreateParams.LineItem.builder()
+                        .putMetadata("orderId", String.valueOf(orderId));
+
+        if (loyaltyPoints != null && loyaltyPoints > 0L) {
+            builder.putMetadata("loyaltyRequestedPoints", String.valueOf(loyaltyPoints));
+            builder.putMetadata("loyaltyAppliedPoints", String.valueOf(appliedPoints));
+        }
+
+        SessionCreateParams params =
+                builder.addLineItem(SessionCreateParams.LineItem.builder()
                                 .setQuantity(1L)
                                 .setPriceData(
                                         SessionCreateParams.LineItem.PriceData.builder()
@@ -181,16 +197,23 @@ public class PaymentService {
         Map<String, String> metadata = session.getMetadata();
         if (metadata == null || !metadata.containsKey("orderId")) return null;
         long orderId = Long.parseLong(metadata.get("orderId"));
+        long appliedLoyaltyPoints = 0L;
+        if (metadata.containsKey("loyaltyAppliedPoints")) {
+            try {
+                appliedLoyaltyPoints = Long.parseLong(metadata.get("loyaltyAppliedPoints"));
+            } catch (NumberFormatException ignored) {
+            }
+        }
         String transactionId = session.getPaymentIntent() != null && !session.getPaymentIntent().isEmpty()
                 ? session.getPaymentIntent() : session.getId();
-        return markOrderPaymentCompletedFromStripe(orderId, transactionId);
+        return markOrderPaymentCompletedFromStripe(orderId, transactionId, appliedLoyaltyPoints);
     }
 
     /**
      * Marks payment as completed for an order (create or update) after Stripe checkout.
      */
     @Transactional
-    public Payment markOrderPaymentCompletedFromStripe(Long orderId, String stripeTransactionId) {
+    public Payment markOrderPaymentCompletedFromStripe(Long orderId, String stripeTransactionId, long appliedLoyaltyPoints) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
         Optional<Payment> existing = paymentRepository.findByOrderId(orderId);
@@ -213,6 +236,11 @@ public class PaymentService {
 
         // Métier avancé 6 : crédits de points de fidélité après paiement Stripe confirmé
         loyaltyService.addPointsForOrder(order.getUserId(), saved.getAmount(), orderId);
+
+        // Débit réel des points utilisés si un palier a été appliqué
+        if (appliedLoyaltyPoints > 0L) {
+            loyaltyService.applyRedemption(order.getUserId(), orderId, appliedLoyaltyPoints);
+        }
 
         return saved;
     }

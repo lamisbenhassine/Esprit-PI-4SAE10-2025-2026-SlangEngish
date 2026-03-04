@@ -98,7 +98,8 @@ public class PaymentController {
             var session = paymentService.createStripeCheckoutSession(
                     request.getOrderId(),
                     request.getSuccessUrl(),
-                    request.getCancelUrl()
+                    request.getCancelUrl(),
+                    request.getLoyaltyPoints()
             );
             return ResponseEntity.ok(Map.of("sessionId", session.getId()));
         } catch (Exception e) {
@@ -184,5 +185,10 @@ public class PaymentController {
         private Long orderId;
         private String successUrl;
         private String cancelUrl;
+        /**
+         * Points de fidélité que le client souhaite utiliser pour cette commande.
+         * Optionnel : si null ou <= 0, aucun rabais fidélité n'est appliqué.
+         */
+        private Long loyaltyPoints;
     }
 }

@@ -60,5 +60,12 @@ export class LoyaltyService {
   getAllAccounts(): Observable<LoyaltySummary[]> {
     return this.http.get<LoyaltySummary[]>(`${API_URL}/admin/accounts`);
   }
+
+  /**
+   * Seed de comptes de démonstration (Bronze / Silver / Gold) pour le backoffice.
+   */
+  seedDemoAccounts(): Observable<LoyaltySummary[]> {
+    return this.http.post<LoyaltySummary[]>(`${API_URL}/admin/seed-demo`, {});
+  }
 }
 

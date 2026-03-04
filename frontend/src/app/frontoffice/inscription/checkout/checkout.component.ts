@@ -304,7 +304,9 @@ export class CheckoutComponent implements OnInit {
     const successUrl = window.location.origin + '/frontoffice/inscription/checkout?success=true&orderId=' + this.orderId + '&orderNumber=' + encodeURIComponent(this.orderNumber || '');
     const cancelUrl = window.location.origin + '/frontoffice/inscription/checkout?canceled=true&orderId=' + this.orderId + '&orderNumber=' + encodeURIComponent(this.orderNumber || '');
 
-    this.paymentService.createStripeCheckoutSession(this.orderId, successUrl, cancelUrl).subscribe({
+    const loyaltyPoints = Math.max(0, Math.floor(this.loyaltyPointsToUse || 0));
+
+    this.paymentService.createStripeCheckoutSession(this.orderId, successUrl, cancelUrl, loyaltyPoints).subscribe({
       next: async (res) => {
         const stripePublicKey = this.stripePublishableKey;
         if (!stripePublicKey) {

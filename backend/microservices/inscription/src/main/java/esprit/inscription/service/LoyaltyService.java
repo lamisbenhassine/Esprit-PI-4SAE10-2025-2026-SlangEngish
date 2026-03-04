@@ -79,6 +79,62 @@ public class LoyaltyService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Seed de comptes de fidélité de démonstration pour le backoffice
+     * (ex. différents paliers Bronze / Silver / Gold).
+     * Idempotent : ne recrée pas les comptes déjà existants.
+     */
+    @Transactional
+    public List<LoyaltySummaryDTO> seedDemoAccounts() {
+        createOrUpdateDemoAccount(1L, 0L, 0L);       // Bronze
+        createOrUpdateDemoAccount(2L, 2500L, 6000L); // Silver
+        createOrUpdateDemoAccount(3L, 8000L, 16000L); // Gold
+        createOrUpdateDemoAccount(4L, 4000L, 10000L); // Silver proche Gold
+        return getAllAccountsSummary();
+    }
+
+    private void createOrUpdateDemoAccount(Long userId, Long balancePoints, Long lifetimePoints) {
+        LoyaltyAccount account = accountRepository.findByUserId(userId)
+                .orElseGet(() -> LoyaltyAccount.builder()
+                        .userId(userId)
+                        .balancePoints(0L)
+                        .lifetimePoints(0L)
+                        .build());
+        account.setBalancePoints(balancePoints);
+        account.setLifetimePoints(lifetimePoints);
+        accountRepository.save(account);
+    }
+
+    /**
+     * Applique définitivement un débit de points après paiement confirmé.
+     * Crée une transaction REDEEMED et met à jour le solde.
+     */
+    @Transactional
+    public void applyRedemption(Long userId, Long orderId, long appliedPoints) {
+        if (appliedPoints <= 0L) {
+            return;
+        }
+        LoyaltyAccount account = getOrCreateAccount(userId);
+        Long current = account.getBalancePoints() != null ? account.getBalancePoints() : 0L;
+        if (current <= 0L) {
+            return;
+        }
+        long actualApplied = Math.min(current, appliedPoints);
+        if (actualApplied <= 0L) {
+            return;
+        }
+        account.setBalancePoints(current - actualApplied);
+        accountRepository.save(account);
+
+        LoyaltyTransaction tx = LoyaltyTransaction.builder()
+                .userId(userId)
+                .orderId(orderId)
+                .type(LoyaltyTransaction.Type.REDEEMED)
+                .points(actualApplied)
+                .build();
+        transactionRepository.save(tx);
+    }
+
     // ─── Gain de points après paiement confirmé ─────────────────────────────────
 
     @Transactional
