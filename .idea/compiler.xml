@@ -18,11 +18,13 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
         </processorPath>
         <module name="evaluation" />
+        <module name="GestionCours" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="GestionCours" options="-parameters" />
       <module name="eureka" options="-parameters" />
       <module name="evaluation" options="-parameters" />
       <module name="gateway" options="-parameters" />

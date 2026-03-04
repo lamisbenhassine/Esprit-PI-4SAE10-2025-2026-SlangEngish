@@ -42,7 +42,6 @@ public class StreamServiceImpl implements IStreamService {
         return streamRepository.findById(id)
                 .map(existing -> {
                     applyRequestToEntity(request, existing);
-                    // On ne régénère pas le lien Jitsi pour garder la stabilité de l'URL
                     Stream updated = streamRepository.save(existing);
                     return mapToResponseDto(updated);
                 })
