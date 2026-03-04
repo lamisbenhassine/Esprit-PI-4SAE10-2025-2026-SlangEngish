@@ -46,15 +46,21 @@ export class ForumManagementComponent implements OnInit {
         this.loading = true;
         this.forumTopicService.getGeneralTopics().subscribe({
             next: (data) => {
-                console.log('Topics loaded successfully:', data);
-                this.topics = data;
+                const list = Array.isArray(data) ? data : [];
+                console.log('Topics loaded successfully:', list.length, 'topics');
+                this.topics = list;
                 this.applyFilters();
                 this.loading = false;
             },
             error: (err) => {
                 console.error('Error loading topics:', err);
-                const status = err.status ? `(HTTP ${err.status})` : '';
-                this.snackBar.open(`✕ Error loading topics ${status}`, 'Close', { duration: 5000 });
+                if (err.status === 200) {
+                    this.topics = [];
+                    this.applyFilters();
+                } else {
+                    const status = err.status ? `(HTTP ${err.status})` : '';
+                    this.snackBar.open(`✕ Error loading topics ${status}`, 'Close', { duration: 5000 });
+                }
                 this.loading = false;
             }
         });
@@ -66,9 +72,9 @@ export class ForumManagementComponent implements OnInit {
         if (this.searchQuery.trim()) {
             const query = this.searchQuery.toLowerCase();
             filtered = filtered.filter(topic =>
-                topic.title.toLowerCase().includes(query) ||
-                topic.description.toLowerCase().includes(query) ||
-                topic.category.toLowerCase().includes(query)
+                (topic.title || '').toLowerCase().includes(query) ||
+                (topic.description || '').toLowerCase().includes(query) ||
+                (topic.category || '').toLowerCase().includes(query)
             );
         }
 

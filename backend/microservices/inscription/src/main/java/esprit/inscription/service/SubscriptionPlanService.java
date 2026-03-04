@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -138,5 +140,39 @@ public class SubscriptionPlanService {
 
     public void deletePlan(Long id) {
         subscriptionPlanRepository.deleteById(id);
+    }
+
+    /**
+     * Crée les offres par défaut si la table est vide. Retourne la liste des plans créés (ou vide si déjà des données).
+     */
+    public List<SubscriptionPlan> seedDefaultPlansIfEmpty() {
+        if (subscriptionPlanRepository.count() > 0) {
+            return List.of();
+        }
+        List<SubscriptionPlan> defaults = List.of(
+                plan("Monthly", "Mensuel", "29.99", 30, "Abonnement mensuel"),
+                plan("Quarterly", "Trimestriel", "79.99", 90, "Abonnement 3 mois"),
+                plan("Yearly", "Annuel", "249.99", 365, "Abonnement 1 an"),
+                plan("C1", "Niveau C1", "199.99", 180, "Plan niveau C1"),
+                plan("C2", "Niveau C2", "299.99", 365, "Plan niveau C2"),
+                plan("Premium", "Premium", "399.99", 365, "Offre premium")
+        );
+        List<SubscriptionPlan> saved = new ArrayList<>();
+        for (SubscriptionPlan p : defaults) {
+            saved.add(subscriptionPlanRepository.save(p));
+        }
+        return saved;
+    }
+
+    private static SubscriptionPlan plan(String planType, String name, String price, int durationDays, String description) {
+        return SubscriptionPlan.builder()
+                .planType(planType)
+                .name(name)
+                .price(new BigDecimal(price))
+                .currency("TND")
+                .durationDays(durationDays)
+                .description(description)
+                .date(LocalDate.now())
+                .build();
     }
 }

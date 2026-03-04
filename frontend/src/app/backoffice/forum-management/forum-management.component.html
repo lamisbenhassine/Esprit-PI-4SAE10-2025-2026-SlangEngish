@@ -57,7 +57,7 @@
             </div>
 
             <div class="card-body">
-                <p class="plan-description">{{ topic.description | slice:0:100 }}{{ topic.description.length > 100 ?
+                <p class="plan-description">{{ (topic.description || '') | slice:0:100 }}{{ (topic.description || '').length > 100 ?
                     '...' : '' }}</p>
 
                 <div class="info-row">

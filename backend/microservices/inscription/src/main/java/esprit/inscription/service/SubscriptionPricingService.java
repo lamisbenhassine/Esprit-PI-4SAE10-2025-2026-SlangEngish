@@ -170,10 +170,22 @@ public class SubscriptionPricingService {
         if (level != null && !level.isBlank()) {
             String levelKey = level.trim().toUpperCase();
             List<SubscriptionPlan> plans = subscriptionPlanRepository.findAll();
+
+            // 1. Try exact match (e.g. C2 -> planType C2)
             for (SubscriptionPlan p : plans) {
                 if (p.getPlanType() != null && levelKey.equals(p.getPlanType().toUpperCase())) {
                     recommendedPlan = Optional.of(p);
                     break;
+                }
+            }
+
+            // 2. Fallback: if level is C2 and no exact plan exists, try C1
+            if (recommendedPlan.isEmpty() && "C2".equals(levelKey)) {
+                for (SubscriptionPlan p : plans) {
+                    if (p.getPlanType() != null && "C1".equalsIgnoreCase(p.getPlanType())) {
+                        recommendedPlan = Optional.of(p);
+                        break;
+                    }
                 }
             }
         }

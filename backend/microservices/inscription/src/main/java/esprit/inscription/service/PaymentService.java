@@ -28,6 +28,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final LoyaltyService loyaltyService;
 
     @Value("${stripe.secret-key:}")
     private String stripeSecretKey;
@@ -72,7 +73,12 @@ public class PaymentService {
         // In a real application, this would integrate with a payment gateway
         payment.setStatus("completed");
 
-        return paymentRepository.save(payment);
+        Payment saved = paymentRepository.save(payment);
+
+        // Métier avancé 6 : crédits de points de fidélité après paiement simulé
+        loyaltyService.addPointsForOrder(order.getUserId(), saved.getAmount(), orderId);
+
+        return saved;
     }
 
     @Transactional
@@ -150,7 +156,7 @@ public class PaymentService {
      * Verifies signature with STRIPE_WEBHOOK_SECRET and marks payment as completed.
      */
     @Transactional
-    public void handleStripeWebhookEvent(String payload, String stripeSignature) {
+    public Payment handleStripeWebhookEvent(String payload, String stripeSignature) {
         String webhookSecret = System.getenv("STRIPE_WEBHOOK_SECRET");
         if (webhookSecret == null || webhookSecret.isBlank()) webhookSecret = stripeWebhookSecret;
         if (webhookSecret == null || webhookSecret.isBlank()) {
@@ -168,16 +174,16 @@ public class PaymentService {
             throw new IllegalArgumentException("Invalid Stripe webhook signature", e);
         }
         if (!"checkout.session.completed".equals(event.getType())) {
-            return;
+            return null;
         }
         Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-        if (session == null) return;
+        if (session == null) return null;
         Map<String, String> metadata = session.getMetadata();
-        if (metadata == null || !metadata.containsKey("orderId")) return;
+        if (metadata == null || !metadata.containsKey("orderId")) return null;
         long orderId = Long.parseLong(metadata.get("orderId"));
         String transactionId = session.getPaymentIntent() != null && !session.getPaymentIntent().isEmpty()
                 ? session.getPaymentIntent() : session.getId();
-        markOrderPaymentCompletedFromStripe(orderId, transactionId);
+        return markOrderPaymentCompletedFromStripe(orderId, transactionId);
     }
 
     /**
@@ -203,7 +209,12 @@ public class PaymentService {
                     .transactionId(stripeTransactionId)
                     .build();
         }
-        return paymentRepository.save(payment);
+        Payment saved = paymentRepository.save(payment);
+
+        // Métier avancé 6 : crédits de points de fidélité après paiement Stripe confirmé
+        loyaltyService.addPointsForOrder(order.getUserId(), saved.getAmount(), orderId);
+
+        return saved;
     }
 
     private String generateTransactionId() {

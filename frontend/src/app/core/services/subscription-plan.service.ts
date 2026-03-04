@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, retry } from 'rxjs/operators';
+import { catchError, map, retry } from 'rxjs/operators';
 
-const API_URL = 'http://localhost:8030/api/inscription/plans';
+const API_URL = '/api/inscription/plans';
 
 /** Métier avancé 1 (Duolingo) : coût par mois */
 export interface CostPerMonthDTO {
@@ -91,6 +91,8 @@ export class SubscriptionPlanService {
 
     getAllPlans(): Observable<SubscriptionPlan[]> {
         return this.http.get<SubscriptionPlan[]>(API_URL).pipe(
+            retry(1),
+            map((body: any) => Array.isArray(body) ? body : (body && Array.isArray(body.content) ? body.content : [])),
             catchError(this.handleError)
         );
     }
@@ -115,6 +117,14 @@ export class SubscriptionPlanService {
 
     deletePlan(id: number): Observable<void> {
         return this.http.delete<void>(`${API_URL}/${id}`).pipe(
+            catchError(this.handleError)
+        );
+    }
+
+    /** Crée les offres par défaut côté backend si la table est vide. Retourne la liste des plans créés. */
+    seedDefaultPlans(): Observable<SubscriptionPlan[]> {
+        return this.http.post<SubscriptionPlan[]>(`${API_URL}/seed`, {}).pipe(
+            map((body: any) => Array.isArray(body) ? body : []),
             catchError(this.handleError)
         );
     }

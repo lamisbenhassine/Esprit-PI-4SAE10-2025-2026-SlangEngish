@@ -283,6 +283,51 @@
     background: #4361ee !important;
 }
 
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+.empty-state mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #a0aec0;
+    margin-bottom: 16px;
+}
+.empty-state h3 {
+    margin: 0 0 8px 0;
+    color: #2d3748;
+    font-size: 20px;
+}
+.empty-hint {
+    color: #718096;
+    font-size: 14px;
+    margin: 0 0 20px 0;
+}
+.empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+}
+.action-btn.secondary {
+    background: #edf2f7;
+    color: #2d3748;
+    padding: 12px 24px;
+    border-radius: 14px;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+}
+.action-btn.secondary:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #1a202c;
+}
+
 /* Success Snackbar Global Styling */
 ::ng-deep .success-snackbar {
     background: #2d3748 !important;

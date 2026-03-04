@@ -3,6 +3,7 @@ import { OrderService, CreateOrderRequest } from '../../../core/services/order.s
 import { PaymentService } from '../../../core/services/payment.service';
 import { CartService, Cart } from '../../../core/services/cart.service';
 import { PromoService, PromoValidationResult } from '../../../core/services/promo.service';
+import { LoyaltyService, LoyaltySummary, LoyaltyRedemptionPreview } from '../../../core/services/loyalty.service';
 import { Router, ActivatedRoute, Params } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -27,6 +28,12 @@ export class CheckoutComponent implements OnInit {
   appliedPromo: PromoValidationResult | null = null;
   promoApplying = false;
 
+  // Loyalty points (Métier 6)
+  loyaltySummary: LoyaltySummary | null = null;
+  loyaltyPreview: LoyaltyRedemptionPreview | null = null;
+  loyaltyPointsToUse: number = 0;
+  loyaltyLoading = false;
+
   private stripePublishableKey = '';
 
   constructor(
@@ -34,6 +41,7 @@ export class CheckoutComponent implements OnInit {
     private paymentService: PaymentService,
     private cartService: CartService,
     private promoService: PromoService,
+    private loyaltyService: LoyaltyService,
     private router: Router,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar
@@ -123,6 +131,13 @@ export class CheckoutComponent implements OnInit {
     return this.cart?.totalAmount ?? 0;
   }
 
+  get displayTotalAfterLoyalty(): number {
+    if (this.loyaltyPreview && this.loyaltyPreview.finalTotal != null) {
+      return this.loyaltyPreview.finalTotal;
+    }
+    return this.displayTotal;
+  }
+
   applyPromo(): void {
     if (!this.promoCodeInput.trim() || !this.cart?.totalAmount) return;
     this.promoApplying = true;
@@ -152,6 +167,48 @@ export class CheckoutComponent implements OnInit {
   removePromo(): void {
     this.appliedPromo = null;
     this.promoCodeInput = '';
+  }
+
+  loadLoyaltySummary(): void {
+    if (!this.cart || !this.cart.totalAmount) {
+      this.loyaltySummary = null;
+      this.loyaltyPreview = null;
+      return;
+    }
+    this.loyaltyLoading = true;
+    this.loyaltyService.getSummary(this.currentUserId, this.displayTotal).subscribe({
+      next: (summary) => {
+        this.loyaltySummary = summary;
+        this.loyaltyLoading = false;
+      },
+      error: () => {
+        this.loyaltyLoading = false;
+        this.loyaltySummary = null;
+        this.loyaltyPreview = null;
+      }
+    });
+  }
+
+  previewLoyalty(): void {
+    if (!this.loyaltySummary || !this.cart || !this.cart.totalAmount) {
+      return;
+    }
+    const pts = Math.max(0, Math.floor(this.loyaltyPointsToUse || 0));
+    if (pts <= 0) {
+      this.loyaltyPreview = null;
+      return;
+    }
+    this.loyaltyLoading = true;
+    this.loyaltyService.previewRedemption(this.currentUserId, this.displayTotal, pts).subscribe({
+      next: (preview) => {
+        this.loyaltyPreview = preview;
+        this.loyaltyLoading = false;
+      },
+      error: () => {
+        this.loyaltyLoading = false;
+        this.loyaltyPreview = null;
+      }
+    });
   }
 
   createOrder() {

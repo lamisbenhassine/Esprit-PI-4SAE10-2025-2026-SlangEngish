@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-const API_URL = 'http://localhost:8098/api/forum/messages';
+const API_URL = 'http://localhost:8040/api/forum/messages';
 
 export interface ForumMessage {
     id?: number;

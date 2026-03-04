@@ -50,6 +50,12 @@ public class SubscriptionPlanController {
         return ResponseEntity.ok(subscriptionPlanService.getPlansByType(planType));
     }
 
+    @PostMapping("/seed")
+    public ResponseEntity<List<SubscriptionPlan>> seedDefaultPlans() {
+        List<SubscriptionPlan> created = subscriptionPlanService.seedDefaultPlansIfEmpty();
+        return ResponseEntity.ok(created);
+    }
+
     @PostMapping
     public ResponseEntity<SubscriptionPlan> createPlan(@RequestBody SubscriptionPlan plan) {
         System.out.println("Creating plan with imageUrl: " + plan.getImageUrl());

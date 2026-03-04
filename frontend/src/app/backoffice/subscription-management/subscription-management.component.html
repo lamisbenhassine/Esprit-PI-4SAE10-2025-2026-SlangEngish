@@ -91,10 +91,17 @@
     <div class="empty-state" *ngIf="filteredPlans.length === 0 && !loading && plans.length === 0">
         <mat-icon>subscriptions</mat-icon>
         <h3>No subscription offers found</h3>
-        <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
-            <mat-icon>add_card</mat-icon>
-            Create Your First Offer
-        </button>
+        <p class="empty-hint">Start the Inscription microservice (port 8030), run the app with <strong>ng serve</strong>, then click "Load default offers" or create one.</p>
+        <div class="empty-actions">
+            <button mat-raised-button class="action-btn secondary" (click)="loadDefaultOffers()" [disabled]="loadingSeed">
+                <mat-icon>refresh</mat-icon>
+                {{ loadingSeed ? 'Loading...' : 'Load default offers' }}
+            </button>
+            <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
+                <mat-icon>add_card</mat-icon>
+                Create Your First Offer
+            </button>
+        </div>
     </div>
 
     <div class="empty-state" *ngIf="filteredPlans.length === 0 && !loading && plans.length > 0">

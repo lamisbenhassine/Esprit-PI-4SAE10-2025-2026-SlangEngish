@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, retry } from 'rxjs/operators';
+import { catchError, map, retry } from 'rxjs/operators';
 
-const API_URL = 'http://localhost:8098/api/forum/topics';
+const API_URL = 'http://localhost:8040/api/forum/topics';
 
 export interface ForumTopic {
     id?: number;
@@ -31,6 +31,7 @@ export class ForumTopicService {
     getGeneralTopics(): Observable<ForumTopic[]> {
         return this.http.get<ForumTopic[]>(`${API_URL}/general`).pipe(
             retry(2),
+            map((body: any) => Array.isArray(body) ? body : []),
             catchError(this.handleError)
         );
     }

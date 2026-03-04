@@ -78,6 +78,7 @@ public class PlacementController {
                 if (text == null) return null;
                 String upper = text.toUpperCase();
 
+                if (containsLevelToken(upper, "C2")) return "C2";
                 if (containsLevelToken(upper, "C1")) return "C1";
                 if (containsLevelToken(upper, "B2")) return "B2";
                 if (containsLevelToken(upper, "B1")) return "B1";
@@ -103,6 +104,7 @@ public class PlacementController {
 
     private String detectLevelFromFileName(String fileName) {
         String upper = fileName.toUpperCase();
+        if (upper.contains("C2")) return "C2";
         if (upper.contains("C1")) return "C1";
         if (upper.contains("B2")) return "B2";
         if (upper.contains("B1")) return "B1";

@@ -107,25 +107,17 @@ export class OffersListComponent implements OnInit {
     this.subscriptionPlanService.getAllPlans().subscribe({
       next: (data) => {
         this.demoMode = false;
-        if (data && data.length > 0) {
-          this.plans = data;
-        } else {
-          this.plans = this.getMockPlans();
-        }
+        this.plans = Array.isArray(data) ? data : [];
         this.applyFilters();
         this.initFamilySiblingPlanIds();
         this.loadPricingMetier();
         this.loading = false;
       },
       error: (err) => {
-        console.warn('Backend unavailable, using demo data:', err.message);
-        this.plans = this.getMockPlans();
-        this.applyFilters();
-        this.initFamilySiblingPlanIds();
-        this.loadPricingMetier();
+        console.error('Error loading plans from backend:', err);
         this.loading = false;
-        this.demoMode = true;
-        this.error = '';
+        this.demoMode = false;
+        this.error = 'Unable to load subscription offers. Please make sure the Inscription service (port 8030) is running.';
       }
     });
   }

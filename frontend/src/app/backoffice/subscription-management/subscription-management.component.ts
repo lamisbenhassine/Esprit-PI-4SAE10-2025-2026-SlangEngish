@@ -13,6 +13,7 @@ export class SubscriptionManagementComponent implements OnInit {
     plans: SubscriptionPlan[] = [];
     filteredPlans: SubscriptionPlan[] = [];
     loading = false;
+    loadingSeed = false;
 
     // Search and filter properties
     searchQuery: string = '';
@@ -73,23 +74,58 @@ export class SubscriptionManagementComponent implements OnInit {
         this.allPlans();
     }
 
+    loadDefaultOffers(): void {
+        this.loadingSeed = true;
+        this.subscriptionPlanService.seedDefaultPlans().subscribe({
+            next: (created) => {
+                this.loadingSeed = false;
+                if (created.length > 0) {
+                    this.snackBar.open(`✓ ${created.length} default offers created`, 'Close', {
+                        duration: 3000,
+                        panelClass: ['success-snackbar']
+                    });
+                    this.allPlans();
+                } else {
+                    this.snackBar.open('Offers already exist. Refreshing list.', 'Close', { duration: 3000 });
+                    this.allPlans();
+                }
+            },
+            error: (err) => {
+                this.loadingSeed = false;
+                console.error('Seed error:', err);
+                if (err.status === 200) {
+                    this.allPlans();
+                    return;
+                }
+                const msg = err.status ? `HTTP ${err.status}` : (err.message || 'Backend unreachable. Is the inscription service running on port 8030?');
+                this.snackBar.open(`✕ Could not load default offers: ${msg}`, 'Close', { duration: 7000 });
+            }
+        });
+    }
+
     allPlans(): void {
         this.loading = true;
         this.subscriptionPlanService.getAllPlans().subscribe({
             next: (data) => {
-                console.log('Plans loaded successfully:', data);
-                // Debug: log each plan's imageUrl
-                data.forEach(plan => {
+                const list = Array.isArray(data) ? data : [];
+                console.log('Plans loaded successfully:', list.length, 'plans');
+                list.forEach(plan => {
                     console.log(`Plan ${plan.id} (${plan.planType}): imageUrl =`, plan.imageUrl);
                 });
-                this.plans = data;
+                this.plans = list;
                 this.applyFilters();
                 this.loading = false;
             },
             error: (err) => {
                 console.error('Error loading plans:', err);
-                const status = err.status ? `(HTTP ${err.status})` : '';
-                this.snackBar.open(`✕ Error loading plans ${status}`, 'Close', { duration: 5000 });
+                // Ne pas afficher d'erreur pour une réponse 200 (succès avec corps vide ou mal formé)
+                if (err.status === 200) {
+                    this.plans = [];
+                    this.applyFilters();
+                } else {
+                    const status = err.status ? `(HTTP ${err.status})` : '';
+                    this.snackBar.open(`✕ Error loading plans ${status}`, 'Close', { duration: 5000 });
+                }
                 this.loading = false;
             }
         });

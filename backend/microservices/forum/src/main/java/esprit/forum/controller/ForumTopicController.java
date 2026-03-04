@@ -12,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/forum/topics")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class ForumTopicController {
 
     private final ForumTopicService forumTopicService;

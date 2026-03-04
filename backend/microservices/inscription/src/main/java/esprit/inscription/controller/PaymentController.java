@@ -141,7 +141,22 @@ public class PaymentController {
             return ResponseEntity.badRequest().body("Missing Stripe-Signature");
         }
         try {
-            paymentService.handleStripeWebhookEvent(payload, sigHeader);
+            Payment payment = paymentService.handleStripeWebhookEvent(payload, sigHeader);
+
+            if (payment != null) {
+                // Push real-time stats update to admin dashboard
+                realTimeStatsService.pushStatsUpdate();
+
+                // Send admin-only notification about the new Stripe payment
+                String amountStr = payment.getAmount() != null
+                        ? String.format("%.2f %s", payment.getAmount(), "€")
+                        : "N/A";
+                realTimeStatsService.sendAdminNotification(
+                        "💳 New Stripe Payment Received!",
+                        "Amount: " + amountStr + " — Method: " + payment.getMethod()
+                                + " (Order #" + payment.getOrderId() + ")",
+                        esprit.inscription.dto.NotificationDTO.Type.SUCCESS);
+            }
             return ResponseEntity.ok("OK");
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(e.getMessage());
