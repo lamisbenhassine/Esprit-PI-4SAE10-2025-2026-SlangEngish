@@ -27,6 +27,12 @@ export interface StripeConfigResponse {
     publishableKey: string;
 }
 
+export interface PaymentStatusResponse {
+    status: 'pending' | 'completed';
+    payment?: Payment;
+    orderId?: number;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -60,5 +66,12 @@ export class PaymentService {
 
     getPaymentByOrderId(orderId: number): Observable<Payment> {
         return this.http.get<Payment>(`${API_URL}/order/${orderId}`);
+    }
+
+    /**
+     * Statut du paiement (pour polling après retour Stripe). Retourne toujours 200.
+     */
+    getPaymentStatusByOrderId(orderId: number): Observable<PaymentStatusResponse> {
+        return this.http.get<PaymentStatusResponse>(`${API_URL}/order/${orderId}/status`);
     }
 }

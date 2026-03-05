@@ -334,6 +334,10 @@ public class EmailCampaignService {
         int sentCount = 0;
         
         for (User recipient : recipients) {
+            if (recipient.getEmail() == null || recipient.getEmail().isBlank()) {
+                log.warn("Skipping recipient {} (id={}): no email address", recipient.getFirstName(), recipient.getId());
+                continue;
+            }
             try {
                 sendEmailToRecipient(campaign, recipient);
                 sentCount++;
@@ -361,25 +365,45 @@ public class EmailCampaignService {
 
         tracking = trackingRepository.save(tracking);
 
-        // Send email (simplified - in real implementation would use JavaMailSender)
         try {
             String personalizedSubject = personalizeSubject(campaign.getSubject(), recipient);
             String personalizedContent = personalizeContent(campaign.getTemplate(), recipient);
-            
-            // Send email logic here
-            log.info("Sending email to: {} with subject: {}", recipient.getEmail(), personalizedSubject);
-            
-            // Update tracking
+            if (personalizedContent == null || personalizedContent.isBlank()) {
+                personalizedContent = buildFallbackHtmlContent(campaign, recipient);
+            }
+
+            // Envoi réel via JavaMailSender
+            emailService.sendHtmlEmail(
+                    recipient.getEmail(),
+                    personalizedSubject,
+                    personalizedContent,
+                    campaign.getFromEmail(),
+                    campaign.getFromName()
+            );
+
             tracking.setStatus(EmailTracking.EmailStatus.SENT);
             tracking.setSentAt(LocalDateTime.now());
             trackingRepository.save(tracking);
-            
+
         } catch (Exception e) {
             tracking.setStatus(EmailTracking.EmailStatus.FAILED);
             tracking.setErrorMessage(e.getMessage());
             trackingRepository.save(tracking);
             throw e;
         }
+    }
+
+    private String buildFallbackHtmlContent(EmailCampaign campaign, User recipient) {
+        String name = recipient.getFirstName() != null ? recipient.getFirstName() : "Friend";
+        return """
+                <!DOCTYPE html><html><body style="font-family: Arial, sans-serif;">
+                <h2>%s</h2>
+                <p>Hello %s,</p>
+                <p>This is a message from English Academy.</p>
+                <p>Best regards,<br>%s</p>
+                </body></html>
+                """.formatted(campaign.getSubject(), name,
+                campaign.getFromName() != null ? campaign.getFromName() : "English Academy");
     }
 
     private String personalizeSubject(String subjectTemplate, User user) {

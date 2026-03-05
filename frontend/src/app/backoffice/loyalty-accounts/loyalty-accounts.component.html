@@ -22,6 +22,30 @@
     <span>{{ error }}</span>
   </div>
 
+  <!-- Summary cards -->
+  <div class="summary-grid" *ngIf="!isLoading && !error">
+    <div class="summary-card bronze">
+      <div class="summary-label">Bronze</div>
+      <div class="summary-value">{{ bronzeCount }}</div>
+      <div class="summary-sub">comptes</div>
+    </div>
+    <div class="summary-card silver">
+      <div class="summary-label">Silver</div>
+      <div class="summary-value">{{ silverCount }}</div>
+      <div class="summary-sub">comptes</div>
+    </div>
+    <div class="summary-card gold">
+      <div class="summary-label">Gold</div>
+      <div class="summary-value">{{ goldCount }}</div>
+      <div class="summary-sub">comptes</div>
+    </div>
+    <div class="summary-card total">
+      <div class="summary-label">Points disponibles</div>
+      <div class="summary-value">{{ totalBalance }}</div>
+      <div class="summary-sub">tous utilisateurs</div>
+    </div>
+  </div>
+
   <div class="content-grid" *ngIf="!isLoading && !error">
     <div class="table-card">
       <table mat-table [dataSource]="accounts" class="mat-elevation-z2 loyalty-table">

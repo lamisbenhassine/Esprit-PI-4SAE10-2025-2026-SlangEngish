@@ -16,6 +16,10 @@ export class LoyaltyAccountsComponent implements OnInit {
   selected: LoyaltyAccountView | null = null;
   isLoading = false;
   error: string | null = null;
+  totalBalance = 0;
+  bronzeCount = 0;
+  silverCount = 0;
+  goldCount = 0;
 
   constructor(private loyaltyService: LoyaltyService) {}
 
@@ -28,18 +32,14 @@ export class LoyaltyAccountsComponent implements OnInit {
     this.error = null;
     this.loyaltyService.getAllAccounts().subscribe({
       next: (list) => {
-        this.accounts = (list || []).map(acc => ({
-          ...acc,
-          tierColor: this.mapTierColor(acc.tier)
-        }));
+        this.accounts = this.mapAccounts(list);
+        this.computeStats();
         if (!this.accounts || this.accounts.length < 4) {
           // Aucun compte trouvé : créer des comptes de démo pour visualiser les paliers
           this.loyaltyService.seedDemoAccounts().subscribe({
             next: (seeded) => {
-              this.accounts = (seeded || []).map(acc => ({
-                ...acc,
-                tierColor: this.mapTierColor(acc.tier)
-              }));
+              this.accounts = this.mapAccounts(seeded);
+              this.computeStats();
               this.selected = this.accounts[0] || null;
               this.isLoading = false;
             },
@@ -64,6 +64,20 @@ export class LoyaltyAccountsComponent implements OnInit {
 
   selectAccount(row: LoyaltyAccountView): void {
     this.selected = row;
+  }
+
+  private mapAccounts(list?: LoyaltySummary[] | null): LoyaltyAccountView[] {
+    return (list || []).map(acc => ({
+      ...acc,
+      tierColor: this.mapTierColor(acc.tier)
+    }));
+  }
+
+  private computeStats(): void {
+    this.totalBalance = this.accounts.reduce((sum, a) => sum + (a.balancePoints || 0), 0);
+    this.bronzeCount = this.accounts.filter(a => a.tierColor === 'bronze').length;
+    this.silverCount = this.accounts.filter(a => a.tierColor === 'silver').length;
+    this.goldCount = this.accounts.filter(a => a.tierColor === 'gold').length;
   }
 
   private mapTierColor(tier?: string | null): 'bronze' | 'silver' | 'gold' {

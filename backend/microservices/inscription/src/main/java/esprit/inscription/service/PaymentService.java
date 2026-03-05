@@ -29,6 +29,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final LoyaltyService loyaltyService;
+    private final OrderService orderService;
 
     @Value("${stripe.secret-key:}")
     private String stripeSecretKey;
@@ -240,6 +241,14 @@ public class PaymentService {
         // Débit réel des points utilisés si un palier a été appliqué
         if (appliedLoyaltyPoints > 0L) {
             loyaltyService.applyRedemption(order.getUserId(), orderId, appliedLoyaltyPoints);
+        }
+
+        // Envoi de l'email de confirmation d'achat après paiement Stripe confirmé
+        try {
+            orderService.sendPurchaseConfirmationEmailForOrder(orderId);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(PaymentService.class)
+                    .warn("Failed to send purchase confirmation email for order {}", orderId, e);
         }
 
         return saved;

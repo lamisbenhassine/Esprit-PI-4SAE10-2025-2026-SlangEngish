@@ -25,7 +25,7 @@ public class OrderService {
     private final CartService cartService;
     private final PromoCodeService promoCodeService;
     private final UserRepository userRepository;
-    private final EmailCampaignService emailCampaignService;
+    private final EmailService emailService;
 
     public List<Order> getOrdersByUserId(Long userId) {
         return orderRepository.findByUserId(userId);
@@ -88,39 +88,63 @@ public class OrderService {
         }
         cartService.clearCart(userId);
 
-        // Send purchase confirmation email
-        sendPurchaseConfirmationEmail(userId, savedOrder);
+        // Envoyer l'email d'inscription (Slang English) dès la création de la commande pour tous les modes de paiement
+        try {
+            sendPurchaseConfirmationEmail(userId, savedOrder);
+        } catch (Exception e) {
+            log.error("Failed to send inscription email for order {}", savedOrder.getOrderNumber(), e);
+        }
 
         log.info("Successfully created order {} for user {}", savedOrder.getOrderNumber(), userId);
         return savedOrder;
     }
 
-    private void sendPurchaseConfirmationEmail(Long userId, Order order) {
-        log.info("Sending purchase confirmation email to user {} for order {}", userId, order.getOrderNumber());
-        
-        try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+    /**
+     * Envoie l'email de confirmation d'achat pour une commande (appelé après confirmation paiement Stripe ou autre).
+     */
+    @Transactional(readOnly = true)
+    public void sendPurchaseConfirmationEmailForOrder(Long orderId) {
+        Order order = orderRepository.findByIdWithOrderItems(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        sendPurchaseConfirmationEmail(order.getUserId(), order);
+    }
 
-            // Create purchase confirmation campaign
-            EmailCampaign campaign = EmailCampaign.builder()
-                    .name("Purchase Confirmation - " + order.getOrderNumber())
-                    .category(EmailCampaign.CampaignCategory.PROMOTIONAL)
-                    .subject("Purchase Confirmation - Order #" + order.getOrderNumber())
-                    .fromEmail("orders@english-academy.com")
-                    .fromName("English Academy")
-                    .targetLevel(user.getEnglishLevel())
-                    .build();
-
-            EmailCampaign createdCampaign = emailCampaignService.createCampaign(campaign);
-            
-            // Launch campaign for this specific user
-            emailCampaignService.launchCampaign(createdCampaign.getId());
-            
-            log.info("Purchase confirmation email sent successfully to user {}", userId);
-        } catch (Exception e) {
-            log.error("Failed to send purchase confirmation email to user {}", userId, e);
+    /**
+     * Envoie l'email d'inscription (Slang English) pour la dernière commande de l'utilisateur (pour test manuel).
+     * @return l'adresse email à laquelle l'email a été envoyé si succès, empty si pas de commande
+     */
+    public Optional<String> sendInscriptionEmailForUser(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is required");
         }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found for id: " + userId));
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new RuntimeException("User " + userId + " has no email address in database");
+        }
+        List<Order> orders = orderRepository.findByUserId(userId);
+        if (orders == null || orders.isEmpty()) {
+            log.warn("No order found for user {}, cannot send inscription email", userId);
+            return Optional.empty();
+        }
+        Order lastOrder = orders.get(orders.size() - 1);
+        try {
+            sendPurchaseConfirmationEmail(userId, lastOrder);
+            return Optional.of(user.getEmail());
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to send inscription email for user {}", userId, e);
+            throw new RuntimeException("Email send failed: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()), e);
+        }
+    }
+
+    private void sendPurchaseConfirmationEmail(Long userId, Order order) {
+        log.info("Sending purchase confirmation email to user {} for order {}", userId, order != null ? order.getOrderNumber() : null);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+        emailService.sendPurchaseConfirmationEmail(user, order);
+        log.info("Purchase confirmation email sent successfully to user {}", userId);
     }
 
     private String generateOrderNumber() {

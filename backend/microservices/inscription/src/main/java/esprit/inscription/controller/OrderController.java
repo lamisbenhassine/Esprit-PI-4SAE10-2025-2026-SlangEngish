@@ -33,6 +33,32 @@ public class OrderController {
         }
     }
 
+    /**
+     * Envoi manuel de l'email d'inscription (Slang English) pour un utilisateur.
+     * Chemin sous /test/ pour ne pas être confondu avec GET /{id}.
+     * GET /api/inscription/orders/test/send-inscription-email?userId=1
+     */
+    @GetMapping("/test/send-inscription-email")
+    public ResponseEntity<?> sendTestInscriptionEmail(@RequestParam Long userId) {
+        try {
+            java.util.Optional<String> sentTo = orderService.sendInscriptionEmailForUser(userId);
+            if (sentTo.isPresent()) {
+                return ResponseEntity.ok(java.util.Map.of(
+                        "message", "Inscription email sent to user " + userId,
+                        "sentTo", sentTo.get(),
+                        "hint", "Check this inbox and your Spam / Promotions folder."));
+            }
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "No order found for user " + userId));
+        } catch (RuntimeException e) {
+            log.warn("Test inscription email failed for user {}: {}", userId, e.getMessage());
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Request failed"));
+        } catch (Exception e) {
+            log.error("Error sending test inscription email for user {}", userId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(java.util.Map.of("error", e.getMessage() != null ? e.getMessage() : "Email send failed"));
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Order> getOrderById(@PathVariable Long id) {
         log.info("Getting order by ID: {}", id);

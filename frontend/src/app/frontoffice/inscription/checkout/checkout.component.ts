@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { OrderService, CreateOrderRequest } from '../../../core/services/order.service';
-import { PaymentService } from '../../../core/services/payment.service';
+import { PaymentService, PaymentStatusResponse } from '../../../core/services/payment.service';
 import { CartService, Cart } from '../../../core/services/cart.service';
 import { PromoService, PromoValidationResult } from '../../../core/services/promo.service';
 import { LoyaltyService, LoyaltySummary, LoyaltyRedemptionPreview } from '../../../core/services/loyalty.service';
@@ -96,13 +96,9 @@ export class CheckoutComponent implements OnInit {
         this.orderNumber = qOrderNumber || '';
         this.step = 3;
         this.orderAmount = 0;
-        // Fetch payment to get transactionId (after webhook has run)
-        this.paymentService.getPaymentByOrderId(this.orderId).subscribe({
-          next: (payment) => {
-            this.transactionId = payment.transactionId || '';
-            this.orderAmount = payment.amount != null ? payment.amount : 0;
-          }
-        });
+        this.transactionId = '';
+        // Poll payment status (évite 404 : l'endpoint /status retourne toujours 200)
+        this.pollPaymentStatus();
         this.clearQueryParams();
         return;
       }
@@ -127,6 +123,40 @@ export class CheckoutComponent implements OnInit {
       queryParams: {},
       queryParamsHandling: ''
     });
+  }
+
+  private pollPaymentStatus(): void {
+    const maxAttempts = 15;
+    const intervalMs = 2000;
+    let attempts = 0;
+    const check = () => {
+      this.paymentService.getPaymentStatusByOrderId(this.orderId).subscribe({
+        next: (res: PaymentStatusResponse) => {
+          if (res.status === 'completed' && res.payment) {
+            this.transactionId = res.payment.transactionId || '';
+            this.orderAmount = res.payment.amount != null ? res.payment.amount : 0;
+            return;
+          }
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(check, intervalMs);
+          } else {
+            this.snackBar.open(
+              'Paiement enregistré. Un email de confirmation vous a été envoyé (vérifiez vos spams si besoin).',
+              'OK',
+              { duration: 8000, panelClass: ['success-snackbar'] }
+            );
+          }
+        },
+        error: () => {
+          attempts++;
+          if (attempts < maxAttempts) {
+            setTimeout(check, intervalMs);
+          }
+        }
+      });
+    };
+    check();
   }
 
   get displayTotal(): number {

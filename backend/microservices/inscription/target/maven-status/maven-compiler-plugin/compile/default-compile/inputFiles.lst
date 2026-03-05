@@ -1,6 +1,8 @@
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\client\ForumServiceClient.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\client\UserServiceClient.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\CorsConfig.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\DefaultPromoInitializer.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\DefaultSubscriptionPlanInitializer.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\MailConfig.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\MailingConfig.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\config\SchedulerConfig.java
@@ -9,6 +11,7 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\EmailCampaignController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\EmailTemplateController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\EmailTrackingController.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\LoyaltyController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\OrderController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\PaymentController.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\controller\PlacementController.java
@@ -24,6 +27,8 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\CertificateAnalysisDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\CostPerMonthDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\DashboardStatsDTO.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\LoyaltyRedemptionPreviewDTO.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\LoyaltySummaryDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\MonthlyRevenueRecognitionDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\NotificationDTO.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\dto\PricePerUserDTO.java
@@ -36,6 +41,8 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\EmailCampaign.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\EmailTemplate.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\EmailTracking.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\LoyaltyAccount.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\LoyaltyTransaction.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\Order.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\OrderItem.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\entity\Payment.java
@@ -50,6 +57,8 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\repository\EmailCampaignRepository.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\repository\EmailTemplateRepository.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\repository\EmailTrackingRepository.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\repository\LoyaltyAccountRepository.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\repository\LoyaltyTransactionRepository.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\repository\OrderItemRepository.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\repository\OrderRepository.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\repository\PaymentRepository.java
@@ -60,6 +69,7 @@ C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\EmailCampaignService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\EmailService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\EmailTemplateService.java
+C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\LoyaltyService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\MailingAutomationService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\OrderService.java
 C:\Users\SHOWTECH\Downloads\Pi_ossra\test\backend\microservices\inscription\src\main\java\esprit\inscription\service\PaymentService.java

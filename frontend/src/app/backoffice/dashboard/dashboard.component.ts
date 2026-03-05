@@ -22,6 +22,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   stats: StatCard[] = [];
   recentActivities: any[] = [];
   isLoading = true;
+  isConnected = false;
   lastUpdated: string | null = null;
   recognizedRevenueChart: Array<{ label: string; amount: number; ratio: number }> = [];
   topCourses = [
@@ -68,6 +69,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private setupWebSocket() {
+    // Listen for connection status (live indicator)
+    this.wsService.isConnected$.subscribe(connected => {
+      this.isConnected = connected;
+    });
+
     // Listen for real-time stats updates
     this.statsSub = this.wsService.stats$.subscribe(data => {
       if (data) {
