@@ -4,6 +4,24 @@
         <p class="subtitle">Join the conversation and improve your English with the community</p>
     </div>
 
+    <!-- Create Post (FB-like) -->
+    <div class="topic-create-card">
+        <h3>Start a discussion</h3>
+        <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Title</mat-label>
+            <input matInput [(ngModel)]="newTitle" placeholder="What’s your question or topic?">
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Description</mat-label>
+            <textarea matInput rows="3" [(ngModel)]="newDescription" placeholder="Add details..."></textarea>
+        </mat-form-field>
+        <button mat-raised-button color="primary"
+                (click)="createTopic()"
+                [disabled]="creating || !newTitle.trim() || !newDescription.trim() || generalSpaceId == null">
+            Post
+        </button>
+    </div>
+
     <div *ngIf="loading" class="loading-state">
         <div class="spinner-border text-primary" role="status">
             <span class="sr-only">Loading...</span>

@@ -2,7 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-const API_URL = 'http://localhost:8040/api/forum/messages';
+// Use relative base URL so Angular proxy can route to backend (dev) or gateway (prod).
+const API_BASE_URL = '/api/forum';
+const API_URL = `${API_BASE_URL}/messages`;
+const TOPICS_URL = `${API_BASE_URL}/topics`;
 
 export interface ForumMessage {
     id?: number;
@@ -27,7 +30,7 @@ export class ForumMessageService {
     constructor(private http: HttpClient) { }
 
     getMessagesByTopic(topicId: number): Observable<ForumMessage[]> {
-        return this.http.get<ForumMessage[]>(`${API_URL}/topic/${topicId}`);
+        return this.http.get<ForumMessage[]>(`${TOPICS_URL}/${topicId}/messages`);
     }
 
     getReplies(parentMessageId: number): Observable<ForumMessage[]> {
@@ -35,7 +38,11 @@ export class ForumMessageService {
     }
 
     createMessage(request: CreateMessageRequest): Observable<ForumMessage> {
-        return this.http.post<ForumMessage>(API_URL, request);
+        return this.http.post<ForumMessage>(`${TOPICS_URL}/${request.topicId}/messages`, {
+            authorId: request.authorId,
+            content: request.content,
+            parentMessageId: request.parentMessageId ?? null
+        });
     }
 
     updateMessage(id: number, content: string): Observable<ForumMessage> {

@@ -1,7 +1,9 @@
 package esprit.forum.service;
 
 import esprit.forum.client.InscriptionClient;
+import esprit.forum.entity.ForumSpace;
 import esprit.forum.entity.ForumTopic;
+import esprit.forum.repository.ForumSpaceRepository;
 import esprit.forum.repository.ForumTopicRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,7 @@ public class ForumTopicService {
 
     private final ForumTopicRepository forumTopicRepository;
     private final InscriptionClient inscriptionClient;
+    private final ForumSpaceRepository forumSpaceRepository;
 
     public List<ForumTopic> getAllPublicTopics() {
         return forumTopicRepository.findByIsPublicTrue();
@@ -52,8 +55,19 @@ public class ForumTopicService {
         return forumTopicRepository.findByAuthorId(authorId);
     }
 
+    public List<ForumTopic> getTopicsBySpaceId(Long spaceId) {
+        return forumTopicRepository.findBySpaceId(spaceId);
+    }
+
     @Transactional
     public ForumTopic createTopic(ForumTopic topic) {
+        if (topic.getSpace() == null && topic.getCategory() != null && !topic.getCategory().trim().isEmpty()) {
+            String normalized = topic.getCategory().trim().toUpperCase();
+            ForumSpace space = "GENERAL".equals(normalized)
+                    ? forumSpaceRepository.findByTypeAndKey(ForumSpace.ForumSpaceType.GENERAL, "GENERAL").orElse(null)
+                    : forumSpaceRepository.findByTypeAndKey(ForumSpace.ForumSpaceType.LEVEL, normalized).orElse(null);
+            topic.setSpace(space);
+        }
         // Validate category
         if ("GENERAL".equalsIgnoreCase(topic.getCategory())) {
             topic.setIsPublic(true);

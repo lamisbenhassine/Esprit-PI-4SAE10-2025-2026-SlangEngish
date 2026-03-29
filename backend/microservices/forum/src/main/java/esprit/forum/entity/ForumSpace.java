@@ -7,38 +7,41 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
-@Table(name = "forum_topic")
+@Table(
+        name = "forum_space",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_forum_space_type_key", columnNames = {"type", "space_key"})
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ForumTopic {
+public class ForumSpace {
+
+    public enum ForumSpaceType {
+        GENERAL,
+        LEVEL,
+        COURSE
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ForumSpaceType type;
+
+    @Column(name = "space_key", nullable = false, length = 100)
+    private String key;
+
+    @Column(nullable = false, length = 200)
     private String title;
 
-    @Column(length = 1000)
-    private String description;
-
-    @Column(name = "author_id")
-    private Long authorId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "space_id")
-    private ForumSpace space;
-
-    private String category; // GENERAL, A1, A2, B1, B2, C1, C2
-
-    @Column(name = "is_public")
-    private Boolean isPublic; // true pour forum général, false pour niveau spécifique
-
-    private Integer views = 0;
+    @Column(name = "is_public", nullable = false)
+    private Boolean isPublic;
 
     @Column(name = "created_at")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -48,15 +51,12 @@ public class ForumTopic {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ForumMessage> messages = new ArrayList<>();
-
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (views == null) {
-            views = 0;
+        if (isPublic == null) {
+            isPublic = false;
         }
     }
 
@@ -64,8 +64,5 @@ public class ForumTopic {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-    public void incrementViews() {
-        this.views++;
-    }
 }
+

@@ -10,6 +10,12 @@ export class ForumGeneralComponent implements OnInit {
   topics: ForumTopic[] = [];
   filteredTopics: ForumTopic[] = [];
   loading = false;
+
+  creating = false;
+  newTitle = '';
+  newDescription = '';
+  currentUserId = 1;
+  generalSpaceId: number | null = null;
   
   // Search and filter properties
   searchQuery: string = '';
@@ -34,6 +40,35 @@ export class ForumGeneralComponent implements OnInit {
         this.loading = false;
       },
       error: () => this.loading = false
+    });
+
+    // Best-effort: resolve GENERAL space id for creating posts.
+    // (We keep feed compatible with existing /topics/general endpoint for now.)
+    this.forumTopicService.getGeneralSpace().subscribe({
+      next: (space) => this.generalSpaceId = space.id ?? null,
+      error: () => this.generalSpaceId = null
+    });
+  }
+
+  createTopic(): void {
+    if (this.creating) return;
+    if (!this.newTitle.trim() || !this.newDescription.trim()) return;
+    if (this.generalSpaceId == null) return;
+
+    this.creating = true;
+    this.forumTopicService.createTopicInSpace(this.generalSpaceId, {
+      userId: this.currentUserId,
+      authorId: this.currentUserId,
+      title: this.newTitle.trim(),
+      description: this.newDescription.trim()
+    }).subscribe({
+      next: () => {
+        this.newTitle = '';
+        this.newDescription = '';
+        this.creating = false;
+        this.ngOnInit();
+      },
+      error: () => this.creating = false
     });
   }
 

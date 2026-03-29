@@ -3,7 +3,10 @@ import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http'
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, retry } from 'rxjs/operators';
 
-const API_URL = 'http://localhost:8040/api/forum/topics';
+// Use relative base URL so Angular proxy can route to backend (dev) or gateway (prod).
+const API_BASE_URL = '/api/forum';
+const API_URL = `${API_BASE_URL}/topics`;
+const SPACES_URL = `${API_BASE_URL}/spaces`;
 
 export interface ForumTopic {
     id?: number;
@@ -13,6 +16,16 @@ export interface ForumTopic {
     category: string;
     isPublic: boolean;
     views: number;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ForumSpace {
+    id?: number;
+    type: 'GENERAL' | 'LEVEL' | 'COURSE';
+    key: string;
+    title: string;
+    isPublic: boolean;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -49,8 +62,37 @@ export class ForumTopicService {
         );
     }
 
+    getTopicsBySpace(spaceId: number, userId?: number): Observable<ForumTopic[]> {
+        let params = new HttpParams();
+        if (userId != null) {
+            params = params.set('userId', userId.toString());
+        }
+        return this.http.get<ForumTopic[]>(`${SPACES_URL}/${spaceId}/topics`, { params }).pipe(
+            catchError(this.handleError)
+        );
+    }
+
+    getCourseSpace(courseKey: string, userId: number): Observable<ForumSpace> {
+        const params = new HttpParams().set('userId', userId.toString());
+        return this.http.get<ForumSpace>(`${SPACES_URL}/course/${courseKey}`, { params }).pipe(
+            catchError(this.handleError)
+        );
+    }
+
+    getGeneralSpace(): Observable<ForumSpace> {
+        return this.http.get<ForumSpace>(`${SPACES_URL}/general`).pipe(
+            catchError(this.handleError)
+        );
+    }
+
     createTopic(topic: ForumTopic): Observable<ForumTopic> {
         return this.http.post<ForumTopic>(API_URL, topic).pipe(
+            catchError(this.handleError)
+        );
+    }
+
+    createTopicInSpace(spaceId: number, request: { userId: number; authorId: number; title: string; description: string; }): Observable<ForumTopic> {
+        return this.http.post<ForumTopic>(`${SPACES_URL}/${spaceId}/topics`, request).pipe(
             catchError(this.handleError)
         );
     }

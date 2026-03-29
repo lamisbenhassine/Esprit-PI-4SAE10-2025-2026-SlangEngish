@@ -12,10 +12,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ForumGeneralComponent } from './forum-general/forum-general.component';
 import { ForumLevelsComponent } from './forum-levels/forum-levels.component';
 import { TopicDetailComponent } from './topic-detail/topic-detail.component';
+import { ForumCoursesComponent } from './forum-courses/forum-courses.component';
 
 const routes: Routes = [
     { path: 'general', component: ForumGeneralComponent },
     { path: 'levels', component: ForumLevelsComponent },
+    { path: 'courses', component: ForumCoursesComponent },
+    { path: 'courses/:courseKey', component: ForumCoursesComponent },
     { path: 'topic/:id', component: TopicDetailComponent }
 ];
 
@@ -23,6 +26,7 @@ const routes: Routes = [
     declarations: [
         ForumGeneralComponent,
         ForumLevelsComponent,
+        ForumCoursesComponent,
         TopicDetailComponent
     ],
     imports: [

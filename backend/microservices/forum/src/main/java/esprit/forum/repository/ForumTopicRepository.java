@@ -15,4 +15,8 @@ public interface ForumTopicRepository extends JpaRepository<ForumTopic, Long> {
     List<ForumTopic> findByCategory(String category);
 
     List<ForumTopic> findByAuthorId(Long authorId);
+
+    List<ForumTopic> findBySpaceId(Long spaceId);
+
+    List<ForumTopic> findBySpaceIsNull();
 }

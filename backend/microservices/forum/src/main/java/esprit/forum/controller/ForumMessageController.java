@@ -18,6 +18,7 @@ public class ForumMessageController {
 
     private final ForumMessageService forumMessageService;
 
+    @Deprecated
     @GetMapping("/topic/{topicId}")
     public ResponseEntity<List<ForumMessage>> getMessagesByTopic(@PathVariable Long topicId) {
         return ResponseEntity.ok(forumMessageService.getMessagesByTopicId(topicId));
@@ -40,6 +41,7 @@ public class ForumMessageController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @Deprecated
     @PostMapping
     public ResponseEntity<ForumMessage> createMessage(@RequestBody CreateMessageRequest request) {
         try {
