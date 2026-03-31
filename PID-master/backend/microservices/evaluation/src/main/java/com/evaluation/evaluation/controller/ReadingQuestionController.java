@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/reading-questions")
+@RequestMapping("/evaluation/reading-questions")
 @RequiredArgsConstructor
 public class ReadingQuestionController {
 

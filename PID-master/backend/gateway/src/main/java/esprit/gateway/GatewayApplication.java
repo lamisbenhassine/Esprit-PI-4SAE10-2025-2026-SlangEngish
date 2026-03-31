@@ -17,8 +17,7 @@ public class GatewayApplication {
     @Bean
     public RouteLocator gatewayRoutes(RouteLocatorBuilder builder) {
         return builder.routes()
-                // Route /api/** to the evaluation microservice (discovered via Eureka as "evaluation")
-                .route("evaluation", r -> r.path("/api/**")
+                .route("evaluation", r -> r.path("/evaluation/**")
                         .uri("lb://evaluation"))
                 // Serve uploaded files (photo, PDF) so frontend can display them
                 .route("evaluation-uploads", r -> r.path("/uploads/**")

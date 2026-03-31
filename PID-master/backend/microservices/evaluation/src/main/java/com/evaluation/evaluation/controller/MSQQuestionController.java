@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/msq-questions")
+@RequestMapping("/evaluation/msq-questions")
 @RequiredArgsConstructor
 public class MSQQuestionController {
 

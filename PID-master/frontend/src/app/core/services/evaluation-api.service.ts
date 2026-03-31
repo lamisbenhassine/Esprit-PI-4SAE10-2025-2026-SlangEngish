@@ -11,7 +11,7 @@ export interface CertificateEligibilityResponse {
   level?: string;
 }
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = 'http://localhost:8080/evaluation';
 
 @Injectable({ providedIn: 'root' })
 export class EvaluationApiService {
