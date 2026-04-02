@@ -17,4 +17,6 @@ public class FeedbackDto {
     private String commentaire;
     private LocalDateTime dateCreation;
     private String nomEtudiant;  // Pour l'affichage admin
+    /** POSITIVE | NEGATIVE | NEUTRAL — analyse lexicale + note */
+    private String sentiment;
 }

@@ -1,5 +1,7 @@
 package org.example.evenement.service;
 
+import org.example.evenement.client.ClubApiClient;
+import org.example.evenement.client.ClubInfoDto;
 import org.example.evenement.entity.Evenement;
 import org.example.evenement.entity.EventStatus;
 import org.example.evenement.repository.EvenementRepository;
@@ -18,6 +20,9 @@ public class EvenementServiceImpl implements EvenementService {
     @Autowired
     private EvenementRepository evenementRepository;
 
+    @Autowired
+    private ClubApiClient clubApiClient;
+
     @Override
     public Evenement createEvenement(Evenement evenement) {
         if (evenement.getTitre() == null || evenement.getTitre().trim().isEmpty()) {
@@ -29,7 +34,24 @@ public class EvenementServiceImpl implements EvenementService {
         if (evenementRepository.existsByTitre(evenement.getTitre())) {
             throw new IllegalArgumentException("Un événement avec ce titre existe déjà");
         }
+        resolveClubOrganisateur(evenement);
         return evenementRepository.save(evenement);
+    }
+
+    /**
+     * Remplit nomClubOrganisateur à partir du microservice Club si idClub est renseigné.
+     */
+    private void resolveClubOrganisateur(Evenement evenement) {
+        if (evenement.getIdClub() != null) {
+            ClubInfoDto club = clubApiClient.getClubById(evenement.getIdClub());
+            if (club == null || club.getNom() == null || club.getNom().isBlank()) {
+                throw new IllegalArgumentException("Club introuvable pour l'organisation de l'événement");
+            }
+            evenement.setNomClubOrganisateur(club.getNom().trim());
+        } else {
+            evenement.setIdClub(null);
+            evenement.setNomClubOrganisateur(null);
+        }
     }
 
     @Override
@@ -94,6 +116,18 @@ public class EvenementServiceImpl implements EvenementService {
         
         if (evenement.getStatus() != null) {
             existingEvenement.setStatus(evenement.getStatus());
+        }
+
+        if (evenement.getIdClub() != null) {
+            ClubInfoDto club = clubApiClient.getClubById(evenement.getIdClub());
+            if (club == null || club.getNom() == null || club.getNom().isBlank()) {
+                throw new IllegalArgumentException("Club introuvable pour l'organisation de l'événement");
+            }
+            existingEvenement.setIdClub(evenement.getIdClub());
+            existingEvenement.setNomClubOrganisateur(club.getNom().trim());
+        } else {
+            existingEvenement.setIdClub(null);
+            existingEvenement.setNomClubOrganisateur(null);
         }
         
         return evenementRepository.save(existingEvenement);

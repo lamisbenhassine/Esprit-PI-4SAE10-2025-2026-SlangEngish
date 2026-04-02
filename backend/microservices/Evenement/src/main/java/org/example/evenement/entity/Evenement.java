@@ -42,6 +42,18 @@ public class Evenement {
     @Column(name = "status")
     private EventStatus status;
 
+    /**
+     * Si l'événement est organisé par un club (sinon null pour un événement général / admin).
+     */
+    @Column(name = "id_club")
+    private Long idClub;
+
+    /**
+     * Nom du club organisateur (dénormalisé pour l'affichage liste).
+     */
+    @Column(name = "nom_club_organisateur", length = 255)
+    private String nomClubOrganisateur;
+
     @OneToMany(mappedBy = "evenement", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<InscriptionEvenement> inscriptions;
@@ -49,4 +61,11 @@ public class Evenement {
     @OneToMany(mappedBy = "evenement", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<ListeAttenteEvenement> listeAttente;
+
+    /**
+     * Avis sur l'événement (côté parent pour Jackson : {@link FeedbackEvenement#evenement} est en @JsonBackReference).
+     */
+    @OneToMany(mappedBy = "evenement", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<FeedbackEvenement> feedbacks;
 }
