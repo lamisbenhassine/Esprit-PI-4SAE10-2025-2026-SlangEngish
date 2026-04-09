@@ -1,116 +1,108 @@
-<div class="forum-container">
-    <div class="forum-header">
-        <h1>Discussion Forum</h1>
-        <p class="subtitle">Join the conversation and improve your English with the community</p>
+<div class="fo-forum">
+  <header class="fo-hero">
+    <div class="fo-hero-inner">
+      <span class="fo-kicker">Slang English · Communauté</span>
+      <h1>Forum</h1>
+      <p>Échangez, partagez des ressources (images, vidéos) et progressez avec d’autres apprenants.</p>
     </div>
+  </header>
 
-    <!-- Create Post (FB-like) -->
-    <div class="topic-create-card">
-        <h3>Start a discussion</h3>
-        <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Title</mat-label>
-            <input matInput [(ngModel)]="newTitle" placeholder="What’s your question or topic?">
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="w-100">
-            <mat-label>Description</mat-label>
-            <textarea matInput rows="3" [(ngModel)]="newDescription" placeholder="Add details..."></textarea>
-        </mat-form-field>
-        <button mat-raised-button color="primary"
-                (click)="createTopic()"
-                [disabled]="creating || !newTitle.trim() || !newDescription.trim() || generalSpaceId == null">
-            Post
-        </button>
+  <section class="fo-compose">
+    <h2>Nouvelle discussion</h2>
+    <mat-form-field appearance="outline" class="w100">
+      <mat-label>Titre</mat-label>
+      <input matInput [(ngModel)]="newTitle" placeholder="Sujet de votre message" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="w100">
+      <mat-label>Description</mat-label>
+      <textarea matInput rows="3" [(ngModel)]="newDescription" placeholder="Détails…"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="w100">
+      <mat-label>Image de couverture (URL optionnelle)</mat-label>
+      <input matInput [(ngModel)]="newCoverUrl" />
+    </mat-form-field>
+    <div class="fo-compose-actions">
+      <input type="file" accept="image/*" #coverIn hidden (change)="onCoverFile($event)" />
+      <button mat-stroked-button type="button" (click)="coverIn.click()" [disabled]="coverUploading">
+        <mat-icon>image</mat-icon> Télécharger une image
+      </button>
+      <button mat-flat-button color="primary" type="button"
+        (click)="createTopic()"
+        [disabled]="creating || !newTitle.trim() || !newDescription.trim() || generalSpaceId == null">
+        Publier
+      </button>
     </div>
+  </section>
 
-    <div *ngIf="loading" class="loading-state">
-        <div class="spinner-border text-primary" role="status">
-            <span class="sr-only">Loading...</span>
+  <div *ngIf="loading" class="fo-loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="filteredTopics.length === 0 && !loading && topics.length === 0" class="fo-empty">
+    <mat-icon>forum</mat-icon>
+    <h3>Aucun sujet pour le moment</h3>
+    <p>Lancez la première discussion ci-dessus.</p>
+  </div>
+
+  <div *ngIf="filteredTopics.length === 0 && !loading && topics.length > 0" class="fo-empty">
+    <mat-icon>search_off</mat-icon>
+    <h3>Aucun résultat</h3>
+    <button mat-button (click)="searchQuery = ''; onSearchChange()">Réinitialiser</button>
+  </div>
+
+  <section class="fo-filters" *ngIf="!loading && topics.length > 0">
+    <mat-form-field appearance="outline" class="fo-search">
+      <mat-label>Rechercher</mat-label>
+      <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" />
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="fo-sort">
+      <mat-label>Trier</mat-label>
+      <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
+        <mat-option value="createdAt">Date</mat-option>
+        <mat-option value="title">Titre</mat-option>
+        <mat-option value="category">Catégorie</mat-option>
+        <mat-option value="views">Vues</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button mat-icon-button (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()" matTooltip="Ordre">
+      <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+    </button>
+  </section>
+
+  <div class="fo-grid" *ngIf="!loading">
+    <a *ngFor="let topic of filteredTopics" [routerLink]="['/frontoffice/forum/topic', topic.id]" class="fo-card">
+      <div class="fo-card-media" *ngIf="topic.coverImageUrl">
+        <img [src]="topic.coverImageUrl" alt="" />
+      </div>
+      <div class="fo-card-media fo-placeholder" *ngIf="!topic.coverImageUrl">
+        <mat-icon>chat_bubble</mat-icon>
+      </div>
+      <div class="fo-card-body">
+        <div class="fo-card-tags">
+          <span class="tag">{{ topic.category }}</span>
+          <span class="tag pin" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> À la une</span>
+          <span class="tag soft">{{ topic.createdAt | date : 'mediumDate' }}</span>
         </div>
-    </div>
+        <h3>{{ topic.title }}</h3>
+        <p>{{ topic.description | slice : 0 : 160 }}{{ (topic.description || '').length > 160 ? '…' : '' }}</p>
+        <footer>
+          <span class="meta"><mat-icon>person</mat-icon>#{{ topic.authorId }}</span>
+          <span class="meta"><mat-icon>visibility</mat-icon>{{ topic.views }}</span>
+        </footer>
+      </div>
+    </a>
+  </div>
 
-    <div *ngIf="filteredTopics.length === 0 && !loading && topics.length === 0" class="empty-state">
-        <div class="empty-icon">💬</div>
-        <h3>No discussions yet</h3>
-        <p>Be the first to start a topic!</p>
-    </div>
-
-    <div *ngIf="filteredTopics.length === 0 && !loading && topics.length > 0" class="empty-state">
-        <div class="empty-icon">🔍</div>
-        <h3>No topics match your search criteria</h3>
-        <button mat-button (click)="searchQuery = ''; onSearchChange()">Clear filters</button>
-    </div>
-
-    <!-- Pagination -->
-    <div class="pagination-section" *ngIf="totalPages > 1 && !loading">
-        <div class="pagination-info">
-            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, topics.length) }} of {{ topics.length }} topics
-        </div>
-        <div class="pagination-controls">
-            <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
-                <mat-icon>chevron_left</mat-icon>
-            </button>
-            <button *ngFor="let page of getPageNumbers()" 
-                    mat-button 
-                    [class.active]="page === currentPage"
-                    (click)="goToPage(page)">
-                {{ page }}
-            </button>
-            <button mat-icon-button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
-                <mat-icon>chevron_right</mat-icon>
-            </button>
-        </div>
-    </div>
-
-    <!-- Search and Filter Section -->
-    <div class="filter-section" *ngIf="!loading && topics.length > 0">
-        <div class="search-box">
-            <mat-form-field appearance="outline" class="search-field">
-                <mat-label>Search topics</mat-label>
-                <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" placeholder="Search by title, description, or category">
-                <mat-icon matPrefix>search</mat-icon>
-            </mat-form-field>
-        </div>
-        <div class="sort-controls">
-            <mat-form-field appearance="outline" class="sort-field">
-                <mat-label>Sort by</mat-label>
-                <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
-                    <mat-option value="createdAt">Date Created</mat-option>
-                    <mat-option value="title">Title</mat-option>
-                    <mat-option value="category">Category</mat-option>
-                    <mat-option value="views">Views</mat-option>
-                </mat-select>
-            </mat-form-field>
-            <button mat-icon-button [class.active]="sortOrder === 'asc'" (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()" matTooltip="Toggle sort order">
-                <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
-            </button>
-        </div>
-    </div>
-
-    <div class="topics-list" *ngIf="!loading">
-        <a *ngFor="let topic of filteredTopics" [routerLink]="['/frontoffice/forum/topic', topic.id]" class="topic-card">
-            <div class="topic-content">
-                <div class="topic-badges">
-                    <span class="badge category" [class]="topic.category.toLowerCase()">{{ topic.category }}</span>
-                    <span class="badge date">{{ topic.createdAt | date:'mediumDate' }}</span>
-                </div>
-                <h2 class="topic-title">{{ topic.title }}</h2>
-                <p class="topic-description">{{ topic.description | slice:0:150 }}{{ topic.description.length > 150 ?
-                    '...' : '' }}</p>
-
-                <div class="topic-meta">
-                    <div class="author">
-                        <div class="avatar-circle">{{ topic.authorId }}</div>
-                        <span>User #{{ topic.authorId }}</span>
-                    </div>
-                    <div class="stats">
-                        <span class="stat"><i class="fas fa-eye"></i> {{ topic.views }} views</span>
-                        <span class="stat"><i class="fas fa-comment"></i> View discussion</span>
-                    </div>
-                </div>
-            </div>
-            <div class="topic-action">
-                <i class="fas fa-chevron-right"></i>
-            </div>
-        </a>
-    </div>
+  <div class="fo-pagination" *ngIf="totalPages > 1 && !loading">
+    <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button *ngFor="let page of getPageNumbers()" mat-button [class.active]="page === currentPage" (click)="goToPage(page)">
+      {{ page }}
+    </button>
+    <button mat-icon-button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
 </div>

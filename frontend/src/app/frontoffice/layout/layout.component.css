@@ -24,6 +24,12 @@
   margin: 0 auto;
 }
 
+/* Fil type Instagram : plus large, moins de marge */
+.content-wrapper.feed-shell {
+  max-width: none;
+  padding: 20px 16px 48px;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .content-wrapper {

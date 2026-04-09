@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -17,13 +19,23 @@ public class ForumMessageService {
 
     private final ForumMessageRepository forumMessageRepository;
     private final ForumTopicRepository forumTopicRepository;
+    private final ForumBlockService forumBlockService;
 
-    public List<ForumMessage> getMessagesByTopicId(Long topicId) {
-        return forumMessageRepository.findByTopicId(topicId);
+    public List<ForumMessage> getMessagesByTopicId(Long topicId, Long viewerUserId) {
+        List<ForumMessage> all = forumMessageRepository.findByTopicId(topicId);
+        return filterByBlockedAuthors(all, viewerUserId);
     }
 
-    public List<ForumMessage> getRepliesByParentId(Long parentMessageId) {
-        return forumMessageRepository.findByParentMessageId(parentMessageId);
+    public List<ForumMessage> getRepliesByParentId(Long parentMessageId, Long viewerUserId) {
+        List<ForumMessage> all = forumMessageRepository.findByParentMessageId(parentMessageId);
+        return filterByBlockedAuthors(all, viewerUserId);
+    }
+
+    private List<ForumMessage> filterByBlockedAuthors(List<ForumMessage> messages, Long viewerUserId) {
+        Set<Long> blocked = forumBlockService.getBlockedUserIds(viewerUserId);
+        return messages.stream()
+                .filter(m -> m.getAuthorId() == null || !blocked.contains(m.getAuthorId()))
+                .collect(Collectors.toList());
     }
 
     public List<ForumMessage> getMessagesByAuthor(Long authorId) {
@@ -38,6 +50,9 @@ public class ForumMessageService {
     public ForumMessage createMessage(ForumMessage message, Long topicId) {
         ForumTopic topic = forumTopicRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Topic not found with id: " + topicId));
+        if (Boolean.TRUE.equals(topic.getLocked())) {
+            throw new RuntimeException("Topic is locked — no new messages");
+        }
 
         message.setTopic(topic);
         return forumMessageRepository.save(message);
@@ -48,6 +63,9 @@ public class ForumMessageService {
         return forumMessageRepository.findById(id)
                 .map(message -> {
                     message.setContent(updatedMessage.getContent());
+                    if (updatedMessage.getAttachments() != null) {
+                        message.setAttachments(updatedMessage.getAttachments());
+                    }
                     return forumMessageRepository.save(message);
                 })
                 .orElseThrow(() -> new RuntimeException("Message not found with id: " + id));

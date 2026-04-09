@@ -6,10 +6,10 @@
       <mat-icon>menu</mat-icon>
     </button>
 
-    <div class="logo">
+    <a [routerLink]="isAdmin ? '/backoffice/dashboard' : '/frontoffice/feed'" class="logo logo-link" aria-label="Accueil">
       <img src="assets/logo1.png" alt="Slang-logo" class="logo-image">
       <span class="logo-text">Slang-English</span>
-    </div>
+    </a>
   </div>
 
   <!-- Center Section - Search Bar -->

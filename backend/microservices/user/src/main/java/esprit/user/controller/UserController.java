@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -46,6 +47,22 @@ public class UserController {
         return ResponseEntity.ok(userRepository.findByEnglishLevel(englishLevel));
     }
 
+    @GetMapping("/by-role/{role}")
+    public ResponseEntity<List<User>> getUsersByRole(@PathVariable String role) {
+        log.info("Getting users by account role: {}", role);
+        return ResponseEntity.ok(userRepository.findByAccountRole(role.toUpperCase()));
+    }
+
+    /** Pour le fil / forum : noms et rôles sans mot de passe (WRITE_ONLY sur User). */
+    @PostMapping("/lookup")
+    public ResponseEntity<List<User>> lookupByIds(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+        List<Long> distinct = ids.stream().distinct().toList();
+        return ResponseEntity.ok(userRepository.findAllById(distinct));
+    }
+
     @PostMapping
     public ResponseEntity<User> createUser(@RequestBody User user) {
         log.info("Creating new user: {}", user.getEmail());
@@ -63,6 +80,9 @@ public class UserController {
                     existing.setPassword(user.getPassword());
                     existing.setEnglishLevel(user.getEnglishLevel());
                     existing.setSubscriptionStatus(user.getSubscriptionStatus());
+                    if (user.getAccountRole() != null && !user.getAccountRole().isBlank()) {
+                        existing.setAccountRole(user.getAccountRole().toUpperCase());
+                    }
                     return ResponseEntity.ok(userRepository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());

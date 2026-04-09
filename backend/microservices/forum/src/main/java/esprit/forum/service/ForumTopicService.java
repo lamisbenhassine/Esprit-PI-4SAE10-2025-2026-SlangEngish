@@ -9,8 +9,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,16 +23,16 @@ public class ForumTopicService {
     private final ForumTopicRepository forumTopicRepository;
     private final InscriptionClient inscriptionClient;
     private final ForumSpaceRepository forumSpaceRepository;
+    private final ForumBlockService forumBlockService;
 
-    public List<ForumTopic> getAllPublicTopics() {
-        return forumTopicRepository.findByIsPublicTrue();
+    public List<ForumTopic> getAllPublicTopics(Long viewerUserId) {
+        List<ForumTopic> topics = forumTopicRepository.findByIsPublicTrue();
+        return filterAndSortTopics(topics, viewerUserId);
     }
 
     public List<ForumTopic> getTopicsByCategory(String category, Long userId) {
-        // Check if accessing level-specific forum
         List<ForumTopic> topics = forumTopicRepository.findByCategory(category);
 
-        // If category is not GENERAL and user is trying to access, verify payment
         if (!"GENERAL".equalsIgnoreCase(category)) {
             Boolean isPaid = inscriptionClient.isUserPaid(userId);
             if (!isPaid) {
@@ -36,7 +40,7 @@ public class ForumTopicService {
             }
         }
 
-        return topics;
+        return filterAndSortTopics(topics, userId);
     }
 
     public Optional<ForumTopic> getTopicById(Long id) {
@@ -55,8 +59,22 @@ public class ForumTopicService {
         return forumTopicRepository.findByAuthorId(authorId);
     }
 
-    public List<ForumTopic> getTopicsBySpaceId(Long spaceId) {
-        return forumTopicRepository.findBySpaceId(spaceId);
+    public List<ForumTopic> getTopicsBySpaceId(Long spaceId, Long viewerUserId) {
+        List<ForumTopic> topics = forumTopicRepository.findBySpaceId(spaceId);
+        return filterAndSortTopics(topics, viewerUserId);
+    }
+
+    private List<ForumTopic> filterAndSortTopics(List<ForumTopic> topics, Long viewerUserId) {
+        Set<Long> blocked = forumBlockService.getBlockedUserIds(viewerUserId);
+        List<ForumTopic> filtered = topics.stream()
+                .filter(t -> t.getAuthorId() == null || !blocked.contains(t.getAuthorId()))
+                .collect(Collectors.toList());
+        filtered.sort(Comparator
+                .comparing((ForumTopic t) -> Boolean.TRUE.equals(t.getPinned()), Comparator.reverseOrder())
+                .thenComparing(
+                        t -> t.getUpdatedAt() != null ? t.getUpdatedAt() : LocalDateTime.MIN,
+                        Comparator.reverseOrder()));
+        return filtered;
     }
 
     @Transactional
@@ -68,11 +86,16 @@ public class ForumTopicService {
                     : forumSpaceRepository.findByTypeAndKey(ForumSpace.ForumSpaceType.LEVEL, normalized).orElse(null);
             topic.setSpace(space);
         }
-        // Validate category
         if ("GENERAL".equalsIgnoreCase(topic.getCategory())) {
             topic.setIsPublic(true);
         } else {
             topic.setIsPublic(false);
+        }
+        if (topic.getPinned() == null) {
+            topic.setPinned(Boolean.FALSE);
+        }
+        if (topic.getLocked() == null) {
+            topic.setLocked(Boolean.FALSE);
         }
         return forumTopicRepository.save(topic);
     }
@@ -84,8 +107,19 @@ public class ForumTopicService {
                     topic.setTitle(updatedTopic.getTitle());
                     topic.setDescription(updatedTopic.getDescription());
                     topic.setCategory(updatedTopic.getCategory());
+                    if (updatedTopic.getCoverImageUrl() != null) {
+                        topic.setCoverImageUrl(updatedTopic.getCoverImageUrl());
+                    }
+                    if (updatedTopic.getCoverVideoUrl() != null) {
+                        topic.setCoverVideoUrl(updatedTopic.getCoverVideoUrl());
+                    }
+                    if (updatedTopic.getPinned() != null) {
+                        topic.setPinned(updatedTopic.getPinned());
+                    }
+                    if (updatedTopic.getLocked() != null) {
+                        topic.setLocked(updatedTopic.getLocked());
+                    }
 
-                    // Update isPublic based on category
                     if ("GENERAL".equalsIgnoreCase(updatedTopic.getCategory())) {
                         topic.setIsPublic(true);
                     } else {
@@ -99,5 +133,18 @@ public class ForumTopicService {
 
     public void deleteTopic(Long id) {
         forumTopicRepository.deleteById(id);
+    }
+
+    @Transactional
+    public ForumTopic moderateTopic(Long id, Boolean pinned, Boolean locked) {
+        ForumTopic t = forumTopicRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Topic not found with id: " + id));
+        if (pinned != null) {
+            t.setPinned(pinned);
+        }
+        if (locked != null) {
+            t.setLocked(locked);
+        }
+        return forumTopicRepository.save(t);
     }
 }

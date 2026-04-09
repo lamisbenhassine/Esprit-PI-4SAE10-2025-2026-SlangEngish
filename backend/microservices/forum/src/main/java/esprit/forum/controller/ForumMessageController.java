@@ -21,12 +21,14 @@ public class ForumMessageController {
     @Deprecated
     @GetMapping("/topic/{topicId}")
     public ResponseEntity<List<ForumMessage>> getMessagesByTopic(@PathVariable Long topicId) {
-        return ResponseEntity.ok(forumMessageService.getMessagesByTopicId(topicId));
+        return ResponseEntity.ok(forumMessageService.getMessagesByTopicId(topicId, null));
     }
 
     @GetMapping("/replies/{parentMessageId}")
-    public ResponseEntity<List<ForumMessage>> getReplies(@PathVariable Long parentMessageId) {
-        return ResponseEntity.ok(forumMessageService.getRepliesByParentId(parentMessageId));
+    public ResponseEntity<List<ForumMessage>> getReplies(
+            @PathVariable Long parentMessageId,
+            @RequestParam(required = false) Long viewerUserId) {
+        return ResponseEntity.ok(forumMessageService.getRepliesByParentId(parentMessageId, viewerUserId));
     }
 
     @GetMapping("/author/{authorId}")
@@ -63,6 +65,7 @@ public class ForumMessageController {
         try {
             ForumMessage message = new ForumMessage();
             message.setContent(request.getContent());
+            message.setAttachments(request.getAttachments());
 
             ForumMessage updatedMessage = forumMessageService.updateMessage(id, message);
             return ResponseEntity.ok(updatedMessage);
@@ -88,5 +91,6 @@ public class ForumMessageController {
     @Data
     public static class UpdateMessageRequest {
         private String content;
+        private String attachments;
     }
 }

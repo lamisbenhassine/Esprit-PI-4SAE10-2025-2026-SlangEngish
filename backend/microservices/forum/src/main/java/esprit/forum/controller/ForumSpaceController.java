@@ -70,7 +70,7 @@ public class ForumSpaceController {
             ForumSpace space = forumSpaceService.getSpaceById(spaceId)
                     .orElseThrow(() -> new RuntimeException("Forum space not found"));
             forumAccessService.assertCanAccess(space, userId);
-            return ResponseEntity.ok(forumTopicService.getTopicsBySpaceId(spaceId));
+            return ResponseEntity.ok(forumTopicService.getTopicsBySpaceId(spaceId, userId));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: " + e.getMessage());
         }
@@ -87,6 +87,8 @@ public class ForumSpaceController {
             topic.setTitle(request.getTitle());
             topic.setDescription(request.getDescription());
             topic.setAuthorId(request.getAuthorId());
+            topic.setCoverImageUrl(request.getCoverImageUrl());
+            topic.setCoverVideoUrl(request.getCoverVideoUrl());
             topic.setSpace(space);
 
             if (space.getType() == ForumSpace.ForumSpaceType.GENERAL) {
@@ -113,6 +115,9 @@ public class ForumSpaceController {
         private Long authorId;
         private String title;
         private String description;
+        /** URL image ou média servi par /forum-media/ après upload */
+        private String coverImageUrl;
+        private String coverVideoUrl;
     }
 }
 

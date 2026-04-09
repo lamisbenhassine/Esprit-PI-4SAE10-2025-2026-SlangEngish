@@ -1,126 +1,177 @@
 <div class="courses-management">
-    <!-- Page Header -->
-    <div class="page-header">
-        <div class="header-content">
-            <h1>Forum Management</h1>
-            <p class="header-subtitle">Manage all forum topics and discussions</p>
-        </div>
-        <div class="header-actions">
-            <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
-                <mat-icon>add_comment</mat-icon>
-                <span>Create Topic</span>
-            </button>
-        </div>
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Forum &amp; modération</h1>
+      <p class="header-subtitle">Sujets, médias, signalements et contrôle d’accès (épinglage / verrou)</p>
     </div>
+    <div class="header-actions">
+      <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
+        <mat-icon>add_comment</mat-icon>
+        <span>Nouveau sujet</span>
+      </button>
+    </div>
+  </div>
 
-    <!-- Search and Filter Section -->
-    <div class="filter-section">
-        <div class="search-box">
+  <mat-tab-group animationDuration="200ms">
+    <mat-tab label="Sujets">
+      <div class="tab-pad">
+        <div class="filter-section">
+          <div class="search-box">
             <mat-form-field appearance="outline" class="search-field">
-                <mat-label>Search topics</mat-label>
-                <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
-                    placeholder="Search by title, description, or category">
-                <mat-icon matPrefix>search</mat-icon>
+              <mat-label>Rechercher</mat-label>
+              <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+                placeholder="Titre, description, catégorie">
+              <mat-icon matPrefix>search</mat-icon>
             </mat-form-field>
-        </div>
-        <div class="sort-controls">
+          </div>
+          <div class="sort-controls">
             <mat-form-field appearance="outline" class="sort-field">
-                <mat-label>Sort by</mat-label>
-                <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
-                    <mat-option value="createdAt">Date Created</mat-option>
-                    <mat-option value="title">Title</mat-option>
-                    <mat-option value="category">Category</mat-option>
-                    <mat-option value="views">Views</mat-option>
-                </mat-select>
+              <mat-label>Trier</mat-label>
+              <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
+                <mat-option value="createdAt">Date</mat-option>
+                <mat-option value="title">Titre</mat-option>
+                <mat-option value="category">Catégorie</mat-option>
+                <mat-option value="views">Vues</mat-option>
+              </mat-select>
             </mat-form-field>
             <button mat-icon-button [class.active]="sortOrder === 'asc'"
-                (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()"
-                matTooltip="Toggle sort order">
-                <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+              (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()" matTooltip="Ordre">
+              <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
             </button>
+          </div>
         </div>
-    </div>
 
-    <!-- Topics Grid -->
-    <div class="subscription-grid">
-        <div class="subscription-card" *ngFor="let topic of filteredTopics">
+        <div class="subscription-grid">
+          <div class="subscription-card" *ngFor="let topic of filteredTopics">
             <div class="card-header">
-                <div class="plan-badge" [class]="topic.category.toLowerCase()">{{ topic.category }}</div>
-                <h3 class="plan-title">{{ topic.title }}</h3>
+              <div class="plan-badge" [class]="topic.category.toLowerCase()">{{ topic.category }}</div>
+              <div class="chip-row">
+                <span class="mini-chip" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> À la une</span>
+                <span class="mini-chip warn" *ngIf="topic.locked"><mat-icon>lock</mat-icon> Verrouillé</span>
+              </div>
+              <h3 class="plan-title">{{ topic.title }}</h3>
             </div>
 
             <div class="image-wrapper">
-                <img [src]="getTopicImage(topic)" [alt]="topic.title">
-                <div class="image-overlay">
-                    <div class="price-tag"><mat-icon>visibility</mat-icon> {{ topic.views }}</div>
-                </div>
+              <img [src]="getTopicImage(topic)" [alt]="topic.title">
+              <div class="image-overlay">
+                <div class="price-tag"><mat-icon>visibility</mat-icon> {{ topic.views }}</div>
+              </div>
             </div>
 
             <div class="card-body">
-                <p class="plan-description">{{ (topic.description || '') | slice:0:100 }}{{ (topic.description || '').length > 100 ?
+              <p class="plan-description">{{ (topic.description || '') | slice:0:100 }}{{ (topic.description || '').length > 100 ?
                     '...' : '' }}</p>
-
-                <div class="info-row">
-                    <mat-icon>{{ topic.isPublic ? 'public' : 'lock' }}</mat-icon>
-                    <span>Status: <strong>{{ topic.isPublic ? 'Public' : 'Private' }}</strong></span>
-                </div>
-
-                <div class="meta-tags">
-                    <span class="tag user">Author #{{ topic.authorId }}</span>
-                </div>
+              <div class="info-row">
+                <mat-icon>{{ topic.isPublic ? 'public' : 'lock' }}</mat-icon>
+                <span><strong>{{ topic.isPublic ? 'Public' : 'Privé' }}</strong></span>
+              </div>
+              <div class="meta-tags">
+                <span class="tag user">Auteur #{{ topic.authorId }}</span>
+              </div>
             </div>
 
-            <div class="card-footer">
-                <button mat-button class="edit-btn" (click)="editTopic(topic)">
-                    <mat-icon>edit_note</mat-icon>
-                    Edit
-                </button>
-                <button mat-button class="delete-btn" (click)="deleteTopic(topic.id!)">
-                    <mat-icon>delete_sweep</mat-icon>
-                    Delete
-                </button>
+            <div class="card-footer mod-footer">
+              <button mat-button type="button" (click)="togglePin(topic)" matTooltip="Épingler">
+                <mat-icon>{{ topic.pinned ? 'push_pin' : 'outlined_flag' }}</mat-icon>
+                Épingler
+              </button>
+              <button mat-button type="button" (click)="toggleLock(topic)" matTooltip="Verrouiller">
+                <mat-icon>{{ topic.locked ? 'lock_open' : 'lock' }}</mat-icon>
+                Verrou
+              </button>
+              <button mat-button class="edit-btn" (click)="editTopic(topic)">
+                <mat-icon>edit_note</mat-icon>
+                Modifier
+              </button>
+              <button mat-button class="delete-btn" (click)="deleteTopic(topic.id!)">
+                <mat-icon>delete_sweep</mat-icon>
+                Supprimer
+              </button>
             </div>
+          </div>
         </div>
-    </div>
 
-    <!-- Empty State -->
-    <div class="empty-state" *ngIf="filteredTopics.length === 0 && !loading && topics.length === 0">
-        <mat-icon>forum</mat-icon>
-        <h3>No forum topics found</h3>
-        <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
+        <div class="empty-state" *ngIf="filteredTopics.length === 0 && !loading && topics.length === 0">
+          <mat-icon>forum</mat-icon>
+          <h3>Aucun sujet</h3>
+          <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
             <mat-icon>add_comment</mat-icon>
-            Create Your First Topic
-        </button>
-    </div>
-
-    <div class="empty-state" *ngIf="filteredTopics.length === 0 && !loading && topics.length > 0">
-        <mat-icon>search_off</mat-icon>
-        <h3>No topics match your search criteria</h3>
-        <button mat-button (click)="searchQuery = ''; onSearchChange()">Clear filters</button>
-    </div>
-
-    <!-- Pagination -->
-    <div class="pagination-section" *ngIf="totalPages > 1 && !loading">
-        <div class="pagination-info">
-            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} -
-            {{ currentPage * itemsPerPage < topics.length ? currentPage * itemsPerPage : topics.length }} of {{
-                topics.length }} topics </div>
-                <div class="pagination-controls">
-                    <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
-                        <mat-icon>chevron_left</mat-icon>
-                    </button>
-                    <button *ngFor="let page of getPageNumbers()" mat-button [class.active]="page === currentPage"
-                        (click)="goToPage(page)">
-                        {{ page }}
-                    </button>
-                    <button mat-icon-button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
-                        <mat-icon>chevron_right</mat-icon>
-                    </button>
-                </div>
+            Créer un sujet
+          </button>
         </div>
 
-        <!-- Loading State -->
+        <div class="empty-state" *ngIf="filteredTopics.length === 0 && !loading && topics.length > 0">
+          <mat-icon>search_off</mat-icon>
+          <h3>Aucun résultat</h3>
+          <button mat-button (click)="searchQuery = ''; onSearchChange()">Réinitialiser</button>
+        </div>
+
+        <div class="pagination-section" *ngIf="totalPages > 1 && !loading">
+          <div class="pagination-info">
+            {{ (currentPage - 1) * itemsPerPage + 1 }} –
+            {{ currentPage * itemsPerPage < topics.length ? currentPage * itemsPerPage : topics.length }}
+            / {{ topics.length }}
+          </div>
+          <div class="pagination-controls">
+            <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <button *ngFor="let page of getPageNumbers()" mat-button [class.active]="page === currentPage"
+              (click)="goToPage(page)">{{ page }}</button>
+            <button mat-icon-button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+        </div>
+
         <div class="loading-state" *ngIf="loading">
-            <mat-spinner diameter="50"></mat-spinner>
+          <mat-spinner diameter="50"></mat-spinner>
         </div>
-    </div>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Signalements">
+      <div class="tab-pad">
+        <div class="reports-hint">File des signalements utilisateurs (contenu inapproprié, spam…). Traiter puis marquer
+          comme revu ou classé sans suite.</div>
+        <div *ngIf="reportsLoading" class="loading-state">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+        <table class="reports-table" *ngIf="!reportsLoading && reports.length">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Cible</th>
+              <th>ID cible</th>
+              <th>Signalant</th>
+              <th>Raison</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of reports">
+              <td>{{ r.id }}</td>
+              <td>{{ r.createdAt | date:'short' }}</td>
+              <td>{{ r.targetType }}</td>
+              <td>{{ r.targetId }}</td>
+              <td>#{{ r.reporterUserId }}</td>
+              <td>{{ r.reason }}</td>
+              <td><span class="st" [class.open]="r.status==='OPEN'">{{ r.status }}</span></td>
+              <td class="rep-actions">
+                <button mat-button type="button" *ngIf="r.status==='OPEN'" (click)="setReportStatus(r, 'REVIEWED')">Traité</button>
+                <button mat-button type="button" *ngIf="r.status==='OPEN'" (click)="setReportStatus(r, 'DISMISSED')">Classer</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="empty-state" *ngIf="!reportsLoading && !reports.length">
+          <mat-icon>assignment_turned_in</mat-icon>
+          <h3>Aucun signalement</h3>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

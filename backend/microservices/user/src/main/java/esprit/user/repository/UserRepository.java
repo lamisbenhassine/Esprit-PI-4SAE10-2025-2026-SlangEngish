@@ -13,5 +13,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     List<User> findByEnglishLevel(String englishLevel);
+
+    List<User> findByAccountRole(String accountRole);
 }
 

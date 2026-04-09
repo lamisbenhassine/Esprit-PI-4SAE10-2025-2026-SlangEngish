@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { ForumTopicService, ForumTopic } from '../../core/services/forum-topic.service';
+import { ForumReportService, ForumReport, ForumReportStatus } from '../../core/services/forum-report.service';
 import { ForumDialogComponent } from './forum-dialog/forum-dialog.component';
 
 @Component({
@@ -25,21 +26,76 @@ export class ForumManagementComponent implements OnInit {
     itemsPerPage: number = 6;
     totalPages: number = 1;
 
+    reports: ForumReport[] = [];
+    reportsLoading = false;
+
     constructor(
         private forumTopicService: ForumTopicService,
+        private forumReportService: ForumReportService,
         private snackBar: MatSnackBar,
         private dialog: MatDialog
     ) { }
 
     ngOnInit(): void {
         this.refreshTopics();
+        this.loadReports();
     }
 
-    // Same helper logic as subscriptions for visual consistency
     getTopicImage(topic: ForumTopic): string {
+        if (topic.coverImageUrl) {
+            return topic.coverImageUrl;
+        }
         const colors = ['43e97b', '38f9d7', 'fa709a', 'fee140'];
         const index = (topic.id || 0) % colors.length;
         return `https://via.placeholder.com/300x200/${colors[index]}/333333?text=${topic.category}`;
+    }
+
+    loadReports(): void {
+        this.reportsLoading = true;
+        this.forumReportService.listAll().subscribe({
+            next: r => {
+                this.reports = Array.isArray(r) ? r : [];
+                this.reportsLoading = false;
+            },
+            error: () => {
+                this.reportsLoading = false;
+            }
+        });
+    }
+
+    setReportStatus(report: ForumReport, status: ForumReportStatus): void {
+        if (!report.id) {
+            return;
+        }
+        this.forumReportService.updateStatus(report.id, status).subscribe({
+            next: () => {
+                this.snackBar.open('Signalement mis à jour', 'OK', { duration: 2500 });
+                this.loadReports();
+            },
+            error: () => this.snackBar.open('Erreur', 'OK', { duration: 3000 })
+        });
+    }
+
+    togglePin(topic: ForumTopic): void {
+        if (!topic.id) {
+            return;
+        }
+        const next = !topic.pinned;
+        this.forumTopicService.moderateTopic(topic.id, next, undefined).subscribe({
+            next: () => this.refreshTopics(),
+            error: () => this.snackBar.open('Erreur modération', 'OK', { duration: 3000 })
+        });
+    }
+
+    toggleLock(topic: ForumTopic): void {
+        if (!topic.id) {
+            return;
+        }
+        const next = !topic.locked;
+        this.forumTopicService.moderateTopic(topic.id, undefined, next).subscribe({
+            next: () => this.refreshTopics(),
+            error: () => this.snackBar.open('Erreur modération', 'OK', { duration: 3000 })
+        });
     }
 
     refreshTopics(): void {
@@ -78,8 +134,12 @@ export class ForumManagementComponent implements OnInit {
             );
         }
 
-        // Apply sorting
         filtered = [...filtered].sort((a, b) => {
+            const pa = a.pinned ? 1 : 0;
+            const pb = b.pinned ? 1 : 0;
+            if (pb !== pa) {
+                return pb - pa;
+            }
             let aValue: any, bValue: any;
 
             switch (this.sortBy) {

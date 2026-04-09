@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 // Use relative base URL so Angular proxy can route to backend (dev) or gateway (prod).
@@ -14,6 +14,8 @@ export interface ForumMessage {
     parentMessageId?: number | null;
     createdAt?: string;
     updatedAt?: string;
+    /** JSON string: [{"type":"image"|"video","url":"..."}] */
+    attachments?: string | null;
 }
 
 export interface CreateMessageRequest {
@@ -21,6 +23,7 @@ export interface CreateMessageRequest {
     authorId: number;
     content: string;
     parentMessageId?: number | null;
+    attachments?: string | null;
 }
 
 @Injectable({
@@ -29,24 +32,37 @@ export interface CreateMessageRequest {
 export class ForumMessageService {
     constructor(private http: HttpClient) { }
 
-    getMessagesByTopic(topicId: number): Observable<ForumMessage[]> {
-        return this.http.get<ForumMessage[]>(`${TOPICS_URL}/${topicId}/messages`);
+    getMessagesByTopic(topicId: number, viewerUserId?: number): Observable<ForumMessage[]> {
+        let params = new HttpParams();
+        if (viewerUserId != null) {
+            params = params.set('viewerUserId', String(viewerUserId));
+        }
+        return this.http.get<ForumMessage[]>(`${TOPICS_URL}/${topicId}/messages`, { params });
     }
 
-    getReplies(parentMessageId: number): Observable<ForumMessage[]> {
-        return this.http.get<ForumMessage[]>(`${API_URL}/replies/${parentMessageId}`);
+    getReplies(parentMessageId: number, viewerUserId?: number): Observable<ForumMessage[]> {
+        let params = new HttpParams();
+        if (viewerUserId != null) {
+            params = params.set('viewerUserId', String(viewerUserId));
+        }
+        return this.http.get<ForumMessage[]>(`${API_URL}/replies/${parentMessageId}`, { params });
     }
 
     createMessage(request: CreateMessageRequest): Observable<ForumMessage> {
         return this.http.post<ForumMessage>(`${TOPICS_URL}/${request.topicId}/messages`, {
             authorId: request.authorId,
             content: request.content,
-            parentMessageId: request.parentMessageId ?? null
+            parentMessageId: request.parentMessageId ?? null,
+            attachments: request.attachments ?? null
         });
     }
 
-    updateMessage(id: number, content: string): Observable<ForumMessage> {
-        return this.http.put<ForumMessage>(`${API_URL}/${id}`, { content });
+    updateMessage(id: number, content: string, attachments?: string | null): Observable<ForumMessage> {
+        const body: { content: string; attachments?: string | null } = { content };
+        if (attachments !== undefined) {
+            body.attachments = attachments;
+        }
+        return this.http.put<ForumMessage>(`${API_URL}/${id}`, body);
     }
 
     deleteMessage(id: number): Observable<void> {

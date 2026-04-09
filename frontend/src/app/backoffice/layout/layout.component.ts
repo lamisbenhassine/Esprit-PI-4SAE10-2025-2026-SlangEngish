@@ -14,24 +14,23 @@ export class LayoutComponent {
 
   backofficeMenuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', routerLink: '/backoffice/dashboard' },
-    { id: 'users', label: 'User Management', icon: 'people', routerLink: '/backoffice/users' },
-    { id: 'courses', label: 'Course Management', icon: 'school', routerLink: '/backoffice/courses' },
-    { id: 'clubs', label: 'Club Management', icon: 'groups', routerLink: '/backoffice/clubs' },
-    { id: 'forum-mgmt', label: 'Forum Management', icon: 'chat', routerLink: '/backoffice/forum' },
-    { id: 'sub-mgmt', label: 'Subscription Mgmt', icon: 'payment', routerLink: '/backoffice/subscription' },
-    { id: 'loyalty-accounts', label: 'Loyalty Accounts', icon: 'loyalty', routerLink: '/backoffice/loyalty-accounts' },
-    { id: 'reports', label: 'Reports', icon: 'assessment', routerLink: '/backoffice/reports' },
-    { id: 'settings', label: 'Settings', icon: 'settings', routerLink: '/backoffice/settings' }
+
+    { id: 'sec-platform', label: 'Plateforme', icon: 'hub', routerLink: '', kind: 'section' },
+    { id: 'users', label: 'Utilisateurs', icon: 'manage_accounts', routerLink: '/backoffice/users' },
+    { id: 'courses', label: 'Cours', icon: 'school', routerLink: '/backoffice/courses' },
+    { id: 'clubs', label: 'Clubs', icon: 'groups', routerLink: '/backoffice/clubs' },
+    { id: 'forum-mgmt', label: 'Forum', icon: 'forum', routerLink: '/backoffice/forum' },
+
+    { id: 'sec-inscription', label: 'Inscription & fidélité', icon: 'workspace_premium', routerLink: '', kind: 'section' },
+    { id: 'sub-mgmt', label: 'Offres & abonnements', icon: 'subscriptions', routerLink: '/backoffice/subscription' },
+    { id: 'loyalty-accounts', label: 'Cartes fidélité', icon: 'card_giftcard', routerLink: '/backoffice/loyalty-accounts' },
+    { id: 'inscription-stats', label: 'Statistiques inscription', icon: 'insights', routerLink: '/backoffice/inscription-stats' }
   ];
 
   constructor(private router: Router) { }
 
   toggleSidebar() {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
-  }
-
-  onMenuItemClick(item: MenuItem) {
-    this.router.navigate([item.routerLink]);
   }
 
   onLogout() {

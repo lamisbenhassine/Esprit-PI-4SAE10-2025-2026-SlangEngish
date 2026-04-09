@@ -1,6 +1,7 @@
 package esprit.forum.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,8 +24,24 @@ public class ForumTopic {
 
     private String title;
 
-    @Column(length = 1000)
+    @Column(length = 4000)
     private String description;
+
+    /** Image de couverture (URL absolue ou /forum-media/... après upload). */
+    @Column(name = "cover_image_url", length = 2000)
+    private String coverImageUrl;
+
+    /** Vidéo du post (URL upload /forum-media/... ou lien externe). */
+    @Column(name = "cover_video_url", length = 2000)
+    private String coverVideoUrl;
+
+    /** Mis en avant en tête de liste (modération backoffice). */
+    @Column(name = "pinned")
+    private Boolean pinned = Boolean.FALSE;
+
+    /** Sujet verrouillé : plus de nouveaux messages (modération). */
+    @Column(name = "locked")
+    private Boolean locked = Boolean.FALSE;
 
     @Column(name = "author_id")
     private Long authorId;
@@ -49,6 +66,7 @@ public class ForumTopic {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<ForumMessage> messages = new ArrayList<>();
 
     @PrePersist
@@ -57,6 +75,12 @@ public class ForumTopic {
         updatedAt = LocalDateTime.now();
         if (views == null) {
             views = 0;
+        }
+        if (pinned == null) {
+            pinned = Boolean.FALSE;
+        }
+        if (locked == null) {
+            locked = Boolean.FALSE;
         }
     }
 

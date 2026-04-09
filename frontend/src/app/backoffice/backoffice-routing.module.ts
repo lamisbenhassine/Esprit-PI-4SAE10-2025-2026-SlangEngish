@@ -8,6 +8,7 @@ import { ForumManagementComponent } from './forum-management/forum-management.co
 import { SubscriptionManagementComponent } from './subscription-management/subscription-management.component';
 import { LoyaltyAccountsComponent } from './loyalty-accounts/loyalty-accounts.component';
 import { ClubsManagementComponent } from './clubs-management/clubs-management.component';
+import { InscriptionStatsComponent } from './inscription-stats/inscription-stats.component';
 
 const routes: Routes = [
   {
@@ -21,7 +22,8 @@ const routes: Routes = [
       { path: 'clubs', component: ClubsManagementComponent },
       { path: 'forum', component: ForumManagementComponent },
       { path: 'subscription', component: SubscriptionManagementComponent },
-      { path: 'loyalty-accounts', component: LoyaltyAccountsComponent }
+      { path: 'loyalty-accounts', component: LoyaltyAccountsComponent },
+      { path: 'inscription-stats', component: InscriptionStatsComponent }
     ]
   }
 ];

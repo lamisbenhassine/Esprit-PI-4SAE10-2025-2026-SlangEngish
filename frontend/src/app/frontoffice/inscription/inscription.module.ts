@@ -19,18 +19,26 @@ import { OfferDetailComponent } from './offer-detail/offer-detail.component';
 import { PlacementFormComponent } from './placement-form/placement-form.component';
 import { CartComponent } from './cart/cart.component';
 import { CheckoutComponent } from './checkout/checkout.component';
+import { InscriptionLayoutComponent } from './inscription-layout/inscription-layout.component';
 
 const routes: Routes = [
-    { path: '', redirectTo: 'register', pathMatch: 'full' },
-    { path: 'register', component: PlacementFormComponent },
-    { path: 'offers', component: OffersListComponent },
-    { path: 'offers/:id', component: OfferDetailComponent },
-    { path: 'cart', component: CartComponent },
-    { path: 'checkout', component: CheckoutComponent }
+    {
+        path: '',
+        component: InscriptionLayoutComponent,
+        children: [
+            { path: '', redirectTo: 'register', pathMatch: 'full' },
+            { path: 'register', component: PlacementFormComponent },
+            { path: 'offers', component: OffersListComponent },
+            { path: 'offers/:id', component: OfferDetailComponent },
+            { path: 'cart', component: CartComponent },
+            { path: 'checkout', component: CheckoutComponent }
+        ]
+    }
 ];
 
 @NgModule({
     declarations: [
+        InscriptionLayoutComponent,
         OffersListComponent,
         OfferDetailComponent,
         PlacementFormComponent,

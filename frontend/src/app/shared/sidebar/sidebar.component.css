@@ -82,6 +82,24 @@
   color: #1976d2;
 }
 
+/* Front office: neutral accent (learner UI), not heavy Material blue */
+.sidebar.light.sidebar-frontoffice .sidebar-logo {
+  color: #334155;
+}
+
+.sidebar.light.sidebar-frontoffice .menu-item.active {
+  background-color: rgba(51, 65, 85, 0.12);
+  color: #1e293b;
+}
+
+.sidebar.light.sidebar-frontoffice .menu-item:hover {
+  background-color: rgba(51, 65, 85, 0.08);
+}
+
+.sidebar.light.sidebar-frontoffice .active-indicator {
+  background-color: #475569;
+}
+
 .sidebar.dark .sidebar-logo {
   color: #64b5f6;
 }
@@ -108,6 +126,37 @@
   padding: 16px 8px;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.menu-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px 8px;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+
+.sidebar.dark .menu-section-title {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.menu-section-title .section-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  opacity: 0.85;
+}
+
+a.menu-item {
+  text-decoration: none;
+  color: inherit;
+  box-sizing: border-box;
 }
 
 .menu-item {

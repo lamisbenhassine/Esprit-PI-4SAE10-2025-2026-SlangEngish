@@ -21,6 +21,8 @@
 	<properties>
 		<java.version>17</java.version>
 		<spring-cloud.version>2025.1.0</spring-cloud.version>
+		<!-- JDK 24+ requires Lombok 1.18.38+ (TypeTag :: UNKNOWN / ExceptionInInitializerError) -->
+		<lombok.version>1.18.38</lombok.version>
 	</properties>
 
 	<dependencyManagement>
@@ -49,6 +51,12 @@
 			<artifactId>spring-cloud-starter-openfeign</artifactId>
 		</dependency>
 
+		<!-- Load balancer (required with Eureka + Feign / service discovery since Ribbon removal) -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-loadbalancer</artifactId>
+		</dependency>
+
 		<!-- WEB -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -72,6 +80,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
 			<optional>true</optional>
 		</dependency>
 
@@ -103,6 +112,7 @@
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

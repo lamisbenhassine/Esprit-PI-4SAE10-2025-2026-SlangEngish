@@ -27,6 +27,22 @@
                 <mat-checkbox formControlName="isPublic">Public Topic</mat-checkbox>
             </div>
         </div>
+
+        <mat-form-field appearance="outline" class="w100">
+            <mat-label>Cover image URL (optional)</mat-label>
+            <input matInput formControlName="coverImageUrl" placeholder="https://… or upload">
+        </mat-form-field>
+        <div class="upload-row">
+            <input type="file" accept="image/*" #cov hidden (change)="onCoverSelected($event)">
+            <button mat-stroked-button type="button" (click)="cov.click()" [disabled]="uploadBusy">
+                Upload cover image
+            </button>
+        </div>
+
+        <div class="mod-row" *ngIf="isEditMode">
+            <mat-checkbox formControlName="pinned">Pinned (à la une)</mat-checkbox>
+            <mat-checkbox formControlName="locked">Locked (no new posts)</mat-checkbox>
+        </div>
     </form>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

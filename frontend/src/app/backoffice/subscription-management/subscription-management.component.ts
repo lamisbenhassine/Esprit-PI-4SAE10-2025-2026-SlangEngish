@@ -24,8 +24,38 @@ export class SubscriptionManagementComponent implements OnInit {
     currentPage: number = 1;
     itemsPerPage: number = 6;
     totalPages: number = 1;
+    /** Total after search/sort (before pagination slice) */
+    filteredTotalCount: number = 0;
 
     Math = Math; // Expose Math to template
+
+    /** All searchable text for a plan (name, badges, dates, etc.) */
+    private planSearchText(plan: SubscriptionPlan): string {
+        const d = plan.date ? new Date(plan.date) : null;
+        const parts = [
+            plan.planType,
+            plan.name,
+            plan.description,
+            plan.category,
+            plan.date,
+            d && !isNaN(d.getTime()) ? d.toLocaleDateString() : '',
+            d && !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : ''
+        ];
+        return parts
+            .filter((p): p is string => p != null && String(p).trim() !== '')
+            .join(' ')
+            .toLowerCase();
+    }
+
+    private matchesSearchQuery(plan: SubscriptionPlan, rawQuery: string): boolean {
+        const query = rawQuery.trim().toLowerCase();
+        if (!query) {
+            return true;
+        }
+        const haystack = this.planSearchText(plan);
+        const tokens = query.split(/\s+/).filter(Boolean);
+        return tokens.every((t) => haystack.includes(t));
+    }
 
     // Helper to get image for the plan - use uploaded image or fallback to placeholder
     getPlanImage(plan: SubscriptionPlan): string {
@@ -132,24 +162,16 @@ export class SubscriptionManagementComponent implements OnInit {
     }
 
     applyFilters(): void {
-        // Apply search filter
-        let filtered = this.plans;
-        if (this.searchQuery.trim()) {
-            const query = this.searchQuery.toLowerCase();
-            filtered = filtered.filter(plan =>
-                plan.planType.toLowerCase().includes(query) ||
-                (plan.date || '').toLowerCase().includes(query)
-            );
-        }
+        let filtered = this.plans.filter((plan) => this.matchesSearchQuery(plan, this.searchQuery));
 
-        // Apply sorting
         filtered = [...filtered].sort((a, b) => {
-            let aValue: any, bValue: any;
+            let aValue: string | number;
+            let bValue: string | number;
 
             switch (this.sortBy) {
                 case 'planType':
-                    aValue = a.planType.toLowerCase();
-                    bValue = b.planType.toLowerCase();
+                    aValue = (a.planType || '').toLowerCase();
+                    bValue = (b.planType || '').toLowerCase();
                     break;
                 case 'date':
                     aValue = new Date(a.date || 0).getTime();
@@ -164,8 +186,11 @@ export class SubscriptionManagementComponent implements OnInit {
             return 0;
         });
 
-        // Calculate pagination
-        this.totalPages = Math.ceil(filtered.length / this.itemsPerPage);
+        this.filteredTotalCount = filtered.length;
+        this.totalPages = Math.max(1, Math.ceil(filtered.length / this.itemsPerPage));
+        if (this.currentPage > this.totalPages) {
+            this.currentPage = this.totalPages;
+        }
         const startIndex = (this.currentPage - 1) * this.itemsPerPage;
         const endIndex = startIndex + this.itemsPerPage;
         this.filteredPlans = filtered.slice(startIndex, endIndex);

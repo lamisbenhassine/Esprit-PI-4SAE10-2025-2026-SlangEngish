@@ -29,7 +29,8 @@ export interface DashboardStats {
     providedIn: 'root'
 })
 export class StatsService {
-    private apiUrl = 'http://localhost:8030/api/inscription/stats';
+    /** Relatif : ng serve (proxy.conf.json → 8030) ou gateway en prod */
+    private readonly apiUrl = '/api/inscription/stats';
 
     constructor(private http: HttpClient) { }
 

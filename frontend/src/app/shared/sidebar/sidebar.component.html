@@ -1,5 +1,5 @@
 <div class="sidebar-container" [@slideInOut]="isCollapsed ? 'closed' : 'open'">
-  <div class="sidebar" [class]="'sidebar ' + theme">
+  <div [ngClass]="['sidebar', theme, variant === 'frontoffice' ? 'sidebar-frontoffice' : '']">
     <!-- Sidebar Header -->
     <div class="sidebar-header">
       <button 
@@ -16,23 +16,28 @@
       </div>
     </div>
 
-    <!-- Menu Items -->
+    <!-- Menu Items (sections + liens avec router) -->
     <div class="sidebar-menu">
-      <div 
-        *ngFor="let item of menuItems" 
-        class="menu-item"
-        [class.active]="isMenuItemActive(item)"
-        [matTooltip]="isCollapsed ? item.label : ''"
-        matTooltipPosition="right"
-        (click)="onMenuItemClick(item)">
-        
-        <mat-icon class="menu-icon">{{ item.icon }}</mat-icon>
-        <span class="menu-label" [@fadeInOut]="isCollapsed ? 'hidden' : 'visible'">
-          {{ item.label }}
-        </span>
-        
-        <div class="active-indicator" *ngIf="isMenuItemActive(item)"></div>
-      </div>
+      <ng-container *ngFor="let item of menuItems">
+        <div
+          *ngIf="item.kind === 'section'"
+          class="menu-section-title"
+          [matTooltip]="isCollapsed ? item.label : ''"
+          matTooltipPosition="right">
+          <mat-icon *ngIf="item.icon" class="section-icon">{{ item.icon }}</mat-icon>
+          <span class="menu-label" [@fadeInOut]="isCollapsed ? 'hidden' : 'visible'">{{ item.label }}</span>
+        </div>
+        <a
+          *ngIf="item.kind !== 'section'"
+          [routerLink]="item.routerLink"
+          routerLinkActive="active"
+          class="menu-item"
+          [matTooltip]="isCollapsed ? item.label : ''"
+          matTooltipPosition="right">
+          <mat-icon class="menu-icon">{{ item.icon }}</mat-icon>
+          <span class="menu-label" [@fadeInOut]="isCollapsed ? 'hidden' : 'visible'">{{ item.label }}</span>
+        </a>
+      </ng-container>
     </div>
 
     <!-- Sidebar Footer -->

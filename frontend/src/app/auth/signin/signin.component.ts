@@ -34,7 +34,7 @@ export class SigninComponent {
       
       // Simulate authentication success
       setTimeout(() => {
-        this.router.navigate(['/frontoffice/dashboard']);
+        this.router.navigate(['/frontoffice/feed']);
       }, 1000);
     }
   }

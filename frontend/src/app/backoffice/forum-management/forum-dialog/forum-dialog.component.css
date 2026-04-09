@@ -25,3 +25,17 @@
 mat-form-field {
     width: 100%;
 }
+
+.w100 {
+    width: 100%;
+}
+
+.upload-row {
+    margin-bottom: 8px;
+}
+
+.mod-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}

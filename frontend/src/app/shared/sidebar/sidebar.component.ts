@@ -5,8 +5,11 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: string;
+  /** Vide pour les titres de section */
   routerLink: string;
   active?: boolean;
+  /** `section` = titre de groupe (non cliquable) */
+  kind?: 'link' | 'section';
 }
 
 @Component({
@@ -44,23 +47,13 @@ export interface MenuItem {
 })
 export class SidebarComponent {
   @Input() theme: 'light' | 'dark' = 'light';
+  /** Neutral styling for learner area (less “Material blue” than backoffice). */
+  @Input() variant: 'default' | 'frontoffice' = 'default';
   @Input() menuItems: MenuItem[] = [];
   @Input() isCollapsed: boolean = false;
   @Output() toggleCollapse = new EventEmitter<void>();
-  @Output() menuItemClick = new EventEmitter<MenuItem>();
-
-  activeMenuItem: string = '';
 
   onToggleCollapse() {
     this.toggleCollapse.emit();
-  }
-
-  onMenuItemClick(item: MenuItem) {
-    this.activeMenuItem = item.id;
-    this.menuItemClick.emit(item);
-  }
-
-  isMenuItemActive(item: MenuItem): boolean {
-    return this.activeMenuItem === item.id || item.active === true;
   }
 }

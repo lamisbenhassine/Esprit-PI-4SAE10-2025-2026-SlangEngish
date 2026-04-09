@@ -12,15 +12,15 @@
   <!-- Sidebar -->
   <app-sidebar 
     theme="light"
+    variant="frontoffice"
     [menuItems]="frontofficeMenuItems"
     [isCollapsed]="isSidebarCollapsed"
-    (toggleCollapse)="toggleSidebar()"
-    (menuItemClick)="onMenuItemClick($event)">
+    (toggleCollapse)="toggleSidebar()">
   </app-sidebar>
 
   <!-- Main Content -->
   <div class="main-content" [class.sidebar-collapsed]="isSidebarCollapsed">
-    <div class="content-wrapper">
+    <div class="content-wrapper" [class.feed-shell]="feedLayout">
       <router-outlet></router-outlet>
     </div>
   </div>

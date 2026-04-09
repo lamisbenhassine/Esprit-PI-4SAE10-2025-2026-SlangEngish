@@ -1,0 +1,146 @@
+<div class="ig-layout" *ngIf="!loading || feed.length">
+  <main class="ig-feed-col">
+    <section class="ig-create">
+      <div class="ig-create-head">
+        <div class="ig-avatar" [attr.aria-label]="composerLabel()">{{ composerInitials() }}</div>
+        <div class="ig-create-meta">
+          <span class="ig-create-label">Créer une publication</span>
+          <span class="ig-create-as">{{ composerLabel() }} · forum général</span>
+        </div>
+      </div>
+      <input class="ig-input" [(ngModel)]="composeTitle" placeholder="Titre" />
+      <textarea
+        class="ig-textarea ig-textarea-compose"
+        [(ngModel)]="composeCaption"
+        rows="3"
+        placeholder="Votre texte — clair, lisible, comme sur Instagram…"></textarea>
+      <div class="ig-media-row">
+        <input #imgIn type="file" accept="image/*" hidden (change)="onMediaFile($event, 'image')" />
+        <input #vidIn type="file" accept="image/*,video/*" hidden (change)="onMediaFile($event, 'video')" />
+        <button mat-stroked-button type="button" (click)="imgIn.click()" [disabled]="coverBusy">Photo</button>
+        <button mat-stroked-button type="button" (click)="vidIn.click()" [disabled]="coverBusy">Vidéo / média</button>
+      </div>
+      <input class="ig-input small" [(ngModel)]="composeImageUrl" placeholder="URL image (optionnel)" />
+      <input class="ig-input small" [(ngModel)]="composeVideoUrl" placeholder="URL vidéo ou YouTube (optionnel)" />
+      <button mat-flat-button color="primary" class="ig-publish" (click)="publishPost()"
+        [disabled]="composing || generalSpaceId == null || !composeTitle.trim() || !composeCaption.trim()">
+        Partager
+      </button>
+    </section>
+
+    <article class="ig-card" *ngFor="let post of feed">
+      <header class="ig-card-head">
+        <div class="ig-avatar sm" [attr.aria-label]="authorFullName(post)">{{ authorInitials(post) }}</div>
+        <div class="ig-card-meta">
+          <div class="ig-author-row">
+            <span class="ig-author">{{ authorFullName(post) }}</span>
+            <span class="ig-role-pill tutor" *ngIf="authorRoleLabel(post) === 'Tuteur'">Tuteur</span>
+            <span class="ig-role-pill admin" *ngIf="authorRoleLabel(post) === 'Équipe'">Équipe</span>
+          </div>
+          <span class="ig-time">{{ post.createdAt | date : 'short' }}</span>
+        </div>
+      </header>
+
+      <div
+        class="ig-media"
+        [class.ig-media--text]="!post.coverVideoUrl && !post.coverImageUrl"
+        (click)="openTopic(post.id)">
+        <div class="ig-yt" *ngIf="post.coverVideoUrl && isYoutubeUrl(post.coverVideoUrl)">
+          <iframe *ngIf="safeYoutube(post.coverVideoUrl) as y" [src]="y" title="vid" allowfullscreen></iframe>
+        </div>
+        <video *ngIf="post.coverVideoUrl && !isYoutubeUrl(post.coverVideoUrl)" [src]="post.coverVideoUrl" controls playsinline></video>
+        <img *ngIf="!post.coverVideoUrl && post.coverImageUrl" [src]="post.coverImageUrl" alt="" />
+        <div class="ig-media-placeholder ig-text-post" *ngIf="!post.coverVideoUrl && !post.coverImageUrl">
+          <div class="ig-scope-row">
+            <span class="ig-scope-pill" *ngIf="post.spaceType === 'GENERAL' || !post.spaceType">Forum général · ouvert à tous</span>
+            <span class="ig-scope-pill level" *ngIf="post.spaceType === 'LEVEL'">Forum niveau {{ post.spaceKey }} · abonnés</span>
+            <span class="ig-scope-pill course" *ngIf="post.spaceType === 'COURSE'">{{ post.spaceTitle || 'Cours' }}</span>
+          </div>
+          <h2 class="ig-post-title">{{ post.title }}</h2>
+          <p class="ig-post-body">{{ post.description }}</p>
+        </div>
+      </div>
+
+      <div class="ig-toolbar">
+        <button mat-icon-button type="button" (click)="toggleLike(post); $event.stopPropagation()"
+          [color]="post.likedByViewer ? 'warn' : undefined"
+          [attr.aria-pressed]="post.likedByViewer">
+          <mat-icon>{{ post.likedByViewer ? 'favorite' : 'favorite_border' }}</mat-icon>
+        </button>
+        <button mat-icon-button type="button" (click)="toggleComments(post); $event.stopPropagation()">
+          <mat-icon>chat_bubble_outline</mat-icon>
+        </button>
+        <button mat-icon-button type="button" (click)="toggleRepost(post); $event.stopPropagation()"
+          [class.ig-reposted]="post.repostedByViewer">
+          <mat-icon>repeat</mat-icon>
+        </button>
+        <button mat-icon-button type="button" (click)="openTopic(post.id); $event.stopPropagation()" matTooltip="Ouvrir">
+          <mat-icon>open_in_new</mat-icon>
+        </button>
+      </div>
+
+      <div class="ig-stats">
+        <strong>{{ post.likeCount }}</strong> J’aime
+        · <strong>{{ post.repostCount }}</strong> republications
+        · <strong>{{ post.commentCount }}</strong> commentaires
+      </div>
+      <p class="ig-caption" *ngIf="post.coverVideoUrl || post.coverImageUrl">
+        <span class="ig-author-inline">{{ authorFullName(post) }}</span>
+        <span class="ig-caption-text">{{ post.description }}</span>
+      </p>
+      <p class="ig-caption ig-caption-textonly" *ngIf="!post.coverVideoUrl && !post.coverImageUrl">
+        <span class="ig-author-inline">{{ authorFullName(post) }}</span>
+        <span class="ig-open-hint">Ouvrir la discussion</span>
+      </p>
+
+      <div class="ig-comments" *ngIf="expandedComments[post.id]?.length">
+        <div class="ig-cm" *ngFor="let c of expandedComments[post.id]">
+          <b>#{{ c.authorId }}</b> {{ c.content }}
+        </div>
+        <button mat-button type="button" (click)="openTopic(post.id)">Tout voir</button>
+      </div>
+    </article>
+
+    <p class="ig-empty" *ngIf="!feed.length && !loading">Aucune publication. Créez-en une ci-dessus.</p>
+  </main>
+
+  <aside class="ig-sidebar">
+    <div class="ig-side-block ig-side-forum-levels">
+      <h3>Forum spécifique par niveau</h3>
+      <p class="ig-side-hint">
+        Les forums <strong>A1 → C2</strong> (payants / abonnés) ne sont pas sur le fil : ils ont une page dédiée.
+      </p>
+      <a mat-stroked-button color="primary" routerLink="/frontoffice/forum/levels" class="ig-side-forum-btn">
+        Ouvrir forums A1–C2
+      </a>
+    </div>
+
+    <div class="ig-side-block">
+      <h3>Invitations</h3>
+      <p class="ig-side-hint">Les autres membres peuvent vous inviter à rejoindre un groupe ou un cours.</p>
+      <div class="ig-inv" *ngFor="let inv of invitations">
+        <div class="ig-inv-from">De l’utilisateur <strong>{{ inv.fromUserId }}</strong></div>
+        <p class="ig-inv-msg">{{ inv.message }}</p>
+        <div class="ig-inv-actions">
+          <button mat-button color="primary" (click)="respond(inv, true)">Accepter</button>
+          <button mat-button (click)="respond(inv, false)">Refuser</button>
+        </div>
+      </div>
+      <div class="ig-inv-empty" *ngIf="!invitations.length">Aucune invitation en attente.</div>
+    </div>
+
+    <div class="ig-side-block">
+      <h3>Inviter quelqu’un</h3>
+      <input class="ig-input" type="number" [(ngModel)]="inviteToId" placeholder="ID utilisateur (nombre)" />
+      <input class="ig-input" [(ngModel)]="inviteMessage" placeholder="Message (optionnel)" />
+      <button mat-stroked-button color="primary" class="ig-inv-send" (click)="sendInvitation()"
+        [disabled]="!canSendInvite()">
+        Envoyer une invitation
+      </button>
+    </div>
+  </aside>
+</div>
+
+<div class="ig-loading" *ngIf="loading && !feed.length">
+  <mat-spinner diameter="40"></mat-spinner>
+</div>

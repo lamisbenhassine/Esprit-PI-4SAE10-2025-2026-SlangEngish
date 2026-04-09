@@ -32,3 +32,6 @@ build/
 ### VS Code ###
 .vscode/
 
+# Local Stripe and secrets (never commit)
+src/main/resources/application-local.properties
+

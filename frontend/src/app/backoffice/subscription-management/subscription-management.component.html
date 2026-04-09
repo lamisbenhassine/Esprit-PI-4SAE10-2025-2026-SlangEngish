@@ -19,7 +19,7 @@
             <mat-form-field appearance="outline" class="search-field">
                 <mat-label>Search plans</mat-label>
                 <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
-                    placeholder="Search by plan type or date">
+                    placeholder="Search by name, type, description or date">
                 <mat-icon matPrefix>search</mat-icon>
             </mat-form-field>
         </div>
@@ -104,18 +104,18 @@
         </div>
     </div>
 
-    <div class="empty-state" *ngIf="filteredPlans.length === 0 && !loading && plans.length > 0">
+    <div class="empty-state" *ngIf="filteredPlans.length === 0 && !loading && plans.length > 0 && searchQuery.trim()">
         <mat-icon>search_off</mat-icon>
         <h3>No plans match your search criteria</h3>
         <button mat-button (click)="searchQuery = ''; onSearchChange()">Clear filters</button>
     </div>
 
     <!-- Pagination -->
-    <div class="pagination-section" *ngIf="totalPages > 1 && !loading">
+    <div class="pagination-section" *ngIf="totalPages > 1 && !loading && filteredTotalCount > 0">
         <div class="pagination-info">
             Showing {{ (currentPage - 1) * itemsPerPage + 1 }} -
-            {{ currentPage * itemsPerPage < plans.length ? currentPage * itemsPerPage : plans.length }} of {{
-                plans.length }} plans </div>
+            {{ Math.min(currentPage * itemsPerPage, filteredTotalCount) }} of {{ filteredTotalCount }} plans
+        </div>
                 <div class="pagination-controls">
                     <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
                         <mat-icon>chevron_left</mat-icon>

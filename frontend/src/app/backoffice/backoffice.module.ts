@@ -13,6 +13,7 @@ import { ForumDialogComponent } from './forum-management/forum-dialog/forum-dial
 import { SubscriptionManagementComponent } from './subscription-management/subscription-management.component';
 import { SubscriptionDialogComponent } from './subscription-management/subscription-dialog/subscription-dialog.component';
 import { LoyaltyAccountsComponent } from './loyalty-accounts/loyalty-accounts.component';
+import { InscriptionStatsComponent } from './inscription-stats/inscription-stats.component';
 import { SharedModule } from '../shared/shared.module';
 
 // Angular Material Modules
@@ -43,6 +44,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
     SubscriptionManagementComponent,
     SubscriptionDialogComponent,
     LoyaltyAccountsComponent,
+    InscriptionStatsComponent,
     LayoutComponent
   ],
   imports: [

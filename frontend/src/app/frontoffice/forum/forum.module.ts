@@ -8,6 +8,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ForumGeneralComponent } from './forum-general/forum-general.component';
 import { ForumLevelsComponent } from './forum-levels/forum-levels.component';
@@ -38,7 +40,9 @@ const routes: Routes = [
         MatSelectModule,
         MatIconModule,
         MatButtonModule,
-        MatTooltipModule
+        MatTooltipModule,
+        MatSnackBarModule,
+        MatProgressSpinnerModule
     ]
 })
 export class ForumModule { }

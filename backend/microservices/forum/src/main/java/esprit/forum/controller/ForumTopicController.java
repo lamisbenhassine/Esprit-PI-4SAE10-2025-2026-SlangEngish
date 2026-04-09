@@ -18,8 +18,9 @@ public class ForumTopicController {
     private final ForumTopicService forumTopicService;
 
     @GetMapping("/general")
-    public ResponseEntity<List<ForumTopic>> getGeneralTopics() {
-        return ResponseEntity.ok(forumTopicService.getAllPublicTopics());
+    public ResponseEntity<List<ForumTopic>> getGeneralTopics(
+            @RequestParam(required = false) Long viewerUserId) {
+        return ResponseEntity.ok(forumTopicService.getAllPublicTopics(viewerUserId));
     }
 
     @GetMapping("/level/{category}")
@@ -71,5 +72,18 @@ public class ForumTopicController {
     public ResponseEntity<Void> deleteTopic(@PathVariable Long id) {
         forumTopicService.deleteTopic(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Épinglage / verrouillage (backoffice modération). */
+    @PatchMapping("/{id}/moderation")
+    public ResponseEntity<?> moderateTopic(
+            @PathVariable Long id,
+            @RequestParam(required = false) Boolean pinned,
+            @RequestParam(required = false) Boolean locked) {
+        try {
+            return ResponseEntity.ok(forumTopicService.moderateTopic(id, pinned, locked));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

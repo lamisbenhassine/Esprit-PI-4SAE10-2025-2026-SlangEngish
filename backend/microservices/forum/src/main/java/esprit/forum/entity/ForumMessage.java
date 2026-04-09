@@ -22,8 +22,14 @@ public class ForumMessage {
     @Column(name = "author_id")
     private Long authorId;
 
-    @Column(length = 2000)
+    @Column(length = 8000)
     private String content;
+
+    /**
+     * JSON: [{"type":"image","url":"..."},{"type":"video","url":"https://youtube.com/watch?v=..."}]
+     */
+    @Column(name = "attachments", columnDefinition = "TEXT")
+    private String attachments;
 
     @Column(name = "parent_message_id")
     private Long parentMessageId; // null pour les posts, non-null pour les commentaires

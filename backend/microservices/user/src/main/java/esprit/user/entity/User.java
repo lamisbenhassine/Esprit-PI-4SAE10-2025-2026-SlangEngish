@@ -1,5 +1,6 @@
 package esprit.user.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +29,13 @@ public class User {
     private String email;
 
     @Column(name = "password", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
+
+    /** STUDENT (défaut), TUTOR (formateur), ou ADMIN (équipe / publication officielle). */
+    @Column(name = "account_role", nullable = false, length = 20)
+    @Builder.Default
+    private String accountRole = "STUDENT";
 
     @Column(name = "english_level")
     @Builder.Default
@@ -37,5 +44,12 @@ public class User {
     @Column(name = "subscription_status")
     @Builder.Default
     private String subscriptionStatus = "TRIAL"; // TRIAL, ACTIVE, EXPIRED, CANCELLED
+
+    @PrePersist
+    public void prePersist() {
+        if (accountRole == null || accountRole.isBlank()) {
+            accountRole = "STUDENT";
+        }
+    }
 }
 

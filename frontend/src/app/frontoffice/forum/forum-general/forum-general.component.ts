@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ForumTopicService, ForumTopic } from '../../../core/services/forum-topic.service';
+import { ForumMediaService } from '../../../core/services/forum-media.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-forum-general',
@@ -14,6 +16,8 @@ export class ForumGeneralComponent implements OnInit {
   creating = false;
   newTitle = '';
   newDescription = '';
+  newCoverUrl = '';
+  coverUploading = false;
   currentUserId = 1;
   generalSpaceId: number | null = null;
   
@@ -29,11 +33,15 @@ export class ForumGeneralComponent implements OnInit {
   
   Math = Math; // Expose Math to template
 
-  constructor(private forumTopicService: ForumTopicService) { }
+  constructor(
+    private forumTopicService: ForumTopicService,
+    private forumMediaService: ForumMediaService,
+    private snackBar: MatSnackBar
+  ) {}
 
   ngOnInit() {
     this.loading = true;
-    this.forumTopicService.getGeneralTopics().subscribe({
+    this.forumTopicService.getGeneralTopics(this.currentUserId).subscribe({
       next: (data) => {
         this.topics = data;
         this.applyFilters();
@@ -60,11 +68,13 @@ export class ForumGeneralComponent implements OnInit {
       userId: this.currentUserId,
       authorId: this.currentUserId,
       title: this.newTitle.trim(),
-      description: this.newDescription.trim()
+      description: this.newDescription.trim(),
+      coverImageUrl: this.newCoverUrl.trim() || undefined
     }).subscribe({
       next: () => {
         this.newTitle = '';
         this.newDescription = '';
+        this.newCoverUrl = '';
         this.creating = false;
         this.ngOnInit();
       },
@@ -84,8 +94,13 @@ export class ForumGeneralComponent implements OnInit {
       );
     }
 
-    // Apply sorting
+    // Apply sorting (épinglés d’abord si tri par date)
     filtered = [...filtered].sort((a, b) => {
+      const pa = a.pinned ? 1 : 0;
+      const pb = b.pinned ? 1 : 0;
+      if (pb !== pa) {
+        return pb - pa;
+      }
       let aValue: any, bValue: any;
       
       switch (this.sortBy) {
@@ -129,6 +144,27 @@ export class ForumGeneralComponent implements OnInit {
   onSortChange(): void {
     this.currentPage = 1;
     this.applyFilters();
+  }
+
+  onCoverFile(ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    this.coverUploading = true;
+    this.forumMediaService.upload(file).subscribe({
+      next: res => {
+        this.newCoverUrl = res.url;
+        this.coverUploading = false;
+        input.value = '';
+      },
+      error: err => {
+        this.coverUploading = false;
+        input.value = '';
+        this.snackBar.open(this.forumMediaService.describeUploadError(err), 'OK', { duration: 7000 });
+      }
+    });
   }
 
   goToPage(page: number): void {

@@ -1,0 +1,12 @@
+.inscription-shell {
+  min-height: calc(100vh - 64px);
+  background: #f5f7fb;
+  padding: 1.25rem 1.5rem 2rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .inscription-shell {
+    padding: 1rem 1rem 1.5rem;
+  }
+}

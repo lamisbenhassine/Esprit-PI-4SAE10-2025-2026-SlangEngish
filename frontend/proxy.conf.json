@@ -1,8 +1,14 @@
 {
+  "/api/user": {
+    "target": "http://localhost:8010",
+    "secure": false,
+    "changeOrigin": true
+  },
   "/api/forum": {
     "target": "http://localhost:8040",
     "secure": false,
-    "changeOrigin": true
+    "changeOrigin": true,
+    "timeout": 120000
   },
   "/api/inscription": {
     "target": "http://localhost:8030",

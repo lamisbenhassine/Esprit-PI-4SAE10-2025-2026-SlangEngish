@@ -1,0 +1,113 @@
+<div class="inscription-stats-page">
+  <div class="page-header">
+    <div class="header-icon-wrap">
+      <mat-icon class="header-icon">insights</mat-icon>
+    </div>
+    <div class="header-text">
+      <h1>Statistiques — Inscription</h1>
+      <p class="subtitle">Indicateurs simples et métriques avancées (reconnaissance de revenus, conversion) — backend <code>/api/inscription/stats</code></p>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="load()" [disabled]="loading">
+        <mat-icon [class.spin]="loading">refresh</mat-icon>
+        Actualiser
+      </button>
+      <a mat-raised-button color="primary" routerLink="/backoffice/subscription">
+        <mat-icon>subscriptions</mat-icon>
+        Offres & abonnements
+      </a>
+      <a mat-raised-button color="accent" routerLink="/backoffice/loyalty-accounts">
+        <mat-icon>card_giftcard</mat-icon>
+        Cartes fidélité
+      </a>
+    </div>
+  </div>
+
+  <div class="loading-wrap" *ngIf="loading">
+    <mat-spinner diameter="48"></mat-spinner>
+    <span>Chargement des statistiques…</span>
+  </div>
+
+  <ng-container *ngIf="!loading && data">
+    <div class="kpi-grid">
+      <mat-card class="kpi-card revenue">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>payments</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Chiffre d’affaires total</span>
+            <span class="kpi-value">{{ (data.totalRevenue || 0) | number:'1.0-0' }} TND</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card orders">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>shopping_cart</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Nouvelles commandes (aujourd’hui)</span>
+            <span class="kpi-value">{{ data.newSubscriptionsToday ?? 0 }}</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card conversion">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>trending_up</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Taux de conversion</span>
+            <span class="kpi-value">{{ (data.conversionRate || 0) | number:'1.1-1' }} %</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      <mat-card class="kpi-card month">
+        <mat-card-content>
+          <div class="kpi-icon"><mat-icon>calendar_month</mat-icon></div>
+          <div class="kpi-body">
+            <span class="kpi-label">Revenu ce mois</span>
+            <span class="kpi-value">{{ (data.revenueThisMonth || 0) | number:'1.0-0' }} TND</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div class="secondary-grid">
+      <mat-card class="detail-card">
+        <mat-card-title>
+          <mat-icon>receipt_long</mat-icon>
+          Paiements
+        </mat-card-title>
+        <mat-card-content>
+          <ul class="stat-list">
+            <li><span>Réussis</span><strong>{{ data.completedPayments ?? 0 }}</strong></li>
+            <li><span>En attente</span><strong>{{ data.pendingPayments ?? 0 }}</strong></li>
+            <li><span>Échoués</span><strong>{{ data.failedPayments ?? 0 }}</strong></li>
+            <li><span>Plan le plus populaire</span><strong>{{ data.mostPopularPlan || '—' }}</strong></li>
+          </ul>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="detail-card" *ngIf="recognizedRevenueChart.length">
+        <mat-card-title>
+          <mat-icon>stacked_bar_chart</mat-icon>
+          Métier avancé — revenus reconnus par mois (TND)
+        </mat-card-title>
+        <mat-card-content>
+          <div class="revenue-bars">
+            <div class="bar-row" *ngFor="let m of recognizedRevenueChart">
+              <span class="bar-label">{{ m.label }}</span>
+              <div class="bar-track">
+                <div class="bar-fill" [style.width.%]="m.ratio"></div>
+              </div>
+              <span class="bar-amount">{{ m.amount | number:'1.0-0' }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <p class="meta" *ngIf="data.lastUpdated">Dernière mise à jour : {{ data.lastUpdated | date:'medium' }}</p>
+  </ng-container>
+
+  <div class="empty-hint" *ngIf="!loading && !data">
+    <mat-icon>cloud_off</mat-icon>
+    <p>Aucune donnée — le backend inscription ne répond pas ou a renvoyé une erreur.</p>
+  </div>
+</div>
