@@ -1,0 +1,128 @@
+<div class="reclamations-management">
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="title-with-icon"><mat-icon>admin_panel_settings</mat-icon>Reclamation Management</h1>
+      <p class="header-subtitle">Process student reclamations and send a response.</p>
+    </div>
+  </div>
+
+  <div class="alert error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="alert success" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div class="stats-grid" *ngIf="!loading">
+    <div class="stat-card stat-card--progress">
+      <div class="stat-icon"><mat-icon>hourglass_top</mat-icon></div>
+      <div class="stat-content">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value">{{ inProgressCount }}</div>
+        <div class="stat-percent">{{ inProgressPercent }}%</div>
+      </div>
+    </div>
+    <div class="stat-card stat-card--processed">
+      <div class="stat-icon"><mat-icon>verified</mat-icon></div>
+      <div class="stat-content">
+        <div class="stat-label">Processed</div>
+        <div class="stat-value">{{ processedCount }}</div>
+        <div class="stat-percent">{{ processedPercent }}%</div>
+      </div>
+    </div>
+    <div class="stat-card stat-card--pending">
+      <div class="stat-icon"><mat-icon>schedule</mat-icon></div>
+      <div class="stat-content">
+        <div class="stat-label">Pending</div>
+        <div class="stat-value">{{ pendingCount }}</div>
+        <div class="stat-percent">{{ pendingPercent }}%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-overview" *ngIf="!loading">
+    <div class="overview-header">
+      <span>Total reclamations</span>
+      <strong>{{ totalCount }}</strong>
+    </div>
+    <div class="overview-bars">
+      <div class="bar bar--processed" [style.width.%]="processedPercent"></div>
+      <div class="bar bar--progress" [style.width.%]="inProgressPercent"></div>
+      <div class="bar bar--pending" [style.width.%]="pendingPercent"></div>
+    </div>
+    <div class="overview-legend">
+      <span><i class="dot dot--processed"></i>Processed</span>
+      <span><i class="dot dot--progress"></i>In Progress</span>
+      <span><i class="dot dot--pending"></i>Pending</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="loading" *ngIf="loading">Loading...</div>
+
+    <table *ngIf="!loading && reclamations.length > 0">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Description</th>
+          <th>Status</th>
+          <th>Admin Response</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let r of reclamations">
+          <tr>
+            <td>{{ r.sujet }}</td>
+            <td>{{ r.description }}</td>
+            <td>
+              <span class="status"
+                    [ngClass]="{
+                      'status--processed': r.statut === 'RESOLUE',
+                      'status--progress': r.statut === 'EN_COURS' || r.statut === 'IN_PROGRESS',
+                      'status--pending': r.statut === 'EN_ATTENTE'
+                    }">
+                {{ r.statut }}
+              </span>
+            </td>
+            <td>{{ r.reponseAdmin || '-' }}</td>
+            <td>
+              <button type="button" class="btn small primary btn-with-icon" (click)="startTreatment(r)">
+                <mat-icon>edit_note</mat-icon>
+                Process
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="activeId === r.id">
+            <td colspan="5">
+              <div class="treatment-box">
+                <div class="form-group">
+                  <label>Status</label>
+                  <select [(ngModel)]="responseForm.statut">
+                    <option value="IN_PROGRESS">IN_PROGRESS</option>
+                    <option value="EN_COURS">EN_COURS</option>
+                    <option value="RESOLUE">RESOLUE</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Admin Response</label>
+                  <textarea rows="3" [(ngModel)]="responseForm.reponseAdmin" placeholder="Write a response for the student"></textarea>
+                </div>
+                <div class="actions">
+                  <button type="button" class="btn primary btn-with-icon" (click)="submitTreatment(r)">
+                    <mat-icon>outgoing_mail</mat-icon>
+                    Send Response
+                  </button>
+                  <button type="button" class="btn secondary btn-with-icon" (click)="cancelTreatment()">
+                    <mat-icon>close</mat-icon>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+
+    <div class="empty" *ngIf="!loading && reclamations.length === 0">
+      No reclamations available.
+    </div>
+  </div>
+</div>

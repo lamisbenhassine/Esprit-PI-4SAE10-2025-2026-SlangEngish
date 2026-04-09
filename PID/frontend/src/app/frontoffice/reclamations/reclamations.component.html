@@ -1,0 +1,68 @@
+<div class="reclamations-container">
+  <div class="header">
+    <h1 class="title-with-icon"><mat-icon>campaign</mat-icon>My Reclamations</h1>
+    <p>Submit your reclamation and track its status.</p>
+  </div>
+
+  <div class="alert error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="alert success" *ngIf="successMessage">{{ successMessage }}</div>
+
+  <div class="card form-card">
+    <h2 class="section-title"><mat-icon>post_add</mat-icon>New Reclamation</h2>
+
+    <div class="form-group">
+      <label for="sujet">Subject</label>
+      <input id="sujet" type="text" [(ngModel)]="formModel.sujet" placeholder="Reclamation subject" />
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea id="description" rows="4" [(ngModel)]="formModel.description" placeholder="Describe your issue"></textarea>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn primary btn-with-icon" (click)="submit()">
+        <mat-icon>send</mat-icon>
+        Submit
+      </button>
+      <button type="button" class="btn secondary btn-with-icon" (click)="resetForm()">
+        <mat-icon>ink_eraser</mat-icon>
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <div class="card list-card">
+    <h2 class="section-title"><mat-icon>monitoring</mat-icon>My Reclamation Status</h2>
+
+    <div class="loading" *ngIf="loading">Loading...</div>
+
+    <table *ngIf="!loading && reclamations.length > 0">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Admin Response</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of reclamations">
+          <td>{{ r.sujet }}</td>
+          <td>
+            <span class="status" [ngClass]="getStatusClass(r.statut)">
+              {{ getStatusLabel(r.statut) }}
+            </span>
+          </td>
+          <td>{{ r.reponseAdmin || '-' }}</td>
+          <td>{{ r.createdAt ? (r.createdAt | date:'short') : '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty" *ngIf="!loading && reclamations.length === 0">
+      No reclamations yet.
+    </div>
+  </div>
+
+</div>

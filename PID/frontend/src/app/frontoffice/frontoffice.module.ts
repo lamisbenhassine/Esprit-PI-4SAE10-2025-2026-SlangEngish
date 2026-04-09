@@ -10,6 +10,7 @@ import { ChatComponent } from './chat/chat.component';
 import { LayoutComponent } from './layout/layout.component';
 import { SharedModule } from '../shared/shared.module';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { ReclamationsComponent } from './reclamations/reclamations.component';
 
 
 @NgModule({
@@ -18,7 +19,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
     ProfileComponent,
     CoursesComponent,
     ChatComponent,
-    LayoutComponent
+    LayoutComponent,
+    ReclamationsComponent
   ],
   imports: [
     CommonModule,

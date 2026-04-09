@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { API_URL } from '../api.config';
 
 export type Role = 'ADMIN' | 'TUTOR' | 'STUDENT' | 'CLUB_MANAGER' | 'EMPLOYEE';
 
@@ -27,7 +28,7 @@ export interface User {
 })
 export class UserService {
 
-  private readonly apiUrl = 'http://localhost:8011/api/users';
+  private readonly apiUrl = `${API_URL}/users`;
 
   constructor(private http: HttpClient) {}
 

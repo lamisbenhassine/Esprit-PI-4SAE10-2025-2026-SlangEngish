@@ -1,0 +1,165 @@
+.reclamations-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  gap: 20px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.title-with-icon,
+.section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-with-icon mat-icon,
+.section-title mat-icon {
+  color: #5c6ac4;
+}
+
+.header p {
+  margin: 6px 0 0;
+  color: #666;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e7e7e7;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.form-card h2,
+.list-card h2 {
+  margin-top: 0;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  border: 1px solid #d6d6d6;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-with-icon mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.btn.primary {
+  background: #667eea;
+  color: #fff;
+}
+
+.btn.secondary {
+  background: #ececec;
+}
+
+.btn.small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.btn.danger {
+  background: #dc3545;
+  color: #fff;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid #efefef;
+  padding: 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.status {
+  background: #f2f5ff;
+  color: #3d57d4;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.status-pending {
+  background: #fff4dd;
+  color: #936200;
+}
+
+.status-progress {
+  background: #e7f0ff;
+  color: #1f4aad;
+}
+
+.status-processed {
+  background: #e7f9ee;
+  color: #1d6d36;
+}
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.alert {
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.alert.error {
+  background: #ffe8ea;
+  color: #9b1c23;
+}
+
+.alert.success {
+  background: #e8f9ed;
+  color: #1d6d36;
+}
+
+.loading,
+.empty {
+  color: #666;
+  padding: 8px 0;
+}

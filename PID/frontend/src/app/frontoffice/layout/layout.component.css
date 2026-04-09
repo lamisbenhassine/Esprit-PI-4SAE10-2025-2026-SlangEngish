@@ -5,6 +5,81 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.notifications-wrap {
+  position: fixed;
+  top: 84px;
+  right: 18px;
+  z-index: 10020;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(420px, calc(100vw - 24px));
+}
+
+.notification-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: linear-gradient(135deg, #243b55 0%, #141e30 100%);
+  color: #fff;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 10px 24px rgba(18, 30, 52, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  animation: notifSlideIn 0.28s ease-out;
+}
+
+.notification-icon mat-icon {
+  color: #7dc4ff;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.notification-message {
+  font-size: 0.86rem;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.35;
+  word-wrap: break-word;
+}
+
+.notification-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.notification-close mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes notifSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+}
+
 /* Welcome overlay (étudiant après signin) */
 .welcome-overlay {
   position: fixed;
@@ -118,6 +193,13 @@
   
   .content-wrapper {
     padding: 16px;
+  }
+
+  .notifications-wrap {
+    top: 74px;
+    right: 10px;
+    left: 10px;
+    width: auto;
   }
 }
 

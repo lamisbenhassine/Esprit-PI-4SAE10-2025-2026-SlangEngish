@@ -8,5 +8,6 @@
     <file url="file://$PROJECT_DIR$/microservices/job/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservices/meeting/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/microservices/notification/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/microservices/users/src/main/java" charset="UTF-8" />
   </component>
 </project>

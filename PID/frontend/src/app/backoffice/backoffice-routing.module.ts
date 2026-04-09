@@ -5,6 +5,8 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { UserManagementComponent } from './user-management/user-management.component';
 import { CoursesManagementComponent } from './courses-management/courses-management.component';
 import { ClubsManagementComponent } from './clubs-management/clubs-management.component';
+import { BackofficeProfileComponent } from './profile/backoffice-profile.component';
+import { ReclamationsManagementComponent } from './reclamations-management/reclamations-management.component';
 
 const routes: Routes = [
   {
@@ -15,7 +17,9 @@ const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'users', component: UserManagementComponent },
       { path: 'courses', component: CoursesManagementComponent },
-      { path: 'clubs', component: ClubsManagementComponent }
+      { path: 'clubs', component: ClubsManagementComponent },
+      { path: 'reclamations', component: ReclamationsManagementComponent },
+      { path: 'profile', component: BackofficeProfileComponent }
     ]
   }
 ];

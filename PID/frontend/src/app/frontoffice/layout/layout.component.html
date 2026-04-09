@@ -25,6 +25,22 @@
     </div>
   </div>
 
+  <!-- In-app notifications -->
+  <div class="notifications-wrap" *ngIf="notifications.length > 0">
+    <div class="notification-card" *ngFor="let n of notifications">
+      <div class="notification-icon">
+        <mat-icon>notifications_active</mat-icon>
+      </div>
+      <div class="notification-content">
+        <div class="notification-title">{{ n.title }}</div>
+        <div class="notification-message">{{ n.message }}</div>
+      </div>
+      <button class="notification-close" (click)="dismissNotification(n.id)" aria-label="Close notification">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
   <!-- Welcome overlay (étudiant, après signin sur dashboard) -->
   <div class="welcome-overlay" *ngIf="showWelcomeOverlay" (click)="dismissWelcomeOverlay()" [class.welcome-overlay--out]="welcomeOverlayFading">
     <div class="welcome-overlay-card" (click)="$event.stopPropagation()">

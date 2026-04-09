@@ -1,0 +1,8 @@
+esprit\reclamation\controller\ReclamationController.class
+esprit\reclamation\repository\ReclamationRepository.class
+esprit\reclamation\service\ReclamationServiceImpl.class
+esprit\reclamation\entity\Reclamation.class
+esprit\reclamation\controller\GlobalExceptionHandler.class
+esprit\reclamation\service\ReclamationService.class
+esprit\reclamation\dto\AdminReponseRequest.class
+esprit\reclamation\ReclamationApplication.class

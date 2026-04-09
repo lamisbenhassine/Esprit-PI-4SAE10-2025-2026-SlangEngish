@@ -2,6 +2,7 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
       <profile name="Maven default annotation processors profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -14,6 +15,15 @@
         <module name="meeting" />
         <module name="gateway" />
       </profile>
+      <profile name="Annotation profile for user" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
+        </processorPath>
+        <module name="user" />
+      </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
@@ -25,6 +35,7 @@
       <module name="job" options="-parameters" />
       <module name="meeting" options="-parameters" />
       <module name="notification" options="-parameters" />
+      <module name="user" options="-parameters" />
     </option>
   </component>
 </project>

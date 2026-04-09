@@ -7,9 +7,12 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { UserManagementComponent } from './user-management/user-management.component';
 import { AddUserDialogComponent } from './user-management/add-user-dialog.component';
 import { EditUserDialogComponent } from './user-management/edit-user-dialog.component';
+import { ViewUserDialogComponent } from './user-management/view-user-dialog.component';
 import { CoursesManagementComponent } from './courses-management/courses-management.component';
 import { ClubsManagementComponent } from './clubs-management/clubs-management.component';
 import { LayoutComponent } from './layout/layout.component';
+import { BackofficeProfileComponent } from './profile/backoffice-profile.component';
+import { ReclamationsManagementComponent } from './reclamations-management/reclamations-management.component';
 import { SharedModule } from '../shared/shared.module';
 
 // Angular Material Modules
@@ -29,9 +32,12 @@ import { MatSelectModule } from '@angular/material/select';
     UserManagementComponent,
     AddUserDialogComponent,
     EditUserDialogComponent,
+    ViewUserDialogComponent,
     CoursesManagementComponent,
     ClubsManagementComponent,
-    LayoutComponent
+    ReclamationsManagementComponent,
+    LayoutComponent,
+    BackofficeProfileComponent
   ],
   imports: [
     CommonModule,

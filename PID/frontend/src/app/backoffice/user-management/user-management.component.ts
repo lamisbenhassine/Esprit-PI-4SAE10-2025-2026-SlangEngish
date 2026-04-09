@@ -6,6 +6,7 @@ import { UserService, User, Status } from '../../services/user.service';
 import { AuthService } from '../../services/auth.service';
 import { AddUserDialogComponent } from './add-user-dialog.component';
 import { EditUserDialogComponent } from './edit-user-dialog.component';
+import { ViewUserDialogComponent } from './view-user-dialog.component';
 
 @Component({
   selector: 'app-user-management',
@@ -231,7 +232,10 @@ export class UserManagementComponent implements OnInit {
   }
 
   viewUser(user: User): void {
-    console.log('View user:', user);
+    this.dialog.open(ViewUserDialogComponent, {
+      width: '520px',
+      data: user
+    });
   }
 
   addUser(): void {
