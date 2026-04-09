@@ -9,14 +9,44 @@
 
   <div class="card form-card">
     <h2 class="section-title"><mat-icon>post_add</mat-icon>New Reclamation</h2>
+    <div class="quick-prompts">
+      <button type="button" class="chip-btn" (click)="useQuickPrompt('access')">
+        <mat-icon>vpn_key</mat-icon> Access issue
+      </button>
+      <button type="button" class="chip-btn" (click)="useQuickPrompt('payment')">
+        <mat-icon>payments</mat-icon> Payment issue
+      </button>
+      <button type="button" class="chip-btn" (click)="useQuickPrompt('bug')">
+        <mat-icon>bug_report</mat-icon> Platform bug
+      </button>
+      <button type="button" class="chip-btn" (click)="useQuickPrompt('other')">
+        <mat-icon>help</mat-icon> Other
+      </button>
+    </div>
+    <p class="voice-hint" *ngIf="speechSupported">
+      <mat-icon>keyboard_voice</mat-icon>
+      You can dictate Subject or Description using voice.
+    </p>
 
     <div class="form-group">
-      <label for="sujet">Subject</label>
+      <div class="label-row">
+        <label for="sujet">Subject</label>
+        <button type="button" class="voice-btn" (click)="toggleVoiceInput('sujet')">
+          <mat-icon>{{ isRecording && recordingField === 'sujet' ? 'mic_off' : 'mic' }}</mat-icon>
+          {{ isRecording && recordingField === 'sujet' ? 'Stop' : 'Voice' }}
+        </button>
+      </div>
       <input id="sujet" type="text" [(ngModel)]="formModel.sujet" placeholder="Reclamation subject" />
     </div>
 
     <div class="form-group">
-      <label for="description">Description</label>
+      <div class="label-row">
+        <label for="description">Description</label>
+        <button type="button" class="voice-btn" (click)="toggleVoiceInput('description')">
+          <mat-icon>{{ isRecording && recordingField === 'description' ? 'mic_off' : 'mic' }}</mat-icon>
+          {{ isRecording && recordingField === 'description' ? 'Stop' : 'Voice' }}
+        </button>
+      </div>
       <textarea id="description" rows="4" [(ngModel)]="formModel.description" placeholder="Describe your issue"></textarea>
     </div>
 
@@ -62,6 +92,37 @@
 
     <div class="empty" *ngIf="!loading && reclamations.length === 0">
       No reclamations yet.
+    </div>
+  </div>
+
+  <button type="button" class="chatbot-fab" (click)="toggleChatbot()">
+    <mat-icon>{{ showChatbot ? 'close' : 'smart_toy' }}</mat-icon>
+  </button>
+
+  <div class="chatbot-panel" *ngIf="showChatbot">
+    <div class="chatbot-header">
+      <mat-icon>smart_toy</mat-icon>
+      <span>Reclamation Assistant</span>
+    </div>
+    <div class="chatbot-body">
+      <div *ngFor="let m of chatbotMessages" class="chat-msg" [ngClass]="m.role">
+        {{ m.text }}
+      </div>
+      <div class="chatbot-typing" *ngIf="isChatbotLoading">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+    <div class="chatbot-input">
+      <input
+        type="text"
+        [(ngModel)]="chatbotInput"
+        placeholder="Describe your issue..."
+        (keydown.enter)="sendChatbotMessage()"
+        [disabled]="isChatbotLoading"
+      />
+      <button type="button" class="send-btn" (click)="sendChatbotMessage()" [disabled]="isChatbotLoading">
+        <mat-icon>send</mat-icon>
+      </button>
     </div>
   </div>
 

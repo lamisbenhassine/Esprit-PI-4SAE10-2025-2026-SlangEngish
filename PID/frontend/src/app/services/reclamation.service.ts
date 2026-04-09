@@ -18,6 +18,19 @@ export interface TraiterReclamationPayload {
   reponseAdmin: string;
 }
 
+export interface ChatbotAssistRequest {
+  message: string;
+  sujet?: string;
+  description?: string;
+}
+
+export interface ChatbotAssistResponse {
+  reply: string;
+  suggestedSubject: string;
+  suggestedDescription: string;
+  aiUsed: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -56,6 +69,10 @@ export class ReclamationService {
 
   markNotificationAsRead(id: number): Observable<Reclamation> {
     return this.http.put<Reclamation>(`${this.apiUrl}/${id}/notifications/read`, {});
+  }
+
+  assistWithChatbot(payload: ChatbotAssistRequest): Observable<ChatbotAssistResponse> {
+    return this.http.post<ChatbotAssistResponse>(`${this.apiUrl}/chatbot/assist`, payload);
   }
 
   delete(id: number): Observable<void> {
