@@ -3,7 +3,7 @@
     <div class="header-content">
       <div class="header-titles">
         <h1 class="title-with-icon"><mat-icon>admin_panel_settings</mat-icon>Reclamation Management</h1>
-        <p class="header-subtitle">Sorted by priority (urgency &amp; sentiment). Pagination on the server. Stats reflect all reclamations. The table refreshes when students submit (other tabs) and every 8s as backup.</p>
+        <p class="header-subtitle">Sorted by priority (urgency &amp; sentiment). Pagination on the server. Stats reflect all reclamations. The table refreshes when students submit (other tabs) and every 2 minutes as backup.</p>
       </div>
       <button type="button" class="btn refresh-btn btn-with-icon" (click)="loadReclamations(false)" [disabled]="loading" title="Reload list now">
         <mat-icon>refresh</mat-icon>

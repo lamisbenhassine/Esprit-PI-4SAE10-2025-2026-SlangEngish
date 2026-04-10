@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ReclamationListSyncService } from '../../services/reclamation-list-sync.service';
 import { Reclamation, ReclamationService, StudentBlockStatus } from '../../services/reclamation.service';
+import { ReclamationResolutionNotifyService } from '../../services/reclamation-resolution-notify.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -44,7 +45,8 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
   constructor(
     private reclamationService: ReclamationService,
     private authService: AuthService,
-    private reclamationListSync: ReclamationListSyncService
+    private reclamationListSync: ReclamationListSyncService,
+    private resolutionNotify: ReclamationResolutionNotifyService
   ) {}
 
   private resolveStudentId(user: { id?: unknown }): number | null {
@@ -199,7 +201,9 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
     this.reclamationService.create(payload).subscribe({
       next: (created) => {
         this.successMessage = 'Reclamation created successfully.';
-        this.pendingCreatedRow = this.mergeCreatedFromResponse(created, payload);
+        const merged = this.mergeCreatedFromResponse(created, payload);
+        this.pendingCreatedRow = merged;
+        this.resolutionNotify.emitAutoResolved(merged);
         this.resetForm();
         this.reclamations = this.mergePendingIntoServerList(this.reclamations);
         this.listLoadError = '';

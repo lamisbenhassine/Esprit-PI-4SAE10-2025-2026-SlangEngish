@@ -7,7 +7,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { Reclamation, ReclamationService } from '../../services/reclamation.service';
 
 /** Poll interval — backup if BroadcastChannel / refresh miss */
-const LIST_POLL_MS = 8000;
+const LIST_POLL_MS = 2 * 60 * 1000;
 
 @Component({
   selector: 'app-reclamations-management',

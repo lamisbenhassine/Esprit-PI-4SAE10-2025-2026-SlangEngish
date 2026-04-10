@@ -1,10 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Component, Inject, OnInit, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { MenuItem } from '../../shared/sidebar/sidebar.component';
 import { AuthService } from '../../services/auth.service';
 import { ReclamationService } from '../../services/reclamation.service';
+import { ReclamationResolutionNotifyService } from '../../services/reclamation-resolution-notify.service';
 
 interface UiNotification {
   id: number;
@@ -26,12 +28,26 @@ export class LayoutComponent implements OnInit, OnDestroy {
   private welcomeOverlayShown = false;
   private welcomeOverlayTimeout: ReturnType<typeof setTimeout> | null = null;
   private routerSub: Subscription | null = null;
+  private resNotifySub: Subscription | null = null;
   notifications: UiNotification[] = [];
   private notificationTimeouts = new Map<number, ReturnType<typeof setTimeout>>();
   private shownNotificationIds = new Set<number>();
   /** Avoid hammering the API when currentUser$ and router both fire in quick succession */
   private lastUnreadNotificationFetch: { studentId: number; at: number } | null = null;
   private static readonly UNREAD_NOTIFICATION_MIN_INTERVAL_MS = 3000;
+  /** Poll so students see admin resolutions without navigating away or re-logging in */
+  private static readonly UNREAD_POLL_INTERVAL_MS = 6000;
+  private unreadPollInterval: ReturnType<typeof setInterval> | null = null;
+  private pollStudentId: number | null = null;
+  private readonly onVisibilityChange = (): void => {
+    if (!isPlatformBrowser(this.platformId) || document.visibilityState !== 'visible') {
+      return;
+    }
+    const user = this.authService.getCurrentUser();
+    if (this.isStudentRole(user) && user?.id != null) {
+      this.checkUnreadReclamationNotifications(user.id, true);
+    }
+  };
 
   frontofficeMenuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', routerLink: '/frontoffice/dashboard' },
@@ -46,7 +62,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private reclamationService: ReclamationService
+    private reclamationService: ReclamationService,
+    private resolutionNotify: ReclamationResolutionNotifyService,
+    @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
   ngOnInit(): void {
@@ -54,6 +72,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
       if (!user) {
         this.username = 'User';
         this.userAvatar = '';
+        this.stopUnreadPoll();
         return;
       }
       this.username = `${user.firstName} ${user.lastName}`;
@@ -79,6 +98,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
       }
       if (this.isStudentRole(user) && user.id != null) {
         this.checkUnreadReclamationNotifications(user.id);
+        this.ensureUnreadPoll(user.id);
+      } else {
+        this.stopUnreadPoll();
       }
     });
     this.routerSub = this.router.events.pipe(
@@ -92,6 +114,25 @@ export class LayoutComponent implements OnInit, OnDestroy {
     });
     // Au premier chargement, l'URL peut ne pas être à jour : réessayer après un court délai
     setTimeout(() => this.tryShowWelcomeOverlay(), 150);
+
+    if (isPlatformBrowser(this.platformId)) {
+      document.addEventListener('visibilitychange', this.onVisibilityChange);
+    }
+
+    this.resNotifySub = this.resolutionNotify.resolved$.subscribe((r) => {
+      if (r.id == null) {
+        return;
+      }
+      if (!this.shownNotificationIds.has(r.id)) {
+        this.shownNotificationIds.add(r.id);
+        this.pushNotification({
+          id: r.id,
+          title: `Reclamation processed: ${r.sujet}`,
+          message: r.reponseAdmin ? r.reponseAdmin : 'Your reclamation has been processed by admin.'
+        });
+      }
+      this.reclamationService.markNotificationAsRead(r.id).subscribe();
+    });
   }
 
   private tryShowWelcomeOverlay(): void {
@@ -114,9 +155,29 @@ export class LayoutComponent implements OnInit, OnDestroy {
     return url.includes('/frontoffice/dashboard') || url === '/frontoffice' || url === '/frontoffice/';
   }
 
-  private checkUnreadReclamationNotifications(studentId: number): void {
+  private ensureUnreadPoll(studentId: number): void {
+    if (this.pollStudentId === studentId && this.unreadPollInterval != null) {
+      return;
+    }
+    this.stopUnreadPoll();
+    this.pollStudentId = studentId;
+    this.unreadPollInterval = setInterval(() => {
+      this.checkUnreadReclamationNotifications(studentId, true);
+    }, LayoutComponent.UNREAD_POLL_INTERVAL_MS);
+  }
+
+  private stopUnreadPoll(): void {
+    this.pollStudentId = null;
+    if (this.unreadPollInterval != null) {
+      clearInterval(this.unreadPollInterval);
+      this.unreadPollInterval = null;
+    }
+  }
+
+  private checkUnreadReclamationNotifications(studentId: number, bypassThrottle = false): void {
     const now = Date.now();
     if (
+      !bypassThrottle &&
       this.lastUnreadNotificationFetch?.studentId === studentId &&
       now - this.lastUnreadNotificationFetch.at < LayoutComponent.UNREAD_NOTIFICATION_MIN_INTERVAL_MS
     ) {
@@ -163,6 +224,12 @@ export class LayoutComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.welcomeOverlayTimeout) clearTimeout(this.welcomeOverlayTimeout);
     this.routerSub?.unsubscribe();
+    this.resNotifySub?.unsubscribe();
+    this.resNotifySub = null;
+    this.stopUnreadPoll();
+    if (isPlatformBrowser(this.platformId)) {
+      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    }
     this.notificationTimeouts.forEach((timeout) => clearTimeout(timeout));
     this.notificationTimeouts.clear();
   }

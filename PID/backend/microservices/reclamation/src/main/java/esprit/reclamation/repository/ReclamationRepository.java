@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,4 +26,10 @@ public interface ReclamationRepository extends JpaRepository<Reclamation, Long> 
     List<Reclamation> findByStudentIdAndNotificationReadFalseAndReponseAdminIsNotNullOrderByCreatedAtDesc(Long studentId);
     Optional<Reclamation> findTopByStudentIdAndStudentReportedTrueOrderByReportedAtDesc(Long studentId);
     boolean existsByStudentIdAndStudentReportedTrueAndReportedAtAfter(Long studentId, LocalDateTime threshold);
+
+    @Query("SELECT COUNT(DISTINCT r.studentId) FROM Reclamation r WHERE r.issueKey = :issueKey AND r.statut <> 'RESOLUE'")
+    long countDistinctStudentsOpenByIssueKey(@Param("issueKey") String issueKey);
+
+    @Query("SELECT r FROM Reclamation r WHERE r.issueKey = :issueKey AND r.statut <> 'RESOLUE'")
+    List<Reclamation> findAllOpenByIssueKey(@Param("issueKey") String issueKey);
 }

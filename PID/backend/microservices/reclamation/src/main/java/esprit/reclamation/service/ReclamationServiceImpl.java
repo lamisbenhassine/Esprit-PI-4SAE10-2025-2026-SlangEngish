@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -26,12 +27,16 @@ public class ReclamationServiceImpl implements ReclamationService {
     private final ReclamationSentimentAnalyzer sentimentAnalyzer;
     private final List<String> badWords;
     private final List<Pattern> badWordPatterns;
+    private final int autoResolveMinDistinctStudents;
+    private final String autoResolveMessage;
 
     public ReclamationServiceImpl(
             ReclamationRepository reclamationRepository,
             StudentReclamationBlockRepository studentReclamationBlockRepository,
             ReclamationSentimentAnalyzer sentimentAnalyzer,
-            @Value("${app.moderation.bad-words:insulte,idiot,stupid,fuck,shit}") String badWordsConfig
+            @Value("${app.moderation.bad-words:insulte,idiot,stupid,fuck,shit}") String badWordsConfig,
+            @Value("${app.reclamation.auto-resolve.min-distinct-students:3}") int autoResolveMinDistinctStudents,
+            @Value("${app.reclamation.auto-resolve.message:This request was automatically closed after three or more different students reported the same subject.}") String autoResolveMessage
     ) {
         this.reclamationRepository = reclamationRepository;
         this.studentReclamationBlockRepository = studentReclamationBlockRepository;
@@ -44,9 +49,14 @@ public class ReclamationServiceImpl implements ReclamationService {
         this.badWordPatterns = this.badWords.stream()
                 .map(word -> Pattern.compile("\\b" + Pattern.quote(word) + "\\b", Pattern.CASE_INSENSITIVE))
                 .collect(Collectors.toList());
+        this.autoResolveMinDistinctStudents = autoResolveMinDistinctStudents;
+        this.autoResolveMessage = autoResolveMessage == null || autoResolveMessage.isBlank()
+                ? "This request was automatically closed after three or more different students reported the same subject."
+                : autoResolveMessage.trim();
     }
 
     @Override
+    @Transactional
     public Reclamation create(Reclamation reclamation) {
         if (reclamation.getStudentId() == null) {
             throw new RuntimeException("studentId est obligatoire");
@@ -65,7 +75,10 @@ public class ReclamationServiceImpl implements ReclamationService {
         reclamation.setSujet(moderation.sanitizedSujet);
         reclamation.setDescription(moderation.sanitizedDescription);
         reclamation.setContainsBadWords(moderation.containsBadWords);
-        return reclamationRepository.save(reclamation);
+        reclamation.setIssueKey(normalizeIssueKey(reclamation.getSujet()));
+        Reclamation saved = reclamationRepository.save(reclamation);
+        applyAutoResolveForSameIssue(saved.getIssueKey());
+        return reclamationRepository.findById(saved.getId()).orElse(saved);
     }
 
     @Override
@@ -106,6 +119,7 @@ public class ReclamationServiceImpl implements ReclamationService {
     }
 
     @Override
+    @Transactional
     public Reclamation update(Long id, Reclamation reclamation) {
         Reclamation existing = getById(id);
         String rawSujet = reclamation.getSujet();
@@ -115,10 +129,13 @@ public class ReclamationServiceImpl implements ReclamationService {
         existing.setSujet(moderation.sanitizedSujet);
         existing.setDescription(moderation.sanitizedDescription);
         existing.setContainsBadWords(moderation.containsBadWords);
+        existing.setIssueKey(normalizeIssueKey(existing.getSujet()));
         if (reclamation.getStudentId() != null) {
             existing.setStudentId(reclamation.getStudentId());
         }
-        return reclamationRepository.save(existing);
+        Reclamation saved = reclamationRepository.save(existing);
+        applyAutoResolveForSameIssue(saved.getIssueKey());
+        return reclamationRepository.findById(saved.getId()).orElse(saved);
     }
 
     @Override
@@ -210,6 +227,41 @@ public class ReclamationServiceImpl implements ReclamationService {
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    /**
+     * Same issue = same normalized subject line (case and spacing ignored).
+     */
+    static String normalizeIssueKey(String sujet) {
+        if (sujet == null) {
+            return "";
+        }
+        return sujet.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+    }
+
+    /**
+     * When the number of distinct students with an open reclamation for the same issue reaches the
+     * configured minimum or exceeds it (e.g. 3, 4, …), resolve all open tickets for that issue.
+     */
+    private void applyAutoResolveForSameIssue(String issueKey) {
+        if (autoResolveMinDistinctStudents <= 0) {
+            return;
+        }
+        if (issueKey == null || issueKey.isBlank()) {
+            return;
+        }
+        long distinct = reclamationRepository.countDistinctStudentsOpenByIssueKey(issueKey);
+        if (distinct < autoResolveMinDistinctStudents) {
+            return;
+        }
+        List<Reclamation> open = reclamationRepository.findAllOpenByIssueKey(issueKey);
+        for (Reclamation r : open) {
+            r.setStatut("RESOLUE");
+            r.setReponseAdmin(autoResolveMessage);
+            r.setNotificationRead(false);
+            reclamationRepository.save(r);
+        }
+        reclamationRepository.flush();
     }
 
     private void applySentiment(Reclamation target, String sujet, String description) {

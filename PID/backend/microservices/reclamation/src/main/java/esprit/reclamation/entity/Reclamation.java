@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.validation.constraints.NotBlank;
@@ -12,7 +13,7 @@ import javax.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "reclamations")
+@Table(name = "reclamations", indexes = @Index(name = "idx_reclamation_issue_key", columnList = "issueKey"))
 public class Reclamation {
 
     @Id
@@ -23,6 +24,10 @@ public class Reclamation {
     @Size(max = 100, message = "Le sujet ne doit pas depasser 100 caracteres")
     @Column(nullable = false, length = 100)
     private String sujet;
+
+    /** Normalized subject for grouping "same issue" across students (lowercase, trimmed, single spaces). */
+    @Column(length = 100)
+    private String issueKey;
 
     @NotBlank(message = "La description est obligatoire")
     @Size(max = 1000, message = "La description ne doit pas depasser 1000 caracteres")
@@ -97,6 +102,14 @@ public class Reclamation {
 
     public void setSujet(String sujet) {
         this.sujet = sujet;
+    }
+
+    public String getIssueKey() {
+        return issueKey;
+    }
+
+    public void setIssueKey(String issueKey) {
+        this.issueKey = issueKey;
     }
 
     public String getDescription() {
