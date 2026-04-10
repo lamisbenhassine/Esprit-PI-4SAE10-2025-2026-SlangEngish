@@ -1,7 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { ReclamationListSyncService } from '../../services/reclamation-list-sync.service';
 import { Reclamation, ReclamationService, StudentBlockStatus } from '../../services/reclamation.service';
 import { ReclamationResolutionNotifyService } from '../../services/reclamation-resolution-notify.service';
+import { StudentReclamationBlockStatusService } from '../../services/student-reclamation-block-status.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -30,6 +32,7 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
   recordingField: 'sujet' | 'description' = 'description';
   speechSupported = false;
   private recognition: any | null = null;
+  private blockStatusSub: Subscription | null = null;
   showChatbot = false;
   isChatbotLoading = false;
   chatbotInput = '';
@@ -46,7 +49,8 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
     private reclamationService: ReclamationService,
     private authService: AuthService,
     private reclamationListSync: ReclamationListSyncService,
-    private resolutionNotify: ReclamationResolutionNotifyService
+    private resolutionNotify: ReclamationResolutionNotifyService,
+    private reclamationBlockStatus: StudentReclamationBlockStatusService
   ) {}
 
   private resolveStudentId(user: { id?: unknown }): number | null {
@@ -113,13 +117,24 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
     }
     this.loadMyReclamations();
     this.initVoiceRecognition();
-    this.loadBlockStatus();
+    this.blockStatusSub = this.reclamationBlockStatus.status$.subscribe((status) => {
+      if (status == null || !status.blocked) {
+        this.isStudentBlocked = false;
+        this.blockMainText = '';
+        this.blockedUntilDisplay = null;
+        return;
+      }
+      this.applyBlockStatus(status);
+    });
+    this.reclamationBlockStatus.refresh(this.studentId);
   }
 
   ngOnDestroy(): void {
     if (this.recognition) {
       this.recognition.stop();
     }
+    this.blockStatusSub?.unsubscribe();
+    this.blockStatusSub = null;
   }
 
   /**
@@ -216,10 +231,9 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
           this.errorMessage = msg;
           return;
         }
-        this.reclamationService.getStudentBlockStatus(this.studentId).subscribe({
+        this.reclamationBlockStatus.fetchNow(this.studentId).subscribe({
           next: (status) => {
             if (status.blocked) {
-              this.applyBlockStatus(status);
               this.errorMessage = '';
             } else {
               this.errorMessage = msg;
@@ -374,21 +388,6 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
           text: 'AI service is currently unavailable. I kept your message; please continue editing manually.'
         });
         this.isChatbotLoading = false;
-      }
-    });
-  }
-
-  private loadBlockStatus(): void {
-    if (!this.studentId) return;
-    this.reclamationService.getStudentBlockStatus(this.studentId).subscribe({
-      next: (status) => {
-        if (status.blocked) {
-          this.applyBlockStatus(status);
-        } else {
-          this.isStudentBlocked = false;
-          this.blockMainText = '';
-          this.blockedUntilDisplay = null;
-        }
       }
     });
   }

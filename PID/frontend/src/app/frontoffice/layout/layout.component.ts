@@ -7,6 +7,7 @@ import { MenuItem } from '../../shared/sidebar/sidebar.component';
 import { AuthService } from '../../services/auth.service';
 import { ReclamationService } from '../../services/reclamation.service';
 import { ReclamationResolutionNotifyService } from '../../services/reclamation-resolution-notify.service';
+import { StudentReclamationBlockStatusService } from '../../services/student-reclamation-block-status.service';
 
 interface UiNotification {
   id: number;
@@ -46,6 +47,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     const user = this.authService.getCurrentUser();
     if (this.isStudentRole(user) && user?.id != null) {
       this.checkUnreadReclamationNotifications(user.id, true);
+      this.reclamationBlockStatus.refresh(user.id);
     }
   };
 
@@ -64,6 +66,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private reclamationService: ReclamationService,
     private resolutionNotify: ReclamationResolutionNotifyService,
+    private reclamationBlockStatus: StudentReclamationBlockStatusService,
     @Inject(PLATFORM_ID) private readonly platformId: object
   ) {}
 
@@ -73,6 +76,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
         this.username = 'User';
         this.userAvatar = '';
         this.stopUnreadPoll();
+        this.reclamationBlockStatus.stopPolling();
         return;
       }
       this.username = `${user.firstName} ${user.lastName}`;
@@ -99,8 +103,10 @@ export class LayoutComponent implements OnInit, OnDestroy {
       if (this.isStudentRole(user) && user.id != null) {
         this.checkUnreadReclamationNotifications(user.id);
         this.ensureUnreadPoll(user.id);
+        this.reclamationBlockStatus.startPolling(user.id);
       } else {
         this.stopUnreadPoll();
+        this.reclamationBlockStatus.stopPolling();
       }
     });
     this.routerSub = this.router.events.pipe(
@@ -227,6 +233,7 @@ export class LayoutComponent implements OnInit, OnDestroy {
     this.resNotifySub?.unsubscribe();
     this.resNotifySub = null;
     this.stopUnreadPoll();
+    this.reclamationBlockStatus.stopPolling();
     if (isPlatformBrowser(this.platformId)) {
       document.removeEventListener('visibilitychange', this.onVisibilityChange);
     }
