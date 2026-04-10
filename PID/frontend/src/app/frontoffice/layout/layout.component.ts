@@ -29,6 +29,9 @@ export class LayoutComponent implements OnInit, OnDestroy {
   notifications: UiNotification[] = [];
   private notificationTimeouts = new Map<number, ReturnType<typeof setTimeout>>();
   private shownNotificationIds = new Set<number>();
+  /** Avoid hammering the API when currentUser$ and router both fire in quick succession */
+  private lastUnreadNotificationFetch: { studentId: number; at: number } | null = null;
+  private static readonly UNREAD_NOTIFICATION_MIN_INTERVAL_MS = 3000;
 
   frontofficeMenuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard', routerLink: '/frontoffice/dashboard' },
@@ -112,6 +115,15 @@ export class LayoutComponent implements OnInit, OnDestroy {
   }
 
   private checkUnreadReclamationNotifications(studentId: number): void {
+    const now = Date.now();
+    if (
+      this.lastUnreadNotificationFetch?.studentId === studentId &&
+      now - this.lastUnreadNotificationFetch.at < LayoutComponent.UNREAD_NOTIFICATION_MIN_INTERVAL_MS
+    ) {
+      return;
+    }
+    this.lastUnreadNotificationFetch = { studentId, at: now };
+
     this.reclamationService.getUnreadNotifications(studentId).subscribe({
       next: (notifications) => {
         if (!notifications || notifications.length === 0) return;

@@ -1,14 +1,30 @@
-import { Component, OnInit } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Component, Inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { ReclamationListSyncService } from '../../services/reclamation-list-sync.service';
+import { PageEvent } from '@angular/material/paginator';
 import { Reclamation, ReclamationService } from '../../services/reclamation.service';
+
+/** Poll interval — backup if BroadcastChannel / refresh miss */
+const LIST_POLL_MS = 8000;
 
 @Component({
   selector: 'app-reclamations-management',
   templateUrl: './reclamations-management.component.html',
   styleUrls: ['./reclamations-management.component.css']
 })
-export class ReclamationsManagementComponent implements OnInit {
+export class ReclamationsManagementComponent implements OnInit, OnDestroy {
+  readonly pageSizeOptions = [5, 10, 20, 50];
   reclamations: Reclamation[] = [];
+  /** 0-based page index (synced with API `number`). */
+  pageIndex = 0;
+  pageSize = 10;
+  totalElements = 0;
+  totalPages = 0;
+  pendingTotal = 0;
+  inProgressTotal = 0;
+  processedTotal = 0;
   loading = false;
   errorMessage = '';
   successMessage = '';
@@ -17,10 +33,20 @@ export class ReclamationsManagementComponent implements OnInit {
     statut: 'IN_PROGRESS',
     reponseAdmin: ''
   };
+  reportReason = '';
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private listSyncSub: Subscription | null = null;
+  private readonly onVisibility = (): void => {
+    if (document.visibilityState === 'visible') {
+      this.loadReclamations(true);
+    }
+  };
 
   constructor(
     private reclamationService: ReclamationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private reclamationListSync: ReclamationListSyncService,
+    @Inject(PLATFORM_ID) private platformId: object
   ) {}
 
   ngOnInit(): void {
@@ -29,22 +55,64 @@ export class ReclamationsManagementComponent implements OnInit {
       this.errorMessage = 'This page is only available for admin.';
       return;
     }
-    this.loadReclamations();
+    this.loadReclamations(false);
+    this.listSyncSub = this.reclamationListSync.listChanged$.subscribe(() => {
+      this.loadReclamations(true);
+    });
+    if (isPlatformBrowser(this.platformId)) {
+      document.addEventListener('visibilitychange', this.onVisibility);
+      this.pollTimer = setInterval(() => this.loadReclamations(true), LIST_POLL_MS);
+    }
   }
 
-  loadReclamations(): void {
-    this.loading = true;
-    this.errorMessage = '';
-    this.reclamationService.getAll().subscribe({
-      next: (data) => {
-        this.reclamations = data;
+  ngOnDestroy(): void {
+    this.listSyncSub?.unsubscribe();
+    this.listSyncSub = null;
+    if (isPlatformBrowser(this.platformId)) {
+      document.removeEventListener('visibilitychange', this.onVisibility);
+    }
+    if (this.pollTimer != null) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  /**
+   * @param silent when true (poll / tab focus), skip full-page loading state so the table does not flicker.
+   */
+  loadReclamations(silent = false): void {
+    if (!silent) {
+      this.loading = true;
+      this.errorMessage = '';
+    }
+    this.reclamationService.getAdminPage(this.pageIndex, this.pageSize).subscribe({
+      next: (page) => {
+        this.reclamations = page.content;
+        this.totalElements = page.totalElements;
+        this.totalPages = page.totalPages;
+        this.pageIndex = page.number;
+        this.pageSize = page.size;
+        this.pendingTotal = page.pendingTotal;
+        this.inProgressTotal = page.inProgressTotal;
+        this.processedTotal = page.processedTotal;
         this.loading = false;
       },
       error: (err) => {
-        this.errorMessage = err?.error?.message || 'An error occurred while loading reclamations.';
+        if (!silent) {
+          this.errorMessage =
+            err?.error?.message ||
+            (typeof err?.error === 'string' ? err.error : null) ||
+            'An error occurred while loading reclamations.';
+        }
         this.loading = false;
       }
     });
+  }
+
+  onPageChange(event: PageEvent): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadReclamations(false);
   }
 
   startTreatment(item: Reclamation): void {
@@ -53,6 +121,7 @@ export class ReclamationsManagementComponent implements OnInit {
       statut: item.statut === 'RESOLUE' ? 'RESOLUE' : (item.statut === 'IN_PROGRESS' ? 'IN_PROGRESS' : 'EN_COURS'),
       reponseAdmin: item.reponseAdmin || ''
     };
+    this.reportReason = item.reportReason || '';
     this.errorMessage = '';
     this.successMessage = '';
   }
@@ -73,6 +142,7 @@ export class ReclamationsManagementComponent implements OnInit {
         this.activeId = null;
         this.responseForm = { statut: 'IN_PROGRESS', reponseAdmin: '' };
         this.loadReclamations();
+        this.reclamationListSync.notifyListChanged();
       },
       error: (err) => {
         this.errorMessage = err?.error?.message || 'An error occurred while sending the response.';
@@ -83,33 +153,72 @@ export class ReclamationsManagementComponent implements OnInit {
   cancelTreatment(): void {
     this.activeId = null;
     this.responseForm = { statut: 'IN_PROGRESS', reponseAdmin: '' };
+    this.reportReason = '';
   }
 
-  get inProgressCount(): number {
-    return this.reclamations.filter(r => r.statut === 'EN_COURS' || r.statut === 'IN_PROGRESS').length;
+  reportStudent(item: Reclamation): void {
+    if (!item.id) return;
+    const reason = this.reportReason.trim();
+    if (!reason) {
+      this.errorMessage = 'Report reason is required.';
+      return;
+    }
+    this.reclamationService.reportStudent(item.id, { reportReason: reason }).subscribe({
+      next: () => {
+        this.successMessage = 'Student reported successfully.';
+        this.reportReason = '';
+        this.loadReclamations();
+        this.reclamationListSync.notifyListChanged();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'An error occurred while reporting the student.';
+      }
+    });
   }
 
-  get processedCount(): number {
-    return this.reclamations.filter(r => r.statut === 'RESOLUE').length;
-  }
-
-  get pendingCount(): number {
-    return this.reclamations.filter(r => r.statut === 'EN_ATTENTE').length;
-  }
-
-  get totalCount(): number {
-    return this.reclamations.length;
+  unblockStudent(item: Reclamation): void {
+    if (!item.id) return;
+    this.reclamationService.unblockStudent(item.id).subscribe({
+      next: () => {
+        this.successMessage = 'Student unblocked successfully.';
+        this.loadReclamations();
+        this.reclamationListSync.notifyListChanged();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'An error occurred while unblocking the student.';
+      }
+    });
   }
 
   get processedPercent(): number {
-    return this.totalCount === 0 ? 0 : Math.round((this.processedCount * 100) / this.totalCount);
+    return this.totalElements === 0 ? 0 : Math.round((this.processedTotal * 100) / this.totalElements);
   }
 
   get inProgressPercent(): number {
-    return this.totalCount === 0 ? 0 : Math.round((this.inProgressCount * 100) / this.totalCount);
+    return this.totalElements === 0 ? 0 : Math.round((this.inProgressTotal * 100) / this.totalElements);
   }
 
   get pendingPercent(): number {
-    return this.totalCount === 0 ? 0 : Math.round((this.pendingCount * 100) / this.totalCount);
+    return this.totalElements === 0 ? 0 : Math.round((this.pendingTotal * 100) / this.totalElements);
+  }
+
+  emotionChips(tags?: string): string[] {
+    if (!tags?.trim()) {
+      return [];
+    }
+    return tags.split(',').map((t) => t.trim()).filter(Boolean);
+  }
+
+  urgencyBadgeClass(level?: string): string {
+    switch (level) {
+      case 'CRITICAL':
+        return 'urgency urgency--critical';
+      case 'HIGH':
+        return 'urgency urgency--high';
+      case 'MEDIUM':
+        return 'urgency urgency--medium';
+      default:
+        return 'urgency urgency--low';
+    }
   }
 }

@@ -48,6 +48,19 @@
   margin-top: 0;
 }
 
+.list-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.list-head .section-title {
+  margin: 0;
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -164,6 +177,13 @@
   box-shadow: 0 10px 20px rgba(88, 103, 214, 0.35);
 }
 
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .voice-btn {
   border: 1px solid #cfd6ff;
   background: #eef2ff;
@@ -248,6 +268,169 @@ th {
 .row-actions {
   display: flex;
   gap: 6px;
+}
+
+/* —— Moderation block notice (student reported) —— */
+.block-notice {
+  position: relative;
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 22px 22px 22px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  background: linear-gradient(135deg, #fffbeb 0%, #fff7ed 48%, #fff1f2 100%);
+  box-shadow: 0 14px 36px rgba(180, 83, 9, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+}
+
+.block-notice__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, #f59e0b 0%, #ea580c 100%);
+  border-radius: 16px 0 0 16px;
+}
+
+.block-notice__icon-wrap {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fff 0%, #ffedd5 100%);
+  border: 1px solid rgba(251, 191, 36, 0.55);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.12);
+}
+
+.block-notice__icon {
+  color: #c2410c;
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.block-notice__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.block-notice__title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #7c2d12;
+  line-height: 1.25;
+}
+
+.block-notice__text {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #78350f;
+}
+
+.block-notice__until {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  margin-bottom: 12px;
+}
+
+.block-notice__until mat-icon {
+  color: #b45309;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+}
+
+.block-notice__until-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.block-notice__until-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #92400e;
+}
+
+.block-notice__until-date {
+  font-size: 16px;
+  font-weight: 700;
+  color: #431407;
+  font-variant-numeric: tabular-nums;
+}
+
+.block-notice__hint {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #9a3412;
+}
+
+.block-notice__hint mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #c2410c;
+}
+
+.form-card--blocked {
+  position: relative;
+  opacity: 0.92;
+}
+
+.form-card--blocked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  background: rgba(248, 250, 252, 0.35);
+}
+
+.form-blocked-overlay-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #9a3412;
+  background: rgba(254, 243, 199, 0.65);
+  border: 1px dashed rgba(217, 119, 6, 0.45);
+}
+
+.form-blocked-overlay-msg mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #b45309;
+}
+
+.chip-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .alert {
@@ -410,6 +593,16 @@ th {
 }
 
 @media (max-width: 700px) {
+  .block-notice {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px 16px;
+  }
+
+  .block-notice__icon-wrap {
+    margin: 0 auto;
+  }
+
   .actions {
     flex-wrap: wrap;
   }

@@ -1,11 +1,16 @@
 package esprit.reclamation.controller;
 
+import esprit.reclamation.dto.ReclamationAdminPageDto;
 import esprit.reclamation.dto.AdminReponseRequest;
 import esprit.reclamation.dto.ChatbotAssistRequest;
 import esprit.reclamation.dto.ChatbotAssistResponse;
+import esprit.reclamation.dto.ReportStudentRequest;
+import esprit.reclamation.dto.StudentBlockStatusResponse;
 import esprit.reclamation.entity.Reclamation;
+import esprit.reclamation.repository.StudentReclamationBlockRepository;
 import esprit.reclamation.service.ReclamationChatbotService;
 import esprit.reclamation.service.ReclamationService;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,17 +25,27 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/reclamations")
 public class ReclamationController {
 
+    private static <T> ResponseEntity<T> okNoStore(T body) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore().mustRevalidate())
+                .body(body);
+    }
+
     private final ReclamationService reclamationService;
     private final ReclamationChatbotService reclamationChatbotService;
+    private final StudentReclamationBlockRepository studentReclamationBlockRepository;
 
-    public ReclamationController(ReclamationService reclamationService, ReclamationChatbotService reclamationChatbotService) {
+    public ReclamationController(ReclamationService reclamationService, ReclamationChatbotService reclamationChatbotService,
+                                 StudentReclamationBlockRepository studentReclamationBlockRepository) {
         this.reclamationService = reclamationService;
         this.reclamationChatbotService = reclamationChatbotService;
+        this.studentReclamationBlockRepository = studentReclamationBlockRepository;
     }
 
     @GetMapping("/health")
@@ -40,20 +55,28 @@ public class ReclamationController {
 
     @PostMapping
     public ResponseEntity<Reclamation> create(@Valid @RequestBody Reclamation reclamation) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(reclamationService.create(reclamation));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .cacheControl(CacheControl.noStore().mustRevalidate())
+                .body(reclamationService.create(reclamation));
     }
 
+    /** Paginated list for back-office (sorted by priority). */
+    @GetMapping("/admin")
+    public ResponseEntity<ReclamationAdminPageDto> getAdminPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return okNoStore(reclamationService.getAdminPage(page, size));
+    }
+
+    /** Student: all own reclamations (no pagination). */
     @GetMapping
-    public ResponseEntity<List<Reclamation>> getAll(@RequestParam(required = false) Long studentId) {
-        if (studentId != null) {
-            return ResponseEntity.ok(reclamationService.getByStudentId(studentId));
-        }
-        return ResponseEntity.ok(reclamationService.getAll());
+    public ResponseEntity<List<Reclamation>> listForStudent(@RequestParam Long studentId) {
+        return okNoStore(reclamationService.getByStudentId(studentId));
     }
 
     @GetMapping("/notifications")
     public ResponseEntity<List<Reclamation>> getUnreadNotifications(@RequestParam Long studentId) {
-        return ResponseEntity.ok(reclamationService.getUnreadNotifications(studentId));
+        return okNoStore(reclamationService.getUnreadNotifications(studentId));
     }
 
     @PostMapping("/chatbot/assist")
@@ -61,9 +84,27 @@ public class ReclamationController {
         return ResponseEntity.ok(reclamationChatbotService.assist(request));
     }
 
+    @GetMapping("/students/{studentId}/block-status")
+    public ResponseEntity<StudentBlockStatusResponse> getStudentBlockStatus(@PathVariable Long studentId) {
+        LocalDateTime now = LocalDateTime.now();
+        return studentReclamationBlockRepository.findByStudentId(studentId)
+                .map(block -> {
+                    boolean blocked = block.getBlockedUntil() != null && block.getBlockedUntil().isAfter(now);
+                    String reason = blocked
+                            ? "You were reported because of your language and cannot create a new reclamation for 3 days. Please consult the administration."
+                            : "";
+                    return okNoStore(new StudentBlockStatusResponse(
+                            blocked,
+                            block.getBlockedUntil() == null ? null : block.getBlockedUntil().toString(),
+                            reason
+                    ));
+                })
+                .orElse(okNoStore(new StudentBlockStatusResponse(false, null, "")));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Reclamation> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(reclamationService.getById(id));
+        return okNoStore(reclamationService.getById(id));
     }
 
     @PutMapping("/{id}")
@@ -79,6 +120,16 @@ public class ReclamationController {
     @PutMapping("/{id}/notifications/read")
     public ResponseEntity<Reclamation> markNotificationAsRead(@PathVariable Long id) {
         return ResponseEntity.ok(reclamationService.markNotificationAsRead(id));
+    }
+
+    @PutMapping("/{id}/report-student")
+    public ResponseEntity<Reclamation> reportStudent(@PathVariable Long id, @Valid @RequestBody ReportStudentRequest request) {
+        return ResponseEntity.ok(reclamationService.reportStudent(id, request.getReportReason()));
+    }
+
+    @PutMapping("/{id}/unblock-student")
+    public ResponseEntity<Reclamation> unblockStudent(@PathVariable Long id) {
+        return ResponseEntity.ok(reclamationService.unblockStudent(id));
     }
 
     @DeleteMapping("/{id}")

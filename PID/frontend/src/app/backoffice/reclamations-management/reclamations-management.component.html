@@ -1,8 +1,14 @@
 <div class="reclamations-management">
   <div class="page-header">
     <div class="header-content">
-      <h1 class="title-with-icon"><mat-icon>admin_panel_settings</mat-icon>Reclamation Management</h1>
-      <p class="header-subtitle">Process student reclamations and send a response.</p>
+      <div class="header-titles">
+        <h1 class="title-with-icon"><mat-icon>admin_panel_settings</mat-icon>Reclamation Management</h1>
+        <p class="header-subtitle">Sorted by priority (urgency &amp; sentiment). Pagination on the server. Stats reflect all reclamations. The table refreshes when students submit (other tabs) and every 8s as backup.</p>
+      </div>
+      <button type="button" class="btn refresh-btn btn-with-icon" (click)="loadReclamations(false)" [disabled]="loading" title="Reload list now">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
     </div>
   </div>
 
@@ -14,7 +20,7 @@
       <div class="stat-icon"><mat-icon>hourglass_top</mat-icon></div>
       <div class="stat-content">
         <div class="stat-label">In Progress</div>
-        <div class="stat-value">{{ inProgressCount }}</div>
+        <div class="stat-value">{{ inProgressTotal }}</div>
         <div class="stat-percent">{{ inProgressPercent }}%</div>
       </div>
     </div>
@@ -22,7 +28,7 @@
       <div class="stat-icon"><mat-icon>verified</mat-icon></div>
       <div class="stat-content">
         <div class="stat-label">Processed</div>
-        <div class="stat-value">{{ processedCount }}</div>
+        <div class="stat-value">{{ processedTotal }}</div>
         <div class="stat-percent">{{ processedPercent }}%</div>
       </div>
     </div>
@@ -30,7 +36,7 @@
       <div class="stat-icon"><mat-icon>schedule</mat-icon></div>
       <div class="stat-content">
         <div class="stat-label">Pending</div>
-        <div class="stat-value">{{ pendingCount }}</div>
+        <div class="stat-value">{{ pendingTotal }}</div>
         <div class="stat-percent">{{ pendingPercent }}%</div>
       </div>
     </div>
@@ -39,7 +45,7 @@
   <div class="stats-overview" *ngIf="!loading">
     <div class="overview-header">
       <span>Total reclamations</span>
-      <strong>{{ totalCount }}</strong>
+      <strong>{{ totalElements }}</strong>
     </div>
     <div class="overview-bars">
       <div class="bar bar--processed" [style.width.%]="processedPercent"></div>
@@ -61,7 +67,10 @@
         <tr>
           <th>Subject</th>
           <th>Description</th>
+          <th>Priority</th>
+          <th>Sentiment</th>
           <th>Status</th>
+          <th>Moderation</th>
           <th>Admin Response</th>
           <th>Actions</th>
         </tr>
@@ -71,6 +80,16 @@
           <tr>
             <td>{{ r.sujet }}</td>
             <td>{{ r.description }}</td>
+            <td class="cell-priority">
+              <span [ngClass]="urgencyBadgeClass(r.urgencyLevel)">{{ r.urgencyLevel || '—' }}</span>
+              <span class="priority-score" *ngIf="r.priorityScore != null">{{ r.priorityScore }}/100</span>
+            </td>
+            <td class="cell-sentiment">
+              <div class="emotion-chips">
+                <span class="emotion-chip" *ngFor="let e of emotionChips(r.emotionTags)">{{ e }}</span>
+              </div>
+              <div class="sentiment-hint" *ngIf="r.sentimentLabel" [title]="r.sentimentLabel">{{ r.sentimentLabel }}</div>
+            </td>
             <td>
               <span class="status"
                     [ngClass]="{
@@ -81,6 +100,11 @@
                 {{ r.statut }}
               </span>
             </td>
+            <td>
+              <span class="status status--pending" *ngIf="r.containsBadWords && !r.studentReported">Needs Review</span>
+              <span class="status status--reported" *ngIf="r.studentReported">Reported</span>
+              <span *ngIf="!r.studentReported && !r.containsBadWords">-</span>
+            </td>
             <td>{{ r.reponseAdmin || '-' }}</td>
             <td>
               <button type="button" class="btn small primary btn-with-icon" (click)="startTreatment(r)">
@@ -90,7 +114,7 @@
             </td>
           </tr>
           <tr *ngIf="activeId === r.id">
-            <td colspan="5">
+            <td colspan="8">
               <div class="treatment-box">
                 <div class="form-group">
                   <label>Status</label>
@@ -104,10 +128,22 @@
                   <label>Admin Response</label>
                   <textarea rows="3" [(ngModel)]="responseForm.reponseAdmin" placeholder="Write a response for the student"></textarea>
                 </div>
+                <div class="form-group">
+                  <label>Report Reason (for bad words or abuse)</label>
+                  <textarea rows="2" [(ngModel)]="reportReason" placeholder="Write why you report this student"></textarea>
+                </div>
                 <div class="actions">
                   <button type="button" class="btn primary btn-with-icon" (click)="submitTreatment(r)">
                     <mat-icon>outgoing_mail</mat-icon>
                     Send Response
+                  </button>
+                  <button type="button" class="btn warning btn-with-icon" (click)="reportStudent(r)">
+                    <mat-icon>gavel</mat-icon>
+                    Report Student
+                  </button>
+                  <button type="button" class="btn success btn-with-icon" *ngIf="r.studentReported" (click)="unblockStudent(r)">
+                    <mat-icon>lock_open</mat-icon>
+                    Unblock Student
                   </button>
                   <button type="button" class="btn secondary btn-with-icon" (click)="cancelTreatment()">
                     <mat-icon>close</mat-icon>
@@ -124,5 +160,16 @@
     <div class="empty" *ngIf="!loading && reclamations.length === 0">
       No reclamations available.
     </div>
+
+    <mat-paginator
+      *ngIf="!loading && totalElements > 0"
+      class="reclamations-paginator"
+      [length]="totalElements"
+      [pageIndex]="pageIndex"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      [showFirstLastButtons]="true"
+      (page)="onPageChange($event)"
+    ></mat-paginator>
   </div>
 </div>

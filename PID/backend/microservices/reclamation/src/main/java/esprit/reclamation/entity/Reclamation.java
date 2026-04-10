@@ -42,6 +42,33 @@ public class Reclamation {
     @Column(nullable = false)
     private Boolean notificationRead;
 
+    @Column(nullable = false)
+    private Boolean studentReported;
+
+    @Column(nullable = false)
+    private Boolean containsBadWords;
+
+    @Size(max = 500, message = "La raison du signalement ne doit pas depasser 500 caracteres")
+    @Column(length = 500)
+    private String reportReason;
+
+    private LocalDateTime reportedAt;
+
+    /** LOW, MEDIUM, HIGH, CRITICAL — computed at save time */
+    @Column(length = 20)
+    private String urgencyLevel;
+
+    /** Comma-separated tags: URGENT, BLOCKED, FRUSTRATED, ANXIOUS, NEUTRAL */
+    @Column(length = 255)
+    private String emotionTags;
+
+    /** 0–100 — higher = treat first */
+    private Integer priorityScore;
+
+    /** Short human-readable summary for admin triage */
+    @Column(length = 300)
+    private String sentimentLabel;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -51,6 +78,8 @@ public class Reclamation {
             this.statut = "EN_ATTENTE";
         }
         this.notificationRead = true;
+        this.studentReported = false;
+        this.containsBadWords = false;
         this.createdAt = LocalDateTime.now();
     }
 
@@ -116,5 +145,69 @@ public class Reclamation {
 
     public void setNotificationRead(Boolean notificationRead) {
         this.notificationRead = notificationRead;
+    }
+
+    public Boolean getStudentReported() {
+        return studentReported;
+    }
+
+    public void setStudentReported(Boolean studentReported) {
+        this.studentReported = studentReported;
+    }
+
+    public Boolean getContainsBadWords() {
+        return containsBadWords;
+    }
+
+    public void setContainsBadWords(Boolean containsBadWords) {
+        this.containsBadWords = containsBadWords;
+    }
+
+    public String getReportReason() {
+        return reportReason;
+    }
+
+    public void setReportReason(String reportReason) {
+        this.reportReason = reportReason;
+    }
+
+    public LocalDateTime getReportedAt() {
+        return reportedAt;
+    }
+
+    public void setReportedAt(LocalDateTime reportedAt) {
+        this.reportedAt = reportedAt;
+    }
+
+    public String getUrgencyLevel() {
+        return urgencyLevel;
+    }
+
+    public void setUrgencyLevel(String urgencyLevel) {
+        this.urgencyLevel = urgencyLevel;
+    }
+
+    public String getEmotionTags() {
+        return emotionTags;
+    }
+
+    public void setEmotionTags(String emotionTags) {
+        this.emotionTags = emotionTags;
+    }
+
+    public Integer getPriorityScore() {
+        return priorityScore;
+    }
+
+    public void setPriorityScore(Integer priorityScore) {
+        this.priorityScore = priorityScore;
+    }
+
+    public String getSentimentLabel() {
+        return sentimentLabel;
+    }
+
+    public void setSentimentLabel(String sentimentLabel) {
+        this.sentimentLabel = sentimentLabel;
     }
 }

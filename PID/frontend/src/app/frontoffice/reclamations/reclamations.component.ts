@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Reclamation, ReclamationService } from '../../services/reclamation.service';
+import { ReclamationListSyncService } from '../../services/reclamation-list-sync.service';
+import { Reclamation, ReclamationService, StudentBlockStatus } from '../../services/reclamation.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -16,7 +17,14 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
   studentId: number | null = null;
   loading = false;
   errorMessage = '';
+  /** Shown when GET /reclamations?studentId=… fails (create may still succeed). */
+  listLoadError = '';
   successMessage = '';
+  isStudentBlocked = false;
+  /** Short explanation shown in the block notice (no raw API concatenation). */
+  blockMainText = '';
+  /** Formatted date/time when the block ends, for display only. */
+  blockedUntilDisplay: string | null = null;
   isRecording = false;
   recordingField: 'sujet' | 'description' = 'description';
   speechSupported = false;
@@ -24,6 +32,8 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
   showChatbot = false;
   isChatbotLoading = false;
   chatbotInput = '';
+  /** Row from last successful POST until the GET list contains the same id (avoids empty UI if GET lags or mismatches). */
+  private pendingCreatedRow: Reclamation | null = null;
   chatbotMessages: Array<{ role: 'bot' | 'user'; text: string }> = [
     {
       role: 'bot',
@@ -33,18 +43,75 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
 
   constructor(
     private reclamationService: ReclamationService,
-    private authService: AuthService
+    private authService: AuthService,
+    private reclamationListSync: ReclamationListSyncService
   ) {}
+
+  private resolveStudentId(user: { id?: unknown }): number | null {
+    const n = Number(user?.id);
+    if (!Number.isFinite(n) || n < 1) {
+      return null;
+    }
+    return Math.floor(n);
+  }
+
+  private isStudentRole(role: string | undefined): boolean {
+    return String(role ?? '').toUpperCase() === 'STUDENT';
+  }
+
+  /** Merge last created row into server list so the table never flashes empty after a successful POST. */
+  private mergePendingIntoServerList(server: Reclamation[]): Reclamation[] {
+    const p = this.pendingCreatedRow;
+    if (!p) {
+      return server;
+    }
+    if (p.id != null && server.some((r) => r.id === p.id)) {
+      this.pendingCreatedRow = null;
+      return server;
+    }
+    const sameContent = server.some(
+      (r) =>
+        (p.studentId == null || r.studentId === p.studentId) &&
+        r.sujet === p.sujet &&
+        r.description === p.description
+    );
+    if (sameContent) {
+      this.pendingCreatedRow = null;
+      return server;
+    }
+    if (p.id != null) {
+      return [p, ...server.filter((r) => r.id !== p.id)];
+    }
+    return [p, ...server];
+  }
+
+  private mergeCreatedFromResponse(
+    created: Reclamation | null | undefined,
+    payload: Reclamation
+  ): Reclamation {
+    const c = created && typeof created === 'object' ? created : ({} as Reclamation);
+    const hasBody = c.id != null || (typeof c.sujet === 'string' && c.sujet.length > 0);
+    if (hasBody) {
+      return { ...payload, ...c };
+    }
+    return { ...payload, statut: c.statut || 'EN_ATTENTE' };
+  }
 
   ngOnInit(): void {
     const currentUser = this.authService.getCurrentUser();
-    if (!currentUser || currentUser.role !== 'STUDENT') {
+    if (!currentUser || !this.isStudentRole(currentUser.role)) {
       this.errorMessage = 'This page is only available for students.';
       return;
     }
-    this.studentId = currentUser.id;
+    this.pendingCreatedRow = null;
+    this.studentId = this.resolveStudentId(currentUser);
+    if (this.studentId == null) {
+      this.errorMessage = 'Your account has no valid student id. Please sign in again.';
+      return;
+    }
     this.loadMyReclamations();
     this.initVoiceRecognition();
+    this.loadBlockStatus();
   }
 
   ngOnDestroy(): void {
@@ -53,24 +120,70 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadMyReclamations(): void {
+  /**
+   * @param silent When true, does not toggle the full-page list loading state (keeps the table visible after create).
+   */
+  loadMyReclamations(silent = false): void {
     if (!this.studentId) return;
-    this.loading = true;
+    if (!silent) {
+      this.loading = true;
+      this.listLoadError = '';
+    }
     this.reclamationService.getByStudent(this.studentId).subscribe({
-      next: (data) => {
-        this.reclamations = data;
+      next: (list) => {
+        this.reclamations = this.mergePendingIntoServerList(list);
         this.loading = false;
+        this.listLoadError = '';
       },
-      error: () => {
+      error: (err) => {
         this.loading = false;
+        const status = err?.status;
+        const detail =
+          typeof err?.error === 'string'
+            ? err.error
+            : err?.error?.message || err?.message || '';
+        this.listLoadError =
+          'Could not refresh your reclamation list' +
+          (status != null ? ` (HTTP ${status}).` : '.') +
+          (detail ? ` ${detail}` : ' Check the network tab or try again.');
       }
     });
+  }
+
+  /** Spring/Jackson may send `createdAt` as ISO string or as an array — keep the table usable in both cases. */
+  formatCreatedAt(r: Reclamation): string {
+    const v = r.createdAt as unknown;
+    if (v == null || v === '') {
+      return '-';
+    }
+    if (typeof v === 'string' || typeof v === 'number') {
+      const d = new Date(v);
+      return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString();
+    }
+    if (Array.isArray(v) && v.length >= 3) {
+      const y = Number(v[0]);
+      const mo = Number(v[1]);
+      const day = Number(v[2]);
+      const h = v.length > 3 ? Number(v[3]) : 0;
+      const mi = v.length > 4 ? Number(v[4]) : 0;
+      const sec = v.length > 5 ? Number(v[5]) : 0;
+      return new Date(y, mo - 1, day, h, mi, sec).toLocaleString();
+    }
+    return '-';
+  }
+
+  refreshList(): void {
+    this.loadMyReclamations(false);
   }
 
   submit(): void {
     if (!this.studentId) return;
     this.errorMessage = '';
     this.successMessage = '';
+
+    if (this.isStudentBlocked) {
+      return;
+    }
 
     if (!this.formModel.sujet?.trim() || !this.formModel.description?.trim()) {
       this.errorMessage = 'Subject and description are required.';
@@ -84,13 +197,34 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
     };
 
     this.reclamationService.create(payload).subscribe({
-      next: () => {
+      next: (created) => {
         this.successMessage = 'Reclamation created successfully.';
+        this.pendingCreatedRow = this.mergeCreatedFromResponse(created, payload);
         this.resetForm();
-        this.loadMyReclamations();
+        this.reclamations = this.mergePendingIntoServerList(this.reclamations);
+        this.listLoadError = '';
+        this.loadMyReclamations(true);
+        this.reclamationListSync.notifyListChanged();
       },
       error: (err) => {
-        this.errorMessage = err?.error?.message || 'An error occurred while creating the reclamation.';
+        const msg = err?.error?.message || 'An error occurred while creating the reclamation.';
+        if (!this.studentId) {
+          this.errorMessage = msg;
+          return;
+        }
+        this.reclamationService.getStudentBlockStatus(this.studentId).subscribe({
+          next: (status) => {
+            if (status.blocked) {
+              this.applyBlockStatus(status);
+              this.errorMessage = '';
+            } else {
+              this.errorMessage = msg;
+            }
+          },
+          error: () => {
+            this.errorMessage = msg;
+          }
+        });
       }
     });
   }
@@ -239,4 +373,46 @@ export class ReclamationsComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  private loadBlockStatus(): void {
+    if (!this.studentId) return;
+    this.reclamationService.getStudentBlockStatus(this.studentId).subscribe({
+      next: (status) => {
+        if (status.blocked) {
+          this.applyBlockStatus(status);
+        } else {
+          this.isStudentBlocked = false;
+          this.blockMainText = '';
+          this.blockedUntilDisplay = null;
+        }
+      }
+    });
+  }
+
+  private applyBlockStatus(status: StudentBlockStatus): void {
+    this.isStudentBlocked = true;
+    this.errorMessage = '';
+    const defaultReason =
+      'You were reported because of inappropriate language. Creating new reclamations is disabled for 3 days. Please contact the administration if you need assistance.';
+    const rawReason = (status.reason || '').trim();
+    this.blockMainText =
+      rawReason && rawReason.length > 0 && !this.isGenericBlockReason(rawReason)
+        ? rawReason
+        : defaultReason;
+    this.blockedUntilDisplay = status.blockedUntil
+      ? new Date(status.blockedUntil).toLocaleString(undefined, {
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        })
+      : null;
+  }
+
+  /** Treats long backend default copy as generic so we show friendlier UI text. */
+  private isGenericBlockReason(text: string): boolean {
+    return (
+      text.includes('cannot create a new reclamation for 3 days') ||
+      text.includes('consult the administration')
+    );
+  }
+
 }

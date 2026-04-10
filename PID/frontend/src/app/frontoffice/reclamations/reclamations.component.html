@@ -4,22 +4,48 @@
     <p>Submit your reclamation and track its status.</p>
   </div>
 
-  <div class="alert error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <div class="alert error" *ngIf="errorMessage && !isStudentBlocked">{{ errorMessage }}</div>
   <div class="alert success" *ngIf="successMessage">{{ successMessage }}</div>
 
-  <div class="card form-card">
+  <div class="block-notice" *ngIf="isStudentBlocked" role="status" aria-live="polite">
+    <div class="block-notice__accent"></div>
+    <div class="block-notice__icon-wrap">
+      <mat-icon class="block-notice__icon">gavel</mat-icon>
+    </div>
+    <div class="block-notice__body">
+      <h2 class="block-notice__title">Reclamation access temporarily restricted</h2>
+      <p class="block-notice__text">{{ blockMainText }}</p>
+      <div class="block-notice__until" *ngIf="blockedUntilDisplay">
+        <mat-icon>schedule</mat-icon>
+        <div class="block-notice__until-text">
+          <span class="block-notice__until-label">You can submit again after</span>
+          <span class="block-notice__until-date">{{ blockedUntilDisplay }}</span>
+        </div>
+      </div>
+      <p class="block-notice__hint">
+        <mat-icon>support_agent</mat-icon>
+        If you believe this is a mistake, contact the administration.
+      </p>
+    </div>
+  </div>
+
+  <div class="card form-card" [class.form-card--blocked]="isStudentBlocked">
     <h2 class="section-title"><mat-icon>post_add</mat-icon>New Reclamation</h2>
+    <p class="form-blocked-overlay-msg" *ngIf="isStudentBlocked">
+      <mat-icon>lock</mat-icon>
+      Submission is disabled until the restriction ends.
+    </p>
     <div class="quick-prompts">
-      <button type="button" class="chip-btn" (click)="useQuickPrompt('access')">
+      <button type="button" class="chip-btn" (click)="useQuickPrompt('access')" [disabled]="isStudentBlocked">
         <mat-icon>vpn_key</mat-icon> Access issue
       </button>
-      <button type="button" class="chip-btn" (click)="useQuickPrompt('payment')">
+      <button type="button" class="chip-btn" (click)="useQuickPrompt('payment')" [disabled]="isStudentBlocked">
         <mat-icon>payments</mat-icon> Payment issue
       </button>
-      <button type="button" class="chip-btn" (click)="useQuickPrompt('bug')">
+      <button type="button" class="chip-btn" (click)="useQuickPrompt('bug')" [disabled]="isStudentBlocked">
         <mat-icon>bug_report</mat-icon> Platform bug
       </button>
-      <button type="button" class="chip-btn" (click)="useQuickPrompt('other')">
+      <button type="button" class="chip-btn" (click)="useQuickPrompt('other')" [disabled]="isStudentBlocked">
         <mat-icon>help</mat-icon> Other
       </button>
     </div>
@@ -31,27 +57,27 @@
     <div class="form-group">
       <div class="label-row">
         <label for="sujet">Subject</label>
-        <button type="button" class="voice-btn" (click)="toggleVoiceInput('sujet')">
+        <button type="button" class="voice-btn" (click)="toggleVoiceInput('sujet')" [disabled]="isStudentBlocked">
           <mat-icon>{{ isRecording && recordingField === 'sujet' ? 'mic_off' : 'mic' }}</mat-icon>
           {{ isRecording && recordingField === 'sujet' ? 'Stop' : 'Voice' }}
         </button>
       </div>
-      <input id="sujet" type="text" [(ngModel)]="formModel.sujet" placeholder="Reclamation subject" />
+      <input id="sujet" type="text" [(ngModel)]="formModel.sujet" placeholder="Reclamation subject" [disabled]="isStudentBlocked" />
     </div>
 
     <div class="form-group">
       <div class="label-row">
         <label for="description">Description</label>
-        <button type="button" class="voice-btn" (click)="toggleVoiceInput('description')">
+        <button type="button" class="voice-btn" (click)="toggleVoiceInput('description')" [disabled]="isStudentBlocked">
           <mat-icon>{{ isRecording && recordingField === 'description' ? 'mic_off' : 'mic' }}</mat-icon>
           {{ isRecording && recordingField === 'description' ? 'Stop' : 'Voice' }}
         </button>
       </div>
-      <textarea id="description" rows="4" [(ngModel)]="formModel.description" placeholder="Describe your issue"></textarea>
+      <textarea id="description" rows="4" [(ngModel)]="formModel.description" placeholder="Describe your issue" [disabled]="isStudentBlocked"></textarea>
     </div>
 
     <div class="actions">
-      <button type="button" class="btn primary btn-with-icon" (click)="submit()">
+      <button type="button" class="btn primary btn-with-icon" (click)="submit()" [disabled]="isStudentBlocked">
         <mat-icon>send</mat-icon>
         Submit
       </button>
@@ -63,7 +89,20 @@
   </div>
 
   <div class="card list-card">
-    <h2 class="section-title"><mat-icon>monitoring</mat-icon>My Reclamation Status</h2>
+    <div class="list-head">
+      <h2 class="section-title"><mat-icon>monitoring</mat-icon>My Reclamation Status</h2>
+      <button
+        type="button"
+        class="btn secondary btn-with-icon"
+        (click)="refreshList()"
+        [disabled]="loading"
+        title="Reload your reclamations from the server"
+      >
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+    </div>
+    <div class="alert error" *ngIf="listLoadError" role="alert">{{ listLoadError }}</div>
 
     <div class="loading" *ngIf="loading">Loading...</div>
 
@@ -85,7 +124,7 @@
             </span>
           </td>
           <td>{{ r.reponseAdmin || '-' }}</td>
-          <td>{{ r.createdAt ? (r.createdAt | date:'short') : '-' }}</td>
+          <td>{{ formatCreatedAt(r) }}</td>
         </tr>
       </tbody>
     </table>
