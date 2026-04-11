@@ -13,7 +13,7 @@
 -- ---------------------------------------------------------------------------
 USE userdb;
 
--- 10 apprenants (id 1–10) + 2 tuteurs (id 11–12)
+-- 16 apprenants (id 1–10 + 13–18) + 4 tuteurs (id 11–12 + 19–20)
 -- Mot de passe en clair "pass" (à des fins démo uniquement — ne pas utiliser en prod)
 INSERT INTO users (id, first_name, last_name, email, password, account_role, english_level, subscription_status) VALUES
 (1,  'Alex',      'Benali',     'alex.demo@test.local',       'pass', 'STUDENT', 'B2', 'ACTIVE'),
@@ -27,7 +27,15 @@ INSERT INTO users (id, first_name, last_name, email, password, account_role, eng
 (9,  'Amine',     'Frikha',     'amine.demo@test.local',      'pass', 'STUDENT', 'C2', 'ACTIVE'),
 (10, 'Salma',     'Bouaziz',    'salma.demo@test.local',      'pass', 'STUDENT', 'B2', 'ACTIVE'),
 (11, 'Marie',     'Dupont',     'marie.tutor@test.local',     'pass', 'TUTOR',   'C2', 'ACTIVE'),
-(12, 'James',     'Wilson',     'james.tutor@test.local',     'pass', 'TUTOR',   'C1', 'ACTIVE')
+(12, 'James',     'Wilson',     'james.tutor@test.local',     'pass', 'TUTOR',   'C1', 'ACTIVE'),
+(13, 'Issra',     'Belhabib',   'issra.demo@test.local',      'pass', 'STUDENT', 'B1', 'ACTIVE'),
+(14, 'Mouna',     'Ayadi',      'mouna.demo@test.local',      'pass', 'STUDENT', 'A2', 'ACTIVE'),
+(15, 'Rim',       'Ben Amor',   'rim.demo@test.local',        'pass', 'STUDENT', 'B2', 'ACTIVE'),
+(16, 'Walid',     'Cherif',     'walid.demo@test.local',      'pass', 'STUDENT', 'C1', 'ACTIVE'),
+(17, 'Sami',      'Karray',     'sami.demo@test.local',       'pass', 'STUDENT', 'A1', 'ACTIVE'),
+(18, 'Aya',       'Mahjoub',    'aya.demo@test.local',        'pass', 'STUDENT', 'C2', 'ACTIVE'),
+(19, 'Nadia',     'Ben Salem',  'nadia.tutor@test.local',     'pass', 'TUTOR',   'C2', 'ACTIVE'),
+(20, 'Omar',      'Haddad',     'omar.tutor@test.local',      'pass', 'TUTOR',   'C1', 'ACTIVE')
 ON DUPLICATE KEY UPDATE
   first_name = VALUES(first_name),
   last_name = VALUES(last_name),
@@ -155,17 +163,21 @@ WHERE @sid_b2 IS NOT NULL
 -- ---------------------------------------------------------------------------
 -- Discussions privées — collègues (PEER) et avec tuteur (WITH_TUTOR)
 -- participant_low_id = min(id1,id2), participant_high_id = max(id1,id2)
--- Suppression des anciennes lignes de démo (ids 1–5) pour pouvoir ré-exécuter
+-- Suppression des anciennes lignes de démo (ids 1–9) pour pouvoir ré-exécuter
 -- ---------------------------------------------------------------------------
-DELETE FROM direct_message WHERE conversation_id BETWEEN 1 AND 5;
-DELETE FROM direct_conversation WHERE id BETWEEN 1 AND 5;
+DELETE FROM direct_message WHERE conversation_id BETWEEN 1 AND 9;
+DELETE FROM direct_conversation WHERE id BETWEEN 1 AND 9;
 
 INSERT INTO direct_conversation (id, participant_low_id, participant_high_id, kind, created_at, updated_at) VALUES
 (1, 1, 2, 'PEER',        NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 1 HOUR),
 (2, 1, 3, 'PEER',        NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 30 MINUTE),
 (3, 1, 11, 'WITH_TUTOR', NOW() - INTERVAL 5 DAY, NOW() - INTERVAL 10 MINUTE),
 (4, 2, 11, 'WITH_TUTOR', NOW() - INTERVAL 4 DAY, NOW() - INTERVAL 2 HOUR),
-(5, 4, 12, 'WITH_TUTOR', NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 45 MINUTE);
+(5, 4, 12, 'WITH_TUTOR', NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 45 MINUTE),
+(6, 13, 19, 'WITH_TUTOR', NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 20 MINUTE),
+(7, 14, 20, 'WITH_TUTOR', NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 55 MINUTE),
+(8, 15, 19, 'WITH_TUTOR', NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 35 MINUTE),
+(9, 16, 20, 'WITH_TUTOR', NOW() - INTERVAL 6 HOUR, NOW() - INTERVAL 8 MINUTE);
 
 -- Messages dans ces conversations (conversation_id doit exister)
 INSERT INTO direct_message (conversation_id, sender_id, content, created_at) VALUES
@@ -185,7 +197,19 @@ INSERT INTO direct_message (conversation_id, sender_id, content, created_at) VAL
 (4, 11, 'Oui Sara : la phrase 3 est correcte ; en 5 préférez « had already left ».', NOW() - INTERVAL 3 DAY),
 
 (5, 4, 'Mr Wilson, question sur les phrasal verbs en contexte pro.', NOW() - INTERVAL 1 DAY),
-(5, 12, 'Hi Inès — list 5 verbs you use weekly; we’ll build sentences tomorrow.', NOW() - INTERVAL 45 MINUTE);
+(5, 12, 'Hi Inès — list 5 verbs you use weekly; we’ll build sentences tomorrow.', NOW() - INTERVAL 45 MINUTE),
+
+(6, 13, 'Bonjour Nadia, pouvez-vous corriger mon texte argumentatif ?', NOW() - INTERVAL 2 DAY),
+(6, 19, 'Oui Issra, envoie ta version et je te donne un feedback structuré.', NOW() - INTERVAL 1 DAY),
+
+(7, 14, 'Omar, j’ai besoin d’aide pour l’expression orale A2.', NOW() - INTERVAL 3 DAY),
+(7, 20, 'Bien sûr Mouna, on commence par des dialogues guidés simples.', NOW() - INTERVAL 55 MINUTE),
+
+(8, 15, 'Nadia, j’aimerais améliorer mes transitions en rédaction.', NOW() - INTERVAL 1 DAY),
+(8, 19, 'Très bonne idée. Commence par “however / moreover / therefore”.', NOW() - INTERVAL 35 MINUTE),
+
+(9, 16, 'Omar, puis-je préparer une présentation de 5 min pour feedback ?', NOW() - INTERVAL 6 HOUR),
+(9, 20, 'Excellent, envoie-moi le plan et on fait une simulation orale.', NOW() - INTERVAL 8 MINUTE);
 
 -- Recalage AUTO_INCREMENT pour les prochains enregistrements créés par l’appli
 ALTER TABLE direct_conversation AUTO_INCREMENT = 100;

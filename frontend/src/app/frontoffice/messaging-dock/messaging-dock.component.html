@@ -1,0 +1,116 @@
+<!-- Barre type LinkedIn : bas-droite -->
+<div class="msg-dock">
+  <div class="msg-dock-collapsed" *ngIf="!expanded" matTooltip="Messagerie">
+    <button type="button" class="msg-dock-collapsed-main" (click)="expandDock()">
+      <span class="msg-dock-avatar sm">
+        <span class="msg-dock-initials">{{ initials(userById[currentUserId] || null) }}</span>
+        <span class="msg-dock-presence on"></span>
+      </span>
+      <span class="msg-dock-label">Messagerie</span>
+      <span class="msg-dock-unread" *ngIf="dockUnread > 0">{{ dockUnread }}</span>
+      <mat-icon class="msg-dock-chevron">expand_less</mat-icon>
+    </button>
+    <button
+      type="button"
+      mat-icon-button
+      class="msg-dock-compose-btn"
+      (click)="expandAndShowList()"
+      matTooltip="Nouvelle discussion">
+      <mat-icon>edit</mat-icon>
+    </button>
+  </div>
+
+  <div class="msg-dock-panel" *ngIf="expanded">
+    <header class="msg-dock-top">
+      <div class="msg-dock-top-info">
+        <span class="msg-dock-avatar">
+          <span class="msg-dock-initials">{{ initials(userById[currentUserId] || null) }}</span>
+          <span class="msg-dock-presence on"></span>
+        </span>
+        <div class="msg-dock-titles">
+          <span class="msg-dock-title">Messagerie</span>
+          <span class="msg-dock-sub">{{ currentUserLabel() }} · {{ currentRoleLabel() }}</span>
+        </div>
+      </div>
+      <div class="msg-dock-toolbar">
+        <button
+          type="button"
+          mat-icon-button
+          matTooltip="Page Messages (changer étudiant / tuteur)"
+          (click)="openFullMessages()">
+          <mat-icon>open_in_new</mat-icon>
+        </button>
+        <button type="button" mat-icon-button matTooltip="Réduire" (click)="toggleExpand()">
+          <mat-icon>expand_more</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <div class="msg-dock-body" *ngIf="view === 'list'">
+      <input
+        class="msg-dock-search"
+        [(ngModel)]="search"
+        placeholder="Rechercher…"
+        type="search" />
+      <h4 class="msg-dock-section-title">{{ rosterTitle() }}</h4>
+      <div class="msg-dock-list">
+        <button
+          type="button"
+          class="msg-dock-row"
+          *ngFor="let u of filteredRoster()"
+          (click)="openPeer(u)"
+          [disabled]="loading">
+          <span class="msg-dock-avatar sm">
+            <span class="msg-dock-initials">{{ initials(u) }}</span>
+            <span class="msg-dock-presence on"></span>
+          </span>
+          <span class="msg-dock-row-text">
+            <span class="msg-dock-name">{{ u.firstName }} {{ u.lastName }}</span>
+            <span class="msg-dock-subline">En ligne</span>
+          </span>
+          <mat-icon class="msg-dock-row-go">chevron_right</mat-icon>
+        </button>
+        <p class="msg-dock-empty" *ngIf="!filteredRoster().length">
+          Aucun contact « en ligne » pour ce rôle. Ouvrez la page Messages pour changer d’utilisateur actif.
+        </p>
+      </div>
+    </div>
+
+    <div class="msg-dock-body msg-dock-thread-wrap" *ngIf="view === 'thread' && selectedPeer">
+      <button type="button" class="msg-dock-back" (click)="backToList()">
+        <mat-icon>arrow_back</mat-icon>
+        Retour
+      </button>
+      <div class="msg-dock-thread-head">
+        <span class="msg-dock-thread-name">{{ selectedPeer.firstName }} {{ selectedPeer.lastName }}</span>
+        <span class="msg-dock-thread-kind" *ngIf="conversationKind === 'WITH_TUTOR'">Tuteur · apprenant</span>
+      </div>
+      <div class="msg-dock-bubbles">
+        <div *ngFor="let m of thread" class="msg-dock-bwrap" [class.own]="isOwn(m)">
+          <div class="msg-dock-bubble">
+            <span class="msg-dock-from" *ngIf="!isOwn(m)">{{ displayName(m.senderId) }}</span>
+            <p class="msg-dock-text">{{ m.content }}</p>
+            <span class="msg-dock-time">{{ m.createdAt | date : 'short' }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="msg-dock-compose">
+        <textarea
+          rows="2"
+          class="msg-dock-input"
+          [(ngModel)]="draft"
+          placeholder="Écrivez un message…"
+          (keydown.control.enter)="send()"
+          (keydown.meta.enter)="send()"></textarea>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          (click)="send()"
+          [disabled]="!draft.trim() || loading">
+          Envoyer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

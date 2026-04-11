@@ -9,6 +9,8 @@ import { SubscriptionManagementComponent } from './subscription-management/subsc
 import { LoyaltyAccountsComponent } from './loyalty-accounts/loyalty-accounts.component';
 import { ClubsManagementComponent } from './clubs-management/clubs-management.component';
 import { InscriptionStatsComponent } from './inscription-stats/inscription-stats.component';
+import { TutorInboxComponent } from './tutor-inbox/tutor-inbox.component';
+import { CommentModerationComponent } from './comment-moderation/comment-moderation.component';
 
 const routes: Routes = [
   {
@@ -21,6 +23,8 @@ const routes: Routes = [
       { path: 'courses', component: CoursesManagementComponent },
       { path: 'clubs', component: ClubsManagementComponent },
       { path: 'forum', component: ForumManagementComponent },
+      { path: 'forum-comments', component: CommentModerationComponent },
+      { path: 'tutor-messages', component: TutorInboxComponent },
       { path: 'subscription', component: SubscriptionManagementComponent },
       { path: 'loyalty-accounts', component: LoyaltyAccountsComponent },
       { path: 'inscription-stats', component: InscriptionStatsComponent }

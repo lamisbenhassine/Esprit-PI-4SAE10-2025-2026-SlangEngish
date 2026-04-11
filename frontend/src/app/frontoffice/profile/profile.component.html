@@ -31,7 +31,7 @@
         </div>
         <ng-container *ngIf="!loyaltyLoading && loyaltySummary">
           <div class="loyalty-balance">
-            <span class="balance-value">{{ loyaltySummary.balancePoints ?? 0 }}</span>
+            <span class="balance-value">{{ loyaltySummary.balancePoints || 0 }}</span>
             <span class="balance-label">Points</span>
           </div>
           <div class="loyalty-tier" [class]="'tier-' + (loyaltySummary.tier || 'BRONZE').toLowerCase()">

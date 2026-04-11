@@ -4,6 +4,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ForumTopicService, ForumTopic } from '../../core/services/forum-topic.service';
 import { ForumReportService, ForumReport, ForumReportStatus } from '../../core/services/forum-report.service';
 import { ForumDialogComponent } from './forum-dialog/forum-dialog.component';
+import { UserProfile, UserProfileService } from '../../core/services/user-profile.service';
 
 @Component({
     selector: 'app-forum-management',
@@ -28,17 +29,61 @@ export class ForumManagementComponent implements OnInit {
 
     reports: ForumReport[] = [];
     reportsLoading = false;
+    userById: { [id: number]: UserProfile } = {};
 
     constructor(
         private forumTopicService: ForumTopicService,
         private forumReportService: ForumReportService,
+        private usersService: UserProfileService,
         private snackBar: MatSnackBar,
         private dialog: MatDialog
     ) { }
 
     ngOnInit(): void {
+        this.loadUsers();
         this.refreshTopics();
         this.loadReports();
+    }
+
+    loadUsers(): void {
+        this.usersService.getAll().subscribe({
+            next: list => {
+                this.userById = {};
+                (Array.isArray(list) ? list : []).forEach(u => {
+                    if (u.id != null) {
+                        this.userById[u.id] = u;
+                    }
+                });
+            },
+            error: () => {
+                this.userById = {};
+            }
+        });
+    }
+
+    authorName(authorId: number | undefined): string {
+        if (authorId == null) {
+            return 'Auteur inconnu';
+        }
+        const u = this.userById[authorId];
+        if (u?.firstName || u?.lastName) {
+            return [u.firstName, u.lastName].filter(Boolean).join(' ');
+        }
+        return 'Auteur';
+    }
+
+    authorRole(authorId: number | undefined): string {
+        if (authorId == null) {
+            return 'Étudiant';
+        }
+        const r = (this.userById[authorId]?.accountRole || 'STUDENT').toUpperCase();
+        if (r === 'TUTOR') {
+            return 'Tuteur';
+        }
+        if (r === 'ADMIN') {
+            return 'Équipe';
+        }
+        return 'Étudiant';
     }
 
     getTopicImage(topic: ForumTopic): string {

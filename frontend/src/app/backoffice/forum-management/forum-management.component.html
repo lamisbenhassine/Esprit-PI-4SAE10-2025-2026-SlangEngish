@@ -67,7 +67,10 @@
                 <span><strong>{{ topic.isPublic ? 'Public' : 'Privé' }}</strong></span>
               </div>
               <div class="meta-tags">
-                <span class="tag user">Auteur #{{ topic.authorId }}</span>
+                <span class="tag user">{{ authorName(topic.authorId) }}</span>
+                <span class="tag role student" *ngIf="authorRole(topic.authorId) === 'Étudiant'">Étudiant</span>
+                <span class="tag role tutor" *ngIf="authorRole(topic.authorId) === 'Tuteur'">Tuteur</span>
+                <span class="tag role admin" *ngIf="authorRole(topic.authorId) === 'Équipe'">Équipe</span>
               </div>
             </div>
 

@@ -98,3 +98,27 @@
 .rep-actions {
     white-space: nowrap;
 }
+
+.tag.role {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.tag.role.student {
+    background: #e8f4fd;
+    color: #0277bd;
+}
+
+.tag.role.tutor {
+    background: #fce4ec;
+    color: #ad1457;
+}
+
+.tag.role.admin {
+    background: #ede7f6;
+    color: #4527a0;
+}

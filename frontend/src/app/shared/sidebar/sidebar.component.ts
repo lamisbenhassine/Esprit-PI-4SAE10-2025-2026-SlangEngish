@@ -10,6 +10,8 @@ export interface MenuItem {
   active?: boolean;
   /** `section` = titre de groupe (non cliquable) */
   kind?: 'link' | 'section';
+  /** Badge optionnel (ex. messages non lus). */
+  badge?: number;
 }
 
 @Component({
@@ -51,6 +53,11 @@ export class SidebarComponent {
   @Input() variant: 'default' | 'frontoffice' = 'default';
   @Input() menuItems: MenuItem[] = [];
   @Input() isCollapsed: boolean = false;
+  /** Lien optionnel en bas du menu (ex. back-office « Messages tuteurs »). */
+  @Input() footerQuickLink?: string;
+  @Input() footerQuickLabel = '';
+  @Input() footerQuickIcon = 'chat';
+  @Input() footerQuickBadge?: number;
   @Output() toggleCollapse = new EventEmitter<void>();
 
   onToggleCollapse() {

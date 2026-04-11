@@ -1,6 +1,5 @@
 package esprit.forum.service;
 
-import esprit.forum.client.InscriptionClient;
 import esprit.forum.entity.ForumSpace;
 import esprit.forum.entity.ForumTopic;
 import esprit.forum.repository.ForumSpaceRepository;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 public class ForumTopicService {
 
     private final ForumTopicRepository forumTopicRepository;
-    private final InscriptionClient inscriptionClient;
     private final ForumSpaceRepository forumSpaceRepository;
     private final ForumBlockService forumBlockService;
 
@@ -32,14 +30,6 @@ public class ForumTopicService {
 
     public List<ForumTopic> getTopicsByCategory(String category, Long userId) {
         List<ForumTopic> topics = forumTopicRepository.findByCategory(category);
-
-        if (!"GENERAL".equalsIgnoreCase(category)) {
-            Boolean isPaid = inscriptionClient.isUserPaid(userId);
-            if (!isPaid) {
-                throw new RuntimeException("User must have an active subscription to access level-specific forums");
-            }
-        }
-
         return filterAndSortTopics(topics, userId);
     }
 

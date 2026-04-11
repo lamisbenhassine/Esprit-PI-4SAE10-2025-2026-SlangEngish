@@ -15,6 +15,8 @@ import { ForumGeneralComponent } from './forum-general/forum-general.component';
 import { ForumLevelsComponent } from './forum-levels/forum-levels.component';
 import { TopicDetailComponent } from './topic-detail/topic-detail.component';
 import { ForumCoursesComponent } from './forum-courses/forum-courses.component';
+import { ForumTutorsBarComponent } from './forum-tutors-bar/forum-tutors-bar.component';
+import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [
     { path: 'general', component: ForumGeneralComponent },
@@ -29,11 +31,13 @@ const routes: Routes = [
         ForumGeneralComponent,
         ForumLevelsComponent,
         ForumCoursesComponent,
-        TopicDetailComponent
+        TopicDetailComponent,
+        ForumTutorsBarComponent
     ],
     imports: [
         CommonModule,
         FormsModule,
+        SharedModule,
         RouterModule.forChild(routes),
         MatFormFieldModule,
         MatInputModule,

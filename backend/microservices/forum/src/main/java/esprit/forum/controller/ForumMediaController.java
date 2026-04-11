@@ -23,7 +23,9 @@ import java.util.UUID;
 @CrossOrigin(origins = "*")
 public class ForumMediaController {
 
-    private static final Set<String> ALLOWED_EXT = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".webm");
+    private static final Set<String> ALLOWED_EXT = Set.of(
+            ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".webm",
+            ".mp3", ".ogg", ".wav", ".m4a", ".aac");
 
     @Value("${forum.upload-dir:forum-uploads}")
     private String uploadDir;
@@ -40,7 +42,7 @@ public class ForumMediaController {
             String fn = file.getOriginalFilename() != null ? file.getOriginalFilename() : "(sans nom)";
             return ResponseEntity.badRequest().body(Map.of(
                     "error",
-                    "Extension ou type MIME non pris en charge. Utilisez JPG, PNG, GIF, WebP ou MP4/WebM. "
+                    "Extension ou type MIME non pris en charge. Images, vidéo MP4/WebM ou audio MP3/OGG/WAV/WebM. "
                             + "Fichier: " + fn + " ; type: " + ct));
         }
         try {
@@ -123,6 +125,12 @@ public class ForumMediaController {
             case "image/webp" -> ".webp";
             case "video/mp4" -> ".mp4";
             case "video/webm" -> ".webm";
+            case "audio/webm" -> ".webm";
+            case "audio/ogg", "application/ogg" -> ".ogg";
+            case "audio/mpeg", "audio/mp3" -> ".mp3";
+            case "audio/wav", "audio/x-wav" -> ".wav";
+            case "audio/mp4", "audio/x-m4a" -> ".m4a";
+            case "audio/aac" -> ".aac";
             default -> "";
         };
     }

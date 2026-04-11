@@ -1,10 +1,14 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { ForumTopicService, ForumTopic } from '../../../core/services/forum-topic.service';
-import { PaymentService } from '../../../core/services/payment.service';
 import { UserProfile, UserProfileService } from '../../../core/services/user-profile.service';
 import { ForumMediaService } from '../../../core/services/forum-media.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { FrontofficeIdentityService } from '../../../core/services/frontoffice-identity.service';
+import {
+  isForumLevelUnlockedForUser,
+  parseCefrFromProfile
+} from '../../../core/utils/cefr-level.util';
 
 export interface LevelMeta {
   code: string;
@@ -19,48 +23,48 @@ export interface LevelMeta {
   templateUrl: './forum-levels.component.html',
   styleUrls: ['./forum-levels.component.css']
 })
-export class ForumLevelsComponent implements OnInit {
+export class ForumLevelsComponent implements OnInit, OnDestroy {
   readonly levelsMeta: LevelMeta[] = [
     {
       code: 'A1',
-      title: 'Introductif',
-      summary: 'Premiers mots, présentations et situations très guidées.',
-      focus: 'Alphabet, nombres, salutations, comprendre des consignes courtes.',
+      title: 'Introductory',
+      summary: 'First words, introductions, and simple guided situations.',
+      focus: 'Alphabet, numbers, greetings, and short basic instructions.',
       gradient: 'linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%)'
     },
     {
       code: 'A2',
-      title: 'Élémentaire',
-      summary: 'Échanges sur le quotidien, les loisirs et les besoins simples.',
-      focus: 'Messages courts, descriptions, compréhension de textes familiers.',
+      title: 'Elementary',
+      summary: 'Daily-life exchanges, hobbies, and practical basic needs.',
+      focus: 'Short messages, descriptions, and familiar text understanding.',
       gradient: 'linear-gradient(135deg, #e8f5e9 0%, #a5d6a7 45%, #66bb6a 100%)'
     },
     {
       code: 'B1',
-      title: 'Intermédiaire',
-      summary: 'S’exprimer sur des sujets personnels et professionnels simples.',
-      focus: 'Raconter un événement, donner un avis, suivre une conversation.',
+      title: 'Intermediate',
+      summary: 'Express ideas on personal and simple professional topics.',
+      focus: 'Narrate events, give opinions, and follow a discussion.',
       gradient: 'linear-gradient(135deg, #fff8e1 0%, #ffe082 40%, #ffca28 100%)'
     },
     {
       code: 'B2',
-      title: 'Intermédiaire supérieur',
-      summary: 'Argumenter avec fluidité et comprendre des contenus exigeants.',
-      focus: 'Articles, débats, rédaction structurée, nuances et registres.',
+      title: 'Upper-Intermediate',
+      summary: 'Argue with fluency and understand more demanding content.',
+      focus: 'Articles, debates, structured writing, nuance and register.',
       gradient: 'linear-gradient(135deg, #fce4ec 0%, #f48fb1 45%, #ec407a 100%)'
     },
     {
       code: 'C1',
-      title: 'Avancé',
-      summary: 'Maîtrise fine pour le travail et les études en anglais.',
-      focus: 'Synthèses, présentations, langage soutenu et implicite.',
+      title: 'Advanced',
+      summary: 'Strong command for professional and academic English.',
+      focus: 'Summaries, presentations, formal language and implicit meaning.',
       gradient: 'linear-gradient(135deg, #ede7f6 0%, #b39ddb 40%, #7e57c2 100%)'
     },
     {
       code: 'C2',
-      title: 'Maîtrise',
-      summary: 'Niveau proche d’un locuteur natif sur des contenus complexes.',
-      focus: 'Subtilités, humour, reformulation instantanée, tous registres.',
+      title: 'Mastery',
+      summary: 'Near-native command on complex and nuanced content.',
+      focus: 'Subtlety, humor, instant reformulation, all registers.',
       gradient: 'linear-gradient(135deg, #263238 0%, #455a64 40%, #78909c 100%)'
     }
   ];
@@ -71,8 +75,8 @@ export class ForumLevelsComponent implements OnInit {
   filteredTopics: ForumTopic[] = [];
   loading = false;
   error = '';
-  isPaid = false;
-  currentUserId = 1;
+  isPaid = true;
+  currentUserId = 2;
 
   levelSpaceId: number | null = null;
 
@@ -81,6 +85,9 @@ export class ForumLevelsComponent implements OnInit {
   sortOrder: 'asc' | 'desc' = 'desc';
 
   userById: { [id: number]: UserProfile } = {};
+  /** Profil connecté (niveau certifié / profil → englishLevel). */
+  me: UserProfile | null = null;
+  private identitySub?: Subscription;
 
   newTitle = '';
   newDescription = '';
@@ -90,22 +97,66 @@ export class ForumLevelsComponent implements OnInit {
 
   constructor(
     private forumTopicService: ForumTopicService,
-    private paymentService: PaymentService,
     private users: UserProfileService,
     private media: ForumMediaService,
     private snackBar: MatSnackBar,
-    private router: Router
+    private identity: FrontofficeIdentityService
   ) {}
 
   ngOnInit(): void {
+    this.currentUserId = this.identity.getCurrentUserId();
+    this.identitySub = this.identity.userId$.subscribe(uid => {
+      this.currentUserId = uid;
+      this.loadProfileAndApplyLevelGate();
+    });
+    this.loadProfileAndApplyLevelGate();
     this.checkPayment();
   }
 
-  checkPayment(): void {
-    this.paymentService.verifyUserPayment(this.currentUserId).subscribe({
-      next: paid => (this.isPaid = paid),
-      error: () => (this.isPaid = false)
+  ngOnDestroy(): void {
+    this.identitySub?.unsubscribe();
+  }
+
+  private loadProfileAndApplyLevelGate(): void {
+    this.users.getById(this.currentUserId).subscribe({
+      next: u => {
+        this.me = u;
+        const role = (u.accountRole || 'STUDENT').toUpperCase();
+        if (role === 'STUDENT') {
+          const lvl = parseCefrFromProfile(u.englishLevel) ?? 'A1';
+          this.selectLevel(lvl);
+        } else {
+          this.selectedLevel = '';
+          this.selectedMeta = null;
+          this.topics = [];
+          this.filteredTopics = [];
+          this.levelSpaceId = null;
+          this.loading = false;
+          this.error = '';
+        }
+      },
+      error: () => {
+        this.me = null;
+        this.selectLevel('A1');
+      }
     });
+  }
+
+  isStudentViewer(): boolean {
+    return (this.me?.accountRole || 'STUDENT').toUpperCase() === 'STUDENT';
+  }
+
+  isLevelLocked(levelCode: string): boolean {
+    return !isForumLevelUnlockedForUser(levelCode, this.me?.accountRole, this.me?.englishLevel);
+  }
+
+  studentUnlockedLevelLabel(): string {
+    return parseCefrFromProfile(this.me?.englishLevel) ?? 'A1';
+  }
+
+  checkPayment(): void {
+    // Level forum is intentionally enabled for all demo users.
+    this.isPaid = true;
   }
 
   metaFor(code: string): LevelMeta | undefined {
@@ -113,10 +164,12 @@ export class ForumLevelsComponent implements OnInit {
   }
 
   onPickLevel(level: string): void {
-    if (!this.isPaid) {
-      this.snackBar.open('Abonnement actif requis pour ouvrir un forum par niveau.', 'Offres', {
-        duration: 5000
-      }).onAction().subscribe(() => this.router.navigate(['/frontoffice/inscription/offers']));
+    if (this.isLevelLocked(level)) {
+      const mine = parseCefrFromProfile(this.me?.englishLevel);
+      const msg = mine
+        ? `Votre niveau enregistré est ${mine}. Seul cet espace forum vous est ouvert. Mettez à jour votre certificat ou votre profil pour changer de niveau.`
+        : `Déposez un certificat (inscription) pour détecter votre niveau, ou complétez votre profil avec un niveau CECRL. En attendant, seul l’espace A1 est accessible.`;
+      this.snackBar.open(msg, 'OK', { duration: 7000 });
       return;
     }
     this.selectLevel(level);
@@ -131,16 +184,12 @@ export class ForumLevelsComponent implements OnInit {
     this.levelSpaceId = null;
     this.loading = true;
 
+    // Load topics first so level access does not depend on resolving write-space metadata.
+    this.fetchTopicsFor(level);
+    // Best effort: resolve level space id for topic creation.
     this.forumTopicService.getLevelSpace(level, this.currentUserId).subscribe({
-      next: space => {
-        this.levelSpaceId = space.id ?? null;
-        this.fetchTopicsFor(level);
-      },
-      error: () => {
-        this.loading = false;
-        this.error = 'Impossible d’accéder à cet espace (abonnement ou serveur).';
-        this.snackBar.open(this.error, 'OK', { duration: 5000 });
-      }
+      next: space => (this.levelSpaceId = space.id ?? null),
+      error: () => (this.levelSpaceId = null)
     });
   }
 
@@ -154,7 +203,7 @@ export class ForumLevelsComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.error = 'Accès refusé ou erreur serveur.';
+        this.error = 'Unable to load this level right now.';
         this.loading = false;
       }
     });
@@ -186,7 +235,7 @@ export class ForumLevelsComponent implements OnInit {
     if (u?.firstName?.trim() || u?.lastName?.trim()) {
       return [u.firstName, u.lastName].filter(Boolean).join(' ');
     }
-    return `Utilisateur #${authorId}`;
+      return 'Member';
   }
 
   initials(authorId: number | undefined): string {
@@ -211,12 +260,12 @@ export class ForumLevelsComponent implements OnInit {
     }
     const r = (this.userById[authorId]?.accountRole || '').toUpperCase();
     if (r === 'TUTOR') {
-      return 'Tuteur';
+      return 'Tutor';
     }
     if (r === 'ADMIN') {
-      return 'Équipe';
+      return 'Team';
     }
-    return null;
+    return 'Student';
   }
 
   applyFilters(): void {
@@ -293,12 +342,17 @@ export class ForumLevelsComponent implements OnInit {
           this.newDescription = '';
           this.newCoverUrl = '';
           this.creating = false;
-          this.snackBar.open('Sujet publié', 'OK', { duration: 2500 });
+          this.snackBar.open('Topic published', 'OK', { duration: 2500 });
           this.fetchTopicsFor(this.selectedLevel);
         },
-        error: () => {
+        error: err => {
           this.creating = false;
-          this.snackBar.open('Publication impossible', 'OK', { duration: 4000 });
+          const body = err?.error;
+          const msg =
+            typeof body === 'string' && body.trim()
+              ? body.trim()
+              : body?.message || err?.message || 'Publishing failed. Check forum (8040) and try again.';
+          this.snackBar.open(msg, 'OK', { duration: 7000 });
         }
       });
   }

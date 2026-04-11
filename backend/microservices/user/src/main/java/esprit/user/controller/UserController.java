@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/user")
@@ -16,6 +18,8 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 @Slf4j
 public class UserController {
+
+    private static final Set<String> CEFR_LEVELS = Set.of("A1", "A2", "B1", "B2", "C1", "C2");
 
     private final UserRepository userRepository;
 
@@ -67,6 +71,26 @@ public class UserController {
     public ResponseEntity<User> createUser(@RequestBody User user) {
         log.info("Creating new user: {}", user.getEmail());
         return ResponseEntity.status(201).body(userRepository.save(user));
+    }
+
+    /** Mise à jour partielle du niveau CECRL (ex. après analyse d’un certificat), sans toucher au mot de passe. */
+    @PatchMapping("/{id}/english-level")
+    public ResponseEntity<User> patchEnglishLevel(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        if (body == null || body.get("englishLevel") == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        String level = body.get("englishLevel").trim().toUpperCase();
+        if (!CEFR_LEVELS.contains(level)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return userRepository.findById(id)
+                .map(existing -> {
+                    existing.setEnglishLevel(level);
+                    return ResponseEntity.ok(userRepository.save(existing));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")

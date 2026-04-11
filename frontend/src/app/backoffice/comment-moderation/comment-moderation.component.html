@@ -1,0 +1,51 @@
+<div class="cm-page">
+  <header class="cm-head">
+    <h1>Modération des commentaires</h1>
+    <p class="cm-lead">
+      Réservé aux <strong>tuteurs</strong> et <strong>administrateurs</strong>. Le profil tuteur actif (identique à « Messages tuteurs ») est utilisé pour les actions.
+    </p>
+    <button mat-stroked-button color="primary" type="button" (click)="refresh()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon>
+      Actualiser
+    </button>
+  </header>
+
+  <div class="cm-loading" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div class="cm-table-wrap" *ngIf="!loading">
+    <table mat-table [dataSource]="rows" class="cm-table">
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>Date</th>
+        <td mat-cell *matCellDef="let row">{{ row.createdAt | date : 'short' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="topic">
+        <th mat-header-cell *matHeaderCellDef>Sujet</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="cm-topic">{{ row.topicTitle || '—' }}</span>
+          <span class="cm-topic-id">#{{ row.topicId }}</span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="author">
+        <th mat-header-cell *matHeaderCellDef>Auteur</th>
+        <td mat-cell *matCellDef="let row">{{ authorLabel(row.authorId) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="preview">
+        <th mat-header-cell *matHeaderCellDef>Aperçu</th>
+        <td mat-cell *matCellDef="let row">{{ previewContent(row) }}</td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-button color="warn" type="button" (click)="deleteRow(row)">Supprimer</button>
+          <button mat-button type="button" (click)="blockAuthor(row)">Bloquer</button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+    <p class="cm-empty" *ngIf="!rows.length">Aucun commentaire pour le moment.</p>
+  </div>
+</div>

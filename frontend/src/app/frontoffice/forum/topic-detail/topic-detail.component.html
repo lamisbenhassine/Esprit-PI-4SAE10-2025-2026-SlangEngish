@@ -1,13 +1,15 @@
 <div class="topic-shell" *ngIf="topic">
   <nav class="crumb" aria-label="breadcrumb">
-    <a routerLink="/frontoffice/forum/general">Communauté</a>
+    <a routerLink="/frontoffice/feed">General Feed</a>
     <span class="sep">/</span>
     <span class="current">{{ topic.title }}</span>
   </nav>
 
+  <app-forum-tutors-bar></app-forum-tutors-bar>
+
   <div class="locked-ribbon" *ngIf="topic.locked">
     <mat-icon>lock</mat-icon>
-    Sujet verrouillé — plus de nouveaux messages.
+    Topic locked - no new messages.
   </div>
 
   <article class="hero-card">
@@ -17,7 +19,7 @@
     <div class="hero-body">
       <div class="hero-top">
         <span class="pill cat" [class]="topic.category.toLowerCase()">{{ topic.category }}</span>
-        <span class="pill pinned" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> À la une</span>
+        <span class="pill pinned" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> Pinned</span>
         <span class="hero-date">{{ topic.createdAt | date : 'mediumDate' }}</span>
       </div>
       <h1>{{ topic.title }}</h1>
@@ -25,19 +27,16 @@
         <div class="avatar">{{ initials(topic.authorId) }}</div>
         <div>
           <div class="name">{{ displayName(topic.authorId) }}</div>
-          <div class="role">{{ userRoleLabel(topic.authorId) || 'Membre' }}</div>
+          <div class="role">{{ userRoleLabel(topic.authorId) || 'Member' }}</div>
         </div>
         <span class="spacer"></span>
-        <button mat-stroked-button type="button" *ngIf="topic.authorId !== currentUserId" (click)="blockUser(topic.authorId!)">
-          <mat-icon>block</mat-icon> Bloquer
-        </button>
-        <button mat-stroked-button color="warn" type="button" (click)="reportTopic()">
-          <mat-icon>flag</mat-icon> Signaler
+        <button mat-stroked-button color="warn" type="button" (click)="reportTopic()" *ngIf="canReportTopic()">
+          <mat-icon>flag</mat-icon> Report
         </button>
       </div>
       <p class="desc">{{ topic.description }}</p>
       <div class="hero-stats">
-        <span><mat-icon>visibility</mat-icon> {{ topic.views }} vues</span>
+        <span><mat-icon>visibility</mat-icon> {{ topic.views }} views</span>
         <span><mat-icon>chat_bubble</mat-icon> {{ messages.length }} messages</span>
       </div>
     </div>
@@ -55,16 +54,14 @@
             <span class="role-mini" *ngIf="userRoleLabel(message.authorId)">{{ userRoleLabel(message.authorId) }}</span>
             <time>{{ message.createdAt | date : 'short' }}</time>
             <span class="spacer"></span>
-            <button mat-button type="button" *ngIf="message.authorId !== currentUserId" (click)="blockUser(message.authorId)">
-              Bloquer
-            </button>
-            <button mat-button color="warn" type="button" (click)="reportMessage(message)">Signaler</button>
+            <button mat-button color="warn" type="button" (click)="reportMessage(message)" *ngIf="canReportMessage(message)">Report</button>
           </header>
 
           <div class="post-body" *ngIf="editingMessageId !== message.id">
             <p>{{ message.content }}</p>
             <div class="media-row" *ngFor="let a of parseAttachments(message)">
               <img *ngIf="a.type === 'image'" [src]="a.url" class="embed-img" alt="" />
+              <audio *ngIf="a.type === 'audio'" [src]="a.url" controls class="embed-audio"></audio>
               <video *ngIf="a.type === 'video' && !isYoutube(a.url)" [src]="a.url" class="embed-video" controls></video>
               <div class="yt-wrap" *ngIf="a.type === 'video' && isYoutube(a.url)">
                 <iframe
@@ -79,21 +76,21 @@
 
           <div class="edit-box" *ngIf="editingMessageId === message.id">
             <textarea [(ngModel)]="editContent" rows="3"></textarea>
-            <label class="hint">Pièces jointes (JSON ou laissez vide)</label>
+            <label class="hint">Attachments (JSON or leave empty)</label>
             <textarea [(ngModel)]="editAttachmentsJson" rows="2" class="mono"></textarea>
             <div class="row-btns">
-              <button mat-button type="button" (click)="editingMessageId = null">Annuler</button>
-              <button mat-flat-button color="primary" type="button" (click)="saveEdit(message.id!)">Enregistrer</button>
+              <button mat-button type="button" (click)="editingMessageId = null">Cancel</button>
+              <button mat-flat-button color="primary" type="button" (click)="saveEdit(message.id!)">Save</button>
             </div>
           </div>
 
           <footer class="post-actions" *ngIf="editingMessageId !== message.id">
             <button mat-button type="button" (click)="replyTo(message.id!)" [disabled]="topic.locked">
-              <mat-icon>reply</mat-icon> Répondre
+              <mat-icon>reply</mat-icon> Reply
             </button>
             <ng-container *ngIf="message.authorId === currentUserId">
-              <button mat-button (click)="startEdit(message)">Modifier</button>
-              <button mat-button color="warn" (click)="deleteMessage(message.id!)">Supprimer</button>
+              <button mat-button (click)="startEdit(message)">Edit</button>
+              <button mat-button color="warn" (click)="deleteMessage(message.id!)">Delete</button>
             </ng-container>
           </footer>
 
@@ -108,6 +105,7 @@
                 <p>{{ reply.content }}</p>
                 <div class="media-row" *ngFor="let a of parseAttachments(reply)">
                   <img *ngIf="a.type === 'image'" [src]="a.url" class="embed-img sm" alt="" />
+                  <audio *ngIf="a.type === 'audio'" [src]="a.url" controls class="embed-audio sm"></audio>
                   <div class="yt-wrap sm" *ngIf="a.type === 'video' && isYoutube(a.url)">
                     <iframe *ngIf="safeYoutube(a.url) as safe" [src]="safe" title="video" allowfullscreen></iframe>
                   </div>
@@ -118,22 +116,22 @@
           </div>
 
           <div class="reply-composer" *ngIf="replyingTo === message.id && !topic.locked">
-            <textarea [(ngModel)]="replyContent" placeholder="Votre réponse…" rows="2"></textarea>
+            <textarea [(ngModel)]="replyContent" placeholder="Your reply..." rows="2"></textarea>
             <div class="media-helpers">
               <input type="file" accept="image/*,video/*" (change)="onComposeFile($event)" #replyFile hidden />
-              <button mat-stroked-button type="button" (click)="replyFile.click()" [disabled]="composeUploading">Joindre fichier</button>
+              <button mat-stroked-button type="button" (click)="replyFile.click()" [disabled]="composeUploading">Attach file</button>
               <mat-form-field appearance="outline" class="fuse">
                 <mat-label>Image (URL)</mat-label>
                 <input matInput [(ngModel)]="composeImageUrl" />
               </mat-form-field>
               <mat-form-field appearance="outline" class="fuse">
-                <mat-label>Vidéo (URL ou YouTube)</mat-label>
+                <mat-label>Video (URL or YouTube)</mat-label>
                 <input matInput [(ngModel)]="composeVideoUrl" />
               </mat-form-field>
             </div>
             <div class="row-btns">
-              <button mat-button type="button" (click)="replyingTo = null">Annuler</button>
-              <button mat-flat-button color="primary" type="button" (click)="submitReply(message.id!)">Envoyer</button>
+              <button mat-button type="button" (click)="replyingTo = null">Cancel</button>
+              <button mat-flat-button color="primary" type="button" (click)="submitReply(message.id!)">Send</button>
             </div>
           </div>
         </div>
@@ -141,22 +139,22 @@
     </div>
 
     <div class="composer-card" *ngIf="!topic.locked">
-      <h3>Participer</h3>
-      <textarea [(ngModel)]="newMessageContent" rows="4" placeholder="Votre message…"></textarea>
+      <h3>Join the conversation</h3>
+      <textarea [(ngModel)]="newMessageContent" rows="4" placeholder="Your message..."></textarea>
       <div class="media-helpers">
         <input type="file" accept="image/*,video/*" (change)="onComposeFile($event)" #mainFile hidden />
-        <button mat-stroked-button type="button" (click)="mainFile.click()" [disabled]="composeUploading">Joindre média</button>
+        <button mat-stroked-button type="button" (click)="mainFile.click()" [disabled]="composeUploading">Attach media</button>
         <mat-form-field appearance="outline" class="fuse">
           <mat-label>Image (URL)</mat-label>
           <input matInput [(ngModel)]="composeImageUrl" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="fuse">
-          <mat-label>Vidéo / YouTube (URL)</mat-label>
+          <mat-label>Video / YouTube (URL)</mat-label>
           <input matInput [(ngModel)]="composeVideoUrl" />
         </mat-form-field>
       </div>
       <button mat-flat-button color="primary" class="send" (click)="postMessage()" [disabled]="!newMessageContent.trim()">
-        Publier
+        Post
       </button>
     </div>
   </section>

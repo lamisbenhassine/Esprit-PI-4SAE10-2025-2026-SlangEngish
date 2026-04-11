@@ -94,6 +94,7 @@ public class ForumFeedService {
         d.setRepostCount(forumTopicRepostRepository.countByTopicId(id));
         d.setRepostedByViewer(viewerUserId != null
                 && forumTopicRepostRepository.existsByTopicIdAndUserId(id, viewerUserId));
+        d.setLocked(t.getLocked());
         return d;
     }
 

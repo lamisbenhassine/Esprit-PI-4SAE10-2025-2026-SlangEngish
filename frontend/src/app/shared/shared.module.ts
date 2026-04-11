@@ -17,11 +17,15 @@ import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ForumSelectionAssistComponent } from './forum-selection-assist/forum-selection-assist.component';
 
 @NgModule({
   declarations: [
     NavbarComponent,
-    SidebarComponent
+    SidebarComponent,
+    ForumSelectionAssistComponent
   ],
   imports: [
     CommonModule,
@@ -40,11 +44,14 @@ import { MatChipsModule } from '@angular/material/chips';
     MatCardModule,
     MatCheckboxModule,
     MatBadgeModule,
-    MatChipsModule
+    MatChipsModule,
+    MatSnackBarModule,
+    MatProgressSpinnerModule
   ],
   exports: [
     NavbarComponent,
     SidebarComponent,
+    ForumSelectionAssistComponent,
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -61,7 +68,9 @@ import { MatChipsModule } from '@angular/material/chips';
     MatCardModule,
     MatCheckboxModule,
     MatBadgeModule,
-    MatChipsModule
+    MatChipsModule,
+    MatSnackBarModule,
+    MatProgressSpinnerModule
   ]
 })
 export class SharedModule { }

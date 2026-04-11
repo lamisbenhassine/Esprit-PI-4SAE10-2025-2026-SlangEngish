@@ -1,11 +1,38 @@
 <div class="backoffice-layout">
   <!-- Navbar -->
-  <app-navbar theme="dark" [username]="username" [userAvatar]="userAvatar" [showSidebarToggle]="true" [isAdmin]="true"
-    (sidebarToggle)="toggleSidebar()" (logout)="onLogout()">
+  <app-navbar
+    theme="dark"
+    [username]="username"
+    [userAvatar]="userAvatar"
+    [showSidebarToggle]="true"
+    [isAdmin]="true"
+    [showTutorMessagesShortcut]="true"
+    (sidebarToggle)="toggleSidebar()"
+    (logout)="onLogout()">
   </app-navbar>
 
+  <!-- Accès toujours visible (ne dépend pas du scroll du menu latéral) -->
+  <a
+    class="bo-tutor-banner"
+    routerLink="/backoffice/tutor-messages"
+    routerLinkActive="bo-tutor-banner--active"
+    [class.bo-tutor-banner--collapsed]="isSidebarCollapsed"
+    [class.bo-tutor-banner--alert]="tutorMsgBadge > 0">
+    <mat-icon class="bo-tutor-banner-icon">chat</mat-icon>
+    <span class="bo-tutor-banner-text">Messages tuteurs — répondre aux étudiants</span>
+    <span class="bo-tutor-banner-badge" *ngIf="tutorMsgBadge > 0">{{ tutorMsgBadge }}</span>
+    <mat-icon class="bo-tutor-banner-chev">chevron_right</mat-icon>
+  </a>
+
   <!-- Sidebar -->
-  <app-sidebar theme="dark" [menuItems]="backofficeMenuItems" [isCollapsed]="isSidebarCollapsed"
+  <app-sidebar
+    theme="dark"
+    [menuItems]="backofficeMenuItems"
+    [isCollapsed]="isSidebarCollapsed"
+    footerQuickLink="/backoffice/tutor-messages"
+    footerQuickLabel="Messages tuteurs"
+    footerQuickIcon="chat"
+    [footerQuickBadge]="tutorMsgBadge"
     (toggleCollapse)="toggleSidebar()">
   </app-sidebar>
 

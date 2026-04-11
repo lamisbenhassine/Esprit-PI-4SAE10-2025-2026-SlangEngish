@@ -1,7 +1,9 @@
 package esprit.forum.controller;
 
+import esprit.forum.dto.ModerationMessageDto;
 import esprit.forum.entity.ForumMessage;
 import esprit.forum.service.ForumMessageService;
+import esprit.forum.service.ForumModerationService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -9,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/forum/messages")
@@ -17,6 +20,7 @@ import java.util.List;
 public class ForumMessageController {
 
     private final ForumMessageService forumMessageService;
+    private final ForumModerationService forumModerationService;
 
     @Deprecated
     @GetMapping("/topic/{topicId}")
@@ -29,6 +33,44 @@ public class ForumMessageController {
             @PathVariable Long parentMessageId,
             @RequestParam(required = false) Long viewerUserId) {
         return ResponseEntity.ok(forumMessageService.getRepliesByParentId(parentMessageId, viewerUserId));
+    }
+
+    /**
+     * Liste des commentaires pour modération (tuteur / admin). Chemin stable sous ce contrôleur
+     * (évite un 404 si un ancien déploiement n’expose pas {@code /api/forum/moderation/...}).
+     */
+    @GetMapping("/moderation/list")
+    public ResponseEntity<?> listModeration(
+            @RequestParam Long moderatorUserId,
+            @RequestParam(defaultValue = "100") int limit) {
+        try {
+            List<ModerationMessageDto> list = forumModerationService.listRecentMessages(moderatorUserId, limit);
+            return ResponseEntity.ok(list);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/moderation/{messageId}")
+    public ResponseEntity<?> deleteAsModerator(
+            @PathVariable Long messageId,
+            @RequestParam Long moderatorUserId) {
+        try {
+            forumModerationService.deleteMessageAsModerator(messageId, moderatorUserId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/moderation/block")
+    public ResponseEntity<?> blockAsModerator(@RequestBody ModerationBlockBody body) {
+        try {
+            forumModerationService.blockUserAsModerator(body.getModeratorUserId(), body.getBlockedUserId());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/author/{authorId}")
@@ -92,5 +134,11 @@ public class ForumMessageController {
     public static class UpdateMessageRequest {
         private String content;
         private String attachments;
+    }
+
+    @Data
+    public static class ModerationBlockBody {
+        private Long moderatorUserId;
+        private Long blockedUserId;
     }
 }

@@ -18,7 +18,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -52,7 +52,9 @@ import { AppComponent } from './app.component';
   ],
   providers: [
     provideClientHydration(),
-    provideHttpClient(withFetch())
+    // Pas de withFetch() : sur le serveur (prerender/SSR), fetch() exige une URL absolue
+    // et les appels relatifs (/api/...) provoquent "Failed to parse URL".
+    provideHttpClient()
   ],
   bootstrap: [AppComponent]
 })

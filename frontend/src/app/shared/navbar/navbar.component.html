@@ -10,6 +10,18 @@
       <img src="assets/logo1.png" alt="Slang-logo" class="logo-image">
       <span class="logo-text">Slang-English</span>
     </a>
+
+    <a
+      *ngIf="showTutorMessagesShortcut"
+      mat-stroked-button
+      color="primary"
+      class="nav-tutor-bo-link"
+      [class.nav-tutor-bo-link--dark]="isAdmin"
+      routerLink="/backoffice/tutor-messages"
+      matTooltip="Messages privés avec les étudiants (réponses des tuteurs)">
+      <mat-icon>chat</mat-icon>
+      <span class="nav-tutor-bo-text">Messages tuteurs</span>
+    </a>
   </div>
 
   <!-- Center Section - Search Bar -->
@@ -26,8 +38,8 @@
     <!-- ===== NOTIFICATIONS BELL ===== -->
     <button mat-icon-button class="nav-btn notif-btn" [matMenuTriggerFor]="notifMenu" (click)="markAsRead()"
       matTooltip="{{ isAdmin ? 'Admin Alerts' : 'Notifications' }}" aria-label="Notifications">
-      <mat-icon [matBadge]="unreadCount > 0 ? unreadCount : null" matBadgeColor="warn"
-        [matBadgeHidden]="unreadCount === 0" aria-hidden="false">
+      <mat-icon [matBadge]="totalBellBadge > 0 ? totalBellBadge : null" matBadgeColor="warn"
+        [matBadgeHidden]="totalBellBadge === 0" aria-hidden="false">
         {{ isAdmin ? 'admin_panel_settings' : 'notifications' }}
       </mat-icon>
     </button>
@@ -40,7 +52,7 @@
           <span>{{ isAdmin ? 'Admin Alerts' : 'Recent Notifications' }}</span>
         </div>
         <div class="notif-actions">
-          <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }} new</span>
+          <span class="unread-badge" *ngIf="totalBellBadge > 0">{{ totalBellBadge }} new</span>
           <button mat-icon-button class="clear-btn" *ngIf="notifications.length > 0"
             (click)="clearAll(); $event.stopPropagation()" matTooltip="Clear all">
             <mat-icon>clear_all</mat-icon>

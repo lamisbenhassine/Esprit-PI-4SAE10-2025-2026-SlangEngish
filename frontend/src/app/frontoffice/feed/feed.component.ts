@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import {
@@ -8,17 +8,23 @@ import {
 } from '../../core/services/social-feed.service';
 import { ForumTopicService } from '../../core/services/forum-topic.service';
 import { ForumMediaService } from '../../core/services/forum-media.service';
-import { ForumMessageService, ForumMessage } from '../../core/services/forum-message.service';
+import { ForumMessageService, ForumMessage, CreateMessageRequest } from '../../core/services/forum-message.service';
 import { UserProfileService, UserProfile } from '../../core/services/user-profile.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { FrontofficeIdentityService } from '../../core/services/frontoffice-identity.service';
+
+export interface FeedCommentAttachment {
+  type: 'image' | 'video' | 'audio';
+  url: string;
+}
 
 @Component({
   selector: 'app-feed',
   templateUrl: './feed.component.html',
   styleUrls: ['./feed.component.css']
 })
-export class FeedComponent implements OnInit {
-  currentUserId = 1;
+export class FeedComponent implements OnInit, OnDestroy {
+  currentUserId = 2;
   feed: FeedPost[] = [];
   invitations: ForumInvitation[] = [];
   loading = true;
@@ -34,6 +40,17 @@ export class FeedComponent implements OnInit {
   coverBusy = false;
   expandedComments: { [topicId: number]: ForumMessage[] } = {};
   loadingComments: { [topicId: number]: boolean } = {};
+  /** Panneau commentaires ouvert par sujet. */
+  commentOpen: { [topicId: number]: boolean } = {};
+  commentText: { [topicId: number]: string } = {};
+  commentImageUrl: { [topicId: number]: string } = {};
+  commentAudioUrl: { [topicId: number]: string } = {};
+  commentBusy: { [topicId: number]: boolean } = {};
+  commentAuthorMap: { [userId: number]: string } = {};
+  recordingPostId: number | null = null;
+  private mediaRecorder: MediaRecorder | null = null;
+  private recordStream: MediaStream | null = null;
+  private recordChunks: Blob[] = [];
   /** Profil de l’utilisateur connecté (zone « Créer une publication »). */
   me: UserProfile | null = null;
 
@@ -43,12 +60,14 @@ export class FeedComponent implements OnInit {
     private media: ForumMediaService,
     private messages: ForumMessageService,
     private users: UserProfileService,
+    private identity: FrontofficeIdentityService,
     private snackBar: MatSnackBar,
     private router: Router,
     private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
+    this.currentUserId = this.identity.getCurrentUserId();
     this.users.getById(this.currentUserId).subscribe({
       next: u => (this.me = u),
       error: () => (this.me = null)
@@ -69,7 +88,7 @@ export class FeedComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
-        this.snackBar.open('Impossible de charger le fil.', 'OK', { duration: 4000 });
+        this.snackBar.open('Unable to load feed.', 'OK', { duration: 4000 });
       }
     });
     this.socialFeed.getInbox(this.currentUserId).subscribe({
@@ -124,12 +143,12 @@ export class FeedComponent implements OnInit {
           this.composeImageUrl = '';
           this.composeVideoUrl = '';
           this.composing = false;
-          this.snackBar.open('Publication ajoutée', 'OK', { duration: 2500 });
+          this.snackBar.open('Post created.', 'OK', { duration: 2500 });
           this.refreshAll();
         },
         error: () => {
           this.composing = false;
-          this.snackBar.open('Erreur publication', 'OK', { duration: 4000 });
+          this.snackBar.open('Failed to publish post.', 'OK', { duration: 4000 });
         }
       });
   }
@@ -140,7 +159,7 @@ export class FeedComponent implements OnInit {
         post.likedByViewer = r.liked;
         post.likeCount = r.likeCount;
       },
-      error: () => this.snackBar.open('Erreur j’aime', 'OK', { duration: 3000 })
+      error: () => this.snackBar.open('Failed to update like.', 'OK', { duration: 3000 })
     });
   }
 
@@ -150,7 +169,7 @@ export class FeedComponent implements OnInit {
         post.repostedByViewer = r.reposted;
         post.repostCount = r.repostCount;
       },
-      error: () => this.snackBar.open('Erreur republication', 'OK', { duration: 3000 })
+      error: () => this.snackBar.open('Failed to update repost.', 'OK', { duration: 3000 })
     });
   }
 
@@ -158,20 +177,225 @@ export class FeedComponent implements OnInit {
     this.router.navigate(['/frontoffice/forum/topic', id]);
   }
 
+  ngOnDestroy(): void {
+    this.stopRecordingCleanup();
+  }
+
   toggleComments(post: FeedPost): void {
-    if (this.expandedComments[post.id]) {
-      delete this.expandedComments[post.id];
+    const id = post.id;
+    if (this.commentOpen[id]) {
+      this.commentOpen[id] = false;
       return;
     }
+    this.commentOpen[id] = true;
+    this.reloadComments(post);
+  }
+
+  reloadComments(post: FeedPost): void {
     this.loadingComments[post.id] = true;
     this.messages.getMessagesByTopic(post.id, this.currentUserId).subscribe({
       next: msgs => {
-        const roots = (msgs || []).filter(m => !m.parentMessageId).slice(0, 5);
+        const roots = (msgs || []).filter(m => !m.parentMessageId).slice(0, 12);
         this.expandedComments[post.id] = roots;
         this.loadingComments[post.id] = false;
+        this.hydrateCommentAuthors(roots);
       },
       error: () => {
         this.loadingComments[post.id] = false;
+      }
+    });
+  }
+
+  private hydrateCommentAuthors(roots: ForumMessage[]): void {
+    const ids = [...new Set(roots.map(m => m.authorId).filter((x): x is number => x != null))];
+    if (!ids.length) {
+      return;
+    }
+    this.users.lookup(ids).subscribe({
+      next: list => {
+        list.forEach(u => {
+          if (u.id != null) {
+            const name = [u.firstName, u.lastName].filter(Boolean).join(' ').trim();
+            this.commentAuthorMap[u.id] = name || `User #${u.id}`;
+          }
+        });
+      },
+      error: () => {}
+    });
+  }
+
+  canStudentComment(): boolean {
+    const r = (this.me?.accountRole || 'STUDENT').toUpperCase();
+    return r === 'STUDENT';
+  }
+
+  parseCommentAttachments(msg: ForumMessage): FeedCommentAttachment[] {
+    if (!msg.attachments?.trim()) {
+      return [];
+    }
+    try {
+      const raw = JSON.parse(msg.attachments) as unknown;
+      if (!Array.isArray(raw)) {
+        return [];
+      }
+      return raw.filter(
+        (a): a is FeedCommentAttachment =>
+          !!a &&
+          typeof a === 'object' &&
+          (a as FeedCommentAttachment).url != null &&
+          ['image', 'video', 'audio'].includes(String((a as FeedCommentAttachment).type))
+      ) as FeedCommentAttachment[];
+    } catch {
+      return [];
+    }
+  }
+
+  commentAuthorDisplay(authorId: number): string {
+    if (this.commentAuthorMap[authorId]) {
+      return this.commentAuthorMap[authorId];
+    }
+    return this.commentAuthor(authorId);
+  }
+
+  onCommentImageFile(ev: Event, post: FeedPost): void {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+    this.commentBusy[post.id] = true;
+    this.media.upload(file).subscribe({
+      next: res => {
+        this.commentImageUrl[post.id] = res.url;
+        this.commentBusy[post.id] = false;
+        input.value = '';
+      },
+      error: err => {
+        this.commentBusy[post.id] = false;
+        input.value = '';
+        this.snackBar.open(this.media.describeUploadError(err), 'OK', { duration: 6000 });
+      }
+    });
+  }
+
+  clearCommentImage(post: FeedPost): void {
+    delete this.commentImageUrl[post.id];
+  }
+
+  clearCommentAudio(post: FeedPost): void {
+    delete this.commentAudioUrl[post.id];
+  }
+
+  startVoiceRecording(post: FeedPost): void {
+    if (!isBrowserMediaSupported()) {
+      this.snackBar.open('Enregistrement vocal non pris en charge par ce navigateur.', 'OK', { duration: 5000 });
+      return;
+    }
+    this.stopRecordingCleanup();
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      this.recordStream = stream;
+      this.recordChunks = [];
+      const mr = new MediaRecorder(stream);
+      this.mediaRecorder = mr;
+      this.recordingPostId = post.id;
+      mr.ondataavailable = e => {
+        if (e.data.size) {
+          this.recordChunks.push(e.data);
+        }
+      };
+      mr.onstop = () => {
+        const blob = new Blob(this.recordChunks, { type: mr.mimeType || 'audio/webm' });
+        const ext = blob.type.includes('webm') ? 'webm' : 'mp3';
+        const file = new File([blob], `voice.${ext}`, { type: blob.type || 'audio/webm' });
+        this.commentBusy[post.id] = true;
+        this.media.upload(file).subscribe({
+          next: res => {
+            this.commentAudioUrl[post.id] = res.url;
+            this.commentBusy[post.id] = false;
+            this.recordingPostId = null;
+          },
+          error: err => {
+            this.commentBusy[post.id] = false;
+            this.recordingPostId = null;
+            this.snackBar.open(this.media.describeUploadError(err), 'OK', { duration: 6000 });
+          }
+        });
+        stream.getTracks().forEach(t => t.stop());
+        this.recordStream = null;
+      };
+      mr.start();
+    }).catch(() => {
+      this.snackBar.open('Accès au micro refusé ou indisponible.', 'OK', { duration: 5000 });
+    });
+  }
+
+  stopVoiceRecording(): void {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+      this.mediaRecorder.stop();
+    }
+    this.mediaRecorder = null;
+  }
+
+  private stopRecordingCleanup(): void {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+      this.mediaRecorder.stop();
+    }
+    this.mediaRecorder = null;
+    if (this.recordStream) {
+      this.recordStream.getTracks().forEach(t => t.stop());
+      this.recordStream = null;
+    }
+    this.recordingPostId = null;
+  }
+
+  isRecording(post: FeedPost): boolean {
+    return this.recordingPostId === post.id;
+  }
+
+  sendComment(post: FeedPost): void {
+    if (!this.canStudentComment()) {
+      return;
+    }
+    if (post.locked) {
+      this.snackBar.open('Ce sujet est verrouillé.', 'OK', { duration: 3000 });
+      return;
+    }
+    const text = (this.commentText[post.id] || '').trim();
+    const img = this.commentImageUrl[post.id]?.trim();
+    const aud = this.commentAudioUrl[post.id]?.trim();
+    if (!text && !img && !aud) {
+      this.snackBar.open('Ajoutez du texte, une image ou un message vocal.', 'OK', { duration: 3000 });
+      return;
+    }
+    const parts: { type: string; url: string }[] = [];
+    if (img) {
+      parts.push({ type: 'image', url: img });
+    }
+    if (aud) {
+      parts.push({ type: 'audio', url: aud });
+    }
+    const req: CreateMessageRequest = {
+      topicId: post.id,
+      authorId: this.currentUserId,
+      content: text || ' ',
+      parentMessageId: null,
+      attachments: parts.length ? JSON.stringify(parts) : undefined
+    };
+    this.commentBusy[post.id] = true;
+    this.messages.createMessage(req).subscribe({
+      next: () => {
+        this.commentBusy[post.id] = false;
+        this.commentText[post.id] = '';
+        delete this.commentImageUrl[post.id];
+        delete this.commentAudioUrl[post.id];
+        post.commentCount = (post.commentCount || 0) + 1;
+        this.snackBar.open('Commentaire publié.', 'OK', { duration: 2500 });
+        this.reloadComments(post);
+      },
+      error: err => {
+        this.commentBusy[post.id] = false;
+        const msg = err?.error?.error || 'Envoi impossible.';
+        this.snackBar.open(msg, 'OK', { duration: 5000 });
       }
     });
   }
@@ -181,13 +405,13 @@ export class FeedComponent implements OnInit {
     if (!to || to === this.currentUserId) {
       return;
     }
-    this.socialFeed.sendInvitation(this.currentUserId, to, this.inviteMessage || 'Rejoins-moi sur Slang English !').subscribe({
+    this.socialFeed.sendInvitation(this.currentUserId, to, this.inviteMessage || 'Join me on Slang English!').subscribe({
       next: () => {
         this.inviteToId = '';
         this.inviteMessage = '';
-        this.snackBar.open('Invitation envoyée', 'OK', { duration: 2500 });
+        this.snackBar.open('Invitation sent.', 'OK', { duration: 2500 });
       },
-      error: () => this.snackBar.open('Erreur envoi invitation', 'OK', { duration: 4000 })
+      error: () => this.snackBar.open('Failed to send invitation.', 'OK', { duration: 4000 })
     });
   }
 
@@ -198,9 +422,9 @@ export class FeedComponent implements OnInit {
     this.socialFeed.respondInvitation(inv.id, this.currentUserId, accept).subscribe({
       next: () => {
         this.invitations = this.invitations.filter(i => i.id !== inv.id);
-        this.snackBar.open(accept ? 'Invitation acceptée' : 'Invitation refusée', 'OK', { duration: 2500 });
+        this.snackBar.open(accept ? 'Invitation accepted.' : 'Invitation declined.', 'OK', { duration: 2500 });
       },
-      error: () => this.snackBar.open('Erreur', 'OK', { duration: 3000 })
+      error: () => this.snackBar.open('Operation failed.', 'OK', { duration: 3000 })
     });
   }
 
@@ -234,19 +458,19 @@ export class FeedComponent implements OnInit {
     if (f || l) {
       return [f, l].filter(Boolean).join(' ');
     }
-    return `Utilisateur #${post.authorId}`;
+    return 'Member';
   }
 
   authorRoleLabel(post: FeedPost): string | null {
     const r = (post.authorRole || '').toUpperCase();
     if (r === 'TUTOR') {
-      return 'Tuteur';
+      return 'Tutor';
     }
     if (r === 'ADMIN') {
-      return 'Équipe';
+      return 'Team';
     }
     if (r === 'STUDENT') {
-      return 'Étudiant';
+      return 'Student';
     }
     return null;
   }
@@ -274,6 +498,22 @@ export class FeedComponent implements OnInit {
     if (this.me?.firstName || this.me?.lastName) {
       return [this.me?.firstName, this.me?.lastName].filter(Boolean).join(' ');
     }
-    return `Vous (#${this.currentUserId})`;
+    return 'You';
   }
+
+  commentAuthor(authorId: number): string {
+    const known = this.feed.find(p => p.authorId === authorId);
+    if (known) {
+      return this.authorFullName(known);
+    }
+    return 'Member';
+  }
+}
+
+function isBrowserMediaSupported(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    !!navigator.mediaDevices?.getUserMedia &&
+    typeof MediaRecorder !== 'undefined'
+  );
 }

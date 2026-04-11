@@ -1,42 +1,50 @@
 <div class="fl-page">
   <header class="fl-hero">
     <div class="fl-hero-inner">
-      <span class="fl-kicker">Forums réservés · CECRL</span>
-      <h1>Espaces par niveau</h1>
+      <span class="fl-kicker">LEVEL FORUMS · CEFR</span>
+      <h1>Level Spaces</h1>
       <p class="fl-lead">
-        Chaque niveau <strong>A1 → C2</strong> dispose de son propre fil de discussions : contenus adaptés, objectifs clairs, communauté d’apprenants du même palier.
-        Le <a routerLink="/frontoffice/feed">fil général</a> reste ouvert à tous ; ici, il faut un <strong>abonnement actif</strong>.
+        Chaque niveau <strong>A1 → C2</strong> regroupe des discussions adaptées au même palier CECRL.
+        Le <a routerLink="/frontoffice/feed">fil général</a> reste ouvert à tous.
+        <ng-container *ngIf="isStudentViewer()">
+          En tant qu’étudiant, seul l’espace correspondant à <strong>votre niveau enregistré</strong> (certificat / profil) est déverrouillé.
+        </ng-container>
+        <ng-container *ngIf="!isStudentViewer()">Les tuteurs et l’équipe peuvent ouvrir tous les niveaux.</ng-container>
       </p>
     </div>
   </header>
 
-  <section class="fl-paywall" *ngIf="!isPaid">
-    <div class="fl-paywall-card">
-      <mat-icon class="fl-pay-ico">workspace_premium</mat-icon>
-      <div>
-        <h2>Débloquez les forums par niveau</h2>
-        <p>
-          Les sujets ci-dessous sont liés à votre progression (A1 à C2). Souscrivez un plan pour participer, poster et accéder aux ressources ciblées.
-        </p>
-        <a mat-flat-button color="primary" routerLink="/frontoffice/inscription/offers" class="fl-cta">
-          Voir les offres d’abonnement
-        </a>
-      </div>
+  <div class="fl-level-banner" *ngIf="isStudentViewer()">
+    <mat-icon>verified</mat-icon>
+    <div>
+      <strong>Votre espace : {{ studentUnlockedLevelLabel() }}</strong>
+      <p>
+        Le niveau provient de votre profil (<code>englishLevel</code>), mis à jour après analyse du certificat à l’inscription.
+        <a routerLink="/frontoffice/inscription/register">Mettre à jour via certificat</a>
+      </p>
     </div>
-  </section>
+  </div>
+
+  <app-forum-tutors-bar></app-forum-tutors-bar>
 
   <section class="fl-levels">
-    <h2 class="fl-section-title">Choisir un niveau</h2>
-    <p class="fl-section-sub">Sélectionnez votre niveau CECRL pour charger les sujets correspondants.</p>
+    <h2 class="fl-section-title">{{ isStudentViewer() ? 'Votre niveau et les autres espaces' : 'Choisir un niveau' }}</h2>
+    <p class="fl-section-sub">
+      <ng-container *ngIf="isStudentViewer()">Les niveaux autres que le vôtre sont verrouillés.</ng-container>
+      <ng-container *ngIf="!isStudentViewer()">Sélectionnez un niveau CECRL pour charger les sujets.</ng-container>
+    </p>
     <div class="fl-level-grid">
       <button
         type="button"
         class="fl-level-card"
         *ngFor="let m of levelsMeta"
         [class.fl-active]="selectedLevel === m.code"
-        [class.fl-locked]="!isPaid"
+        [class.fl-locked]="isLevelLocked(m.code)"
         [style.--fl-bg]="m.gradient"
         (click)="onPickLevel(m.code)">
+        <span class="fl-lock-ico" *ngIf="isLevelLocked(m.code)" aria-hidden="true">
+          <mat-icon>lock</mat-icon>
+        </span>
         <span class="fl-code">{{ m.code }}</span>
         <span class="fl-ltitle">{{ m.title }}</span>
         <span class="fl-lsum">{{ m.summary }}</span>
@@ -44,7 +52,7 @@
     </div>
   </section>
 
-  <div class="fl-panel" *ngIf="isPaid && selectedLevel && selectedMeta">
+  <div class="fl-panel" *ngIf="selectedLevel && selectedMeta">
     <aside class="fl-aside" [style.--aside-accent]="selectedMeta.gradient">
       <div class="fl-aside-head">
         <span class="fl-aside-code">{{ selectedMeta.code }}</span>
@@ -60,23 +68,23 @@
       </div>
 
       <div class="fl-compose" *ngIf="levelSpaceId != null">
-        <h4>Nouveau sujet (niveau {{ selectedLevel }})</h4>
+        <h4>New topic ({{ selectedLevel }} level)</h4>
         <mat-form-field appearance="outline" class="fl-full">
-          <mat-label>Titre</mat-label>
-          <input matInput [(ngModel)]="newTitle" placeholder="Ex. Devoir de style — email formel" />
+          <mat-label>Title</mat-label>
+          <input matInput [(ngModel)]="newTitle" placeholder="Ex. Formal email writing practice" />
         </mat-form-field>
         <mat-form-field appearance="outline" class="fl-full">
-          <mat-label>Contenu</mat-label>
-          <textarea matInput rows="3" [(ngModel)]="newDescription" placeholder="Contexte, questions…"></textarea>
+          <mat-label>Content</mat-label>
+          <textarea matInput rows="3" [(ngModel)]="newDescription" placeholder="Context, goals, questions..."></textarea>
         </mat-form-field>
         <mat-form-field appearance="outline" class="fl-full">
-          <mat-label>Image de couverture (URL)</mat-label>
+          <mat-label>Cover image URL</mat-label>
           <input matInput [(ngModel)]="newCoverUrl" />
         </mat-form-field>
         <div class="fl-compose-row">
           <input type="file" accept="image/*" #coverIn hidden (change)="onCoverFile($event)" />
           <button mat-stroked-button type="button" (click)="coverIn.click()" [disabled]="coverUploading">
-            <mat-icon>image</mat-icon> Envoyer une image
+            <mat-icon>image</mat-icon> Upload image
           </button>
           <button
             mat-flat-button
@@ -84,7 +92,7 @@
             type="button"
             (click)="createTopic()"
             [disabled]="creating || !newTitle.trim() || !newDescription.trim()">
-            Publier dans ce niveau
+            Publish to this level
           </button>
         </div>
       </div>
@@ -93,19 +101,19 @@
     <main class="fl-main">
       <div class="fl-toolbar" *ngIf="!loading || topics.length">
         <mat-form-field appearance="outline" class="fl-search">
-          <mat-label>Rechercher dans ce niveau</mat-label>
+          <mat-label>Search in this level</mat-label>
           <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" />
           <mat-icon matPrefix>search</mat-icon>
         </mat-form-field>
         <mat-form-field appearance="outline" class="fl-sort">
-          <mat-label>Trier</mat-label>
+          <mat-label>Sort by</mat-label>
           <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
             <mat-option value="createdAt">Date</mat-option>
-            <mat-option value="title">Titre</mat-option>
-            <mat-option value="views">Vues</mat-option>
+            <mat-option value="title">Title</mat-option>
+            <mat-option value="views">Views</mat-option>
           </mat-select>
         </mat-form-field>
-        <button mat-icon-button type="button" (click)="toggleSortOrder()" matTooltip="Ordre">
+        <button mat-icon-button type="button" (click)="toggleSortOrder()" matTooltip="Order">
           <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
         </button>
       </div>
@@ -118,8 +126,8 @@
 
       <div class="fl-empty" *ngIf="!loading && !error && !filteredTopics.length">
         <mat-icon>post_add</mat-icon>
-        <p>Aucun sujet pour le niveau <strong>{{ selectedLevel }}</strong> pour l’instant.</p>
-        <p class="fl-empty-hint">Soyez le premier à lancer une discussion dans l’encadré de gauche.</p>
+        <p>No topics yet for level <strong>{{ selectedLevel }}</strong>.</p>
+        <p class="fl-empty-hint">Be the first to start a discussion from the left panel.</p>
       </div>
 
       <div class="fl-cards" *ngIf="!loading && filteredTopics.length">
@@ -135,8 +143,8 @@
           </div>
           <div class="fl-card-body">
             <div class="fl-card-top">
-              <span class="fl-pill" *ngIf="topic.pinned">À la une</span>
-              <span class="fl-pill lock" *ngIf="topic.locked">Fermé</span>
+              <span class="fl-pill" *ngIf="topic.pinned">Pinned</span>
+              <span class="fl-pill lock" *ngIf="topic.locked">Locked</span>
             </div>
             <h3>{{ topic.title }}</h3>
             <p class="fl-excerpt">
@@ -147,8 +155,9 @@
               <div class="fl-author">
                 <span class="fl-av">{{ initials(topic.authorId) }}</span>
                 <span class="fl-name">{{ authorName(topic.authorId) }}</span>
-                <span class="fl-badge tutor" *ngIf="authorRole(topic.authorId) === 'Tuteur'">Tuteur</span>
-                <span class="fl-badge admin" *ngIf="authorRole(topic.authorId) === 'Équipe'">Équipe</span>
+                <span class="fl-badge student" *ngIf="authorRole(topic.authorId) === 'Student'">Student</span>
+                <span class="fl-badge tutor" *ngIf="authorRole(topic.authorId) === 'Tutor'">Tutor</span>
+                <span class="fl-badge admin" *ngIf="authorRole(topic.authorId) === 'Team'">Team</span>
               </div>
               <span class="fl-views"><mat-icon>visibility</mat-icon> {{ topic.views }}</span>
             </div>
@@ -158,8 +167,8 @@
     </main>
   </div>
 
-  <p class="fl-hint-bottom" *ngIf="isPaid && !selectedLevel && !loading">
+  <p class="fl-hint-bottom" *ngIf="!selectedLevel && !loading">
     <mat-icon>touch_app</mat-icon>
-    Sélectionnez un niveau ci-dessus pour afficher les discussions et publier.
+    Select a level above to browse discussions and publish.
   </p>
 </div>

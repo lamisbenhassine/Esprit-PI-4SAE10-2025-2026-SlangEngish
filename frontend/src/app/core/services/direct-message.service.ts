@@ -20,6 +20,9 @@ export interface DirectConversationSummary {
   otherUserId: number;
   kind: DirectKind;
   lastMessagePreview?: string;
+  /** Présents quand l’API forum expose le dernier message (badges non lus). */
+  lastMessageId?: number;
+  lastMessageSenderId?: number;
   updatedAt?: string;
 }
 

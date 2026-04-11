@@ -5,6 +5,7 @@
     [username]="username"
     [userAvatar]="userAvatar"
     [showSidebarToggle]="true"
+    [showTutorMessagesShortcut]="false"
     (sidebarToggle)="toggleSidebar()"
     (logout)="onLogout()">
   </app-navbar>
@@ -17,6 +18,8 @@
     [isCollapsed]="isSidebarCollapsed"
     (toggleCollapse)="toggleSidebar()">
   </app-sidebar>
+
+  <app-messaging-dock></app-messaging-dock>
 
   <!-- Main Content -->
   <div class="main-content" [class.sidebar-collapsed]="isSidebarCollapsed">

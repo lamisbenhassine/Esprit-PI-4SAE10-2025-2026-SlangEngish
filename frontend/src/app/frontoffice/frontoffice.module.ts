@@ -8,6 +8,7 @@ import { ProfileComponent } from './profile/profile.component';
 import { CoursesComponent } from './courses/courses.component';
 import { MessagesComponent } from './messages/messages.component';
 import { LayoutComponent } from './layout/layout.component';
+import { MessagingDockComponent } from './messaging-dock/messaging-dock.component';
 import { FeedComponent } from './feed/feed.component';
 import { SharedModule } from '../shared/shared.module';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -25,7 +26,8 @@ import { MatTabsModule } from '@angular/material/tabs';
     CoursesComponent,
     MessagesComponent,
     LayoutComponent,
-    FeedComponent
+    FeedComponent,
+    MessagingDockComponent
   ],
   imports: [
     CommonModule,

@@ -14,6 +14,8 @@ import { SubscriptionManagementComponent } from './subscription-management/subsc
 import { SubscriptionDialogComponent } from './subscription-management/subscription-dialog/subscription-dialog.component';
 import { LoyaltyAccountsComponent } from './loyalty-accounts/loyalty-accounts.component';
 import { InscriptionStatsComponent } from './inscription-stats/inscription-stats.component';
+import { TutorInboxComponent } from './tutor-inbox/tutor-inbox.component';
+import { CommentModerationComponent } from './comment-moderation/comment-moderation.component';
 import { SharedModule } from '../shared/shared.module';
 
 // Angular Material Modules
@@ -45,6 +47,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
     SubscriptionDialogComponent,
     LoyaltyAccountsComponent,
     InscriptionStatsComponent,
+    TutorInboxComponent,
+    CommentModerationComponent,
     LayoutComponent
   ],
   imports: [

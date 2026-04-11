@@ -117,7 +117,11 @@ public class DirectConversationService {
         d.setKind(c.getKind());
         d.setUpdatedAt(c.getUpdatedAt());
         messageRepository.findTopByConversation_IdOrderByCreatedAtDesc(c.getId())
-                .ifPresent(m -> d.setLastMessagePreview(trimPreview(m.getContent())));
+                .ifPresent(m -> {
+                    d.setLastMessagePreview(trimPreview(m.getContent()));
+                    d.setLastMessageId(m.getId());
+                    d.setLastMessageSenderId(m.getSenderId());
+                });
         return d;
     }
 

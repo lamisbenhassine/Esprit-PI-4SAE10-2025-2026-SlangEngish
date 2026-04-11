@@ -40,7 +40,6 @@ public class ForumSpaceController {
         try {
             ForumSpace space = forumSpaceService.findByTypeAndKey(ForumSpace.ForumSpaceType.LEVEL, level.toUpperCase())
                     .orElseThrow(() -> new RuntimeException("Level space not found"));
-            forumAccessService.assertCanAccess(space, userId);
             return ResponseEntity.ok(space);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: " + e.getMessage());

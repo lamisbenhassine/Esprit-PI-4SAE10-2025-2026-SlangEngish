@@ -1,0 +1,75 @@
+<div class="ti-page">
+  <header class="ti-intro">
+    <h1>Messages tuteurs</h1>
+    <p class="ti-lead">Boîte de réception des échanges avec les apprenants.</p>
+    <div class="ti-toolbar">
+      <button
+        mat-stroked-button
+        type="button"
+        color="primary"
+        *ngIf="desktopNotifAvailable && desktopNotifPermission !== 'granted'"
+        (click)="requestDesktopNotifications()">
+        <mat-icon>notifications_active</mat-icon>
+        Alertes pour nouveaux messages
+      </button>
+    </div>
+    <div class="ti-tutor-pick">
+      <label>Profil tuteur actif</label>
+      <select class="ti-input" [ngModel]="tutorUserId" (ngModelChange)="setTutorId($event)">
+        <option *ngFor="let t of tutorProfiles" [ngValue]="t.id">
+          {{ t.firstName }} {{ t.lastName }}
+        </option>
+      </select>
+    </div>
+  </header>
+
+  <div class="ti-shell">
+    <aside class="ti-aside">
+      <h3 class="ti-side-title">Conversations avec des apprenants</h3>
+      <input class="ti-input ti-search" [(ngModel)]="search" placeholder="Rechercher un étudiant…" type="search" />
+      <div class="ti-list">
+        <button
+          type="button"
+          class="ti-row"
+          *ngFor="let row of filteredInbox()"
+          [class.active]="selected?.id === row.id"
+          [class.ti-row-unread]="rowUnread(row)"
+          (click)="openSummary(row)">
+          <span class="ti-row-user">
+            {{ userName(row.otherUserId) }}
+            <span class="ti-badge">{{ studentBadge(row.otherUserId) }}</span>
+          </span>
+          <span class="ti-preview">{{ row.lastMessagePreview || '…' }}</span>
+        </button>
+        <p class="ti-empty" *ngIf="!filteredInbox().length">Aucune conversation. Un étudiant doit vous écrire depuis le front-office.</p>
+      </div>
+    </aside>
+
+    <section class="ti-thread" *ngIf="selected">
+      <div class="ti-thread-head">
+        <span class="ti-thread-title">Discussion avec {{ userName(selected.otherUserId) }}</span>
+        <span class="ti-badge soft">{{ studentBadge(selected.otherUserId) }}</span>
+      </div>
+      <div class="ti-bubbles">
+        <div *ngFor="let m of thread" class="ti-bwrap" [class.own]="isOwn(m)">
+          <div class="ti-bubble">
+            <span class="ti-meta" *ngIf="!isOwn(m)">{{ userName(m.senderId) }}</span>
+            <p class="ti-text">{{ m.content }}</p>
+            <span class="ti-time">{{ m.createdAt | date : 'short' }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="ti-compose">
+        <textarea class="ti-textarea" rows="3" [(ngModel)]="draft" placeholder="Réponse à l’apprenant…"></textarea>
+        <button mat-flat-button color="primary" type="button" (click)="send()" [disabled]="!draft.trim()">
+          Envoyer la réponse
+        </button>
+      </div>
+    </section>
+
+    <section class="ti-placeholder" *ngIf="!selected">
+      <mat-icon>forum</mat-icon>
+      <p>Sélectionnez une conversation pour répondre aux messages des étudiants.</p>
+    </section>
+  </div>
+</div>

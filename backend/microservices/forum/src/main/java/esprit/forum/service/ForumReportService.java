@@ -24,13 +24,27 @@ public class ForumReportService {
         if (reporterUserId == null || targetType == null || targetId == null) {
             throw new IllegalArgumentException("Missing report fields");
         }
+        Long targetAuthorId;
         if (targetType == ForumReport.TargetType.TOPIC) {
-            forumTopicRepository.findById(targetId)
-                    .orElseThrow(() -> new IllegalArgumentException("Topic not found"));
+            targetAuthorId = forumTopicRepository.findById(targetId)
+                    .orElseThrow(() -> new IllegalArgumentException("Topic not found"))
+                    .getAuthorId();
         } else {
-            forumMessageRepository.findById(targetId)
-                    .orElseThrow(() -> new IllegalArgumentException("Message not found"));
+            targetAuthorId = forumMessageRepository.findById(targetId)
+                    .orElseThrow(() -> new IllegalArgumentException("Message not found"))
+                    .getAuthorId();
         }
+
+        if (targetAuthorId != null && targetAuthorId.equals(reporterUserId)) {
+            throw new IllegalArgumentException("You cannot report your own content");
+        }
+
+        boolean alreadyReported = forumReportRepository.existsByReporterUserIdAndTargetTypeAndTargetId(
+                reporterUserId, targetType, targetId);
+        if (alreadyReported) {
+            throw new IllegalArgumentException("You already reported this content");
+        }
+
         ForumReport r = new ForumReport();
         r.setReporterUserId(reporterUserId);
         r.setTargetType(targetType);

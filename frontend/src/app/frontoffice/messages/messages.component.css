@@ -5,20 +5,42 @@
   box-sizing: border-box;
 }
 
-.dm-intro h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #262626;
-  letter-spacing: -0.02em;
+.dm-page--li .dm-hero {
+  margin-bottom: 1.25rem;
 }
 
-.dm-intro p {
-  margin: 0 0 1.25rem;
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: #4a4a4a;
-  max-width: 52rem;
+.dm-hero h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #191919;
+  letter-spacing: -0.03em;
+}
+
+.dm-tagline {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: #5c5c5c;
+  line-height: 1.45;
+}
+
+.dm-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.dm-profile-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #666f7a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dm-input--profile {
+  max-width: 280px;
 }
 
 .dm-shell {
@@ -80,6 +102,22 @@
   margin: 0 0 0.75rem;
 }
 
+.dm-side-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #1f2937;
+  letter-spacing: 0.01em;
+}
+
+.dm-side-title.secondary {
+  margin-top: 1rem;
+}
+
+.dm-search {
+  margin-bottom: 0.65rem;
+}
+
 .dm-tutors {
   display: flex;
   flex-wrap: wrap;
@@ -128,6 +166,10 @@
   font-weight: 600;
   font-size: 0.88rem;
   color: #262626;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .dm-row-preview {
@@ -163,6 +205,10 @@
 .dm-thread-head {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #efefef;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .dm-thread-title {
@@ -214,6 +260,48 @@
   font-weight: 600;
   color: #8e8e8e;
   margin-bottom: 0.15rem;
+}
+
+.dm-role-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+.dm-role-badge.student {
+  background: #e8f4fd;
+  color: #0277bd;
+}
+
+.dm-role-badge.tutor {
+  background: #fce4ec;
+  color: #ad1457;
+}
+
+.dm-role-badge.admin {
+  background: #ede7f6;
+  color: #4527a0;
+}
+
+.dm-status {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.12rem 0.35rem;
+  border-radius: 999px;
+}
+
+.dm-status.online {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.dm-status.away {
+  background: #f5f5f5;
+  color: #757575;
 }
 
 .dm-text {

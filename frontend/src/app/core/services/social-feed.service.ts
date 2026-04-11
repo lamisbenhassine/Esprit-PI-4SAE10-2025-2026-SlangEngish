@@ -27,6 +27,7 @@ export interface FeedPost {
   commentCount: number;
   repostCount: number;
   repostedByViewer: boolean;
+  locked?: boolean;
 }
 
 export interface LikeResponse {

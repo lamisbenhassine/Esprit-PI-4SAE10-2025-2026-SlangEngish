@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { ForumTopicService, ForumTopic } from '../../../core/services/forum-topic.service';
 import { ForumMediaService } from '../../../core/services/forum-media.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { UserProfile, UserProfileService } from '../../../core/services/user-profile.service';
+import { FrontofficeIdentityService } from '../../../core/services/frontoffice-identity.service';
 
 @Component({
   selector: 'app-forum-general',
@@ -18,7 +20,9 @@ export class ForumGeneralComponent implements OnInit {
   newDescription = '';
   newCoverUrl = '';
   coverUploading = false;
-  currentUserId = 1;
+  currentUserId = 2;
+  users: UserProfile[] = [];
+  userById: { [id: number]: UserProfile } = {};
   generalSpaceId: number | null = null;
   
   // Search and filter properties
@@ -36,10 +40,48 @@ export class ForumGeneralComponent implements OnInit {
   constructor(
     private forumTopicService: ForumTopicService,
     private forumMediaService: ForumMediaService,
+    private usersService: UserProfileService,
+    private identity: FrontofficeIdentityService,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
+    this.currentUserId = this.identity.getCurrentUserId();
+    this.usersService.getAll().subscribe({
+      next: list => {
+        this.users = (Array.isArray(list) ? list : []).filter(u => u.id !== 1);
+        this.userById = {};
+        this.users.forEach(u => {
+          if (u.id != null) {
+            this.userById[u.id] = u;
+          }
+        });
+        if (this.currentUserId === 1) {
+          const suggested = this.users.find(u => u.id != null && u.id !== 1)?.id;
+          if (suggested) {
+            this.currentUserId = suggested;
+            this.identity.setCurrentUserId(suggested);
+            this.loadTopics();
+          }
+        }
+      },
+      error: () => {
+        this.users = [];
+        this.userById = {};
+      }
+    });
+    this.loadTopics();
+    this.resolveGeneralSpace();
+  }
+
+  private resolveGeneralSpace(): void {
+    this.forumTopicService.getGeneralSpace().subscribe({
+      next: (space) => this.generalSpaceId = space.id ?? null,
+      error: () => this.generalSpaceId = null
+    });
+  }
+
+  private loadTopics(): void {
     this.loading = true;
     this.forumTopicService.getGeneralTopics(this.currentUserId).subscribe({
       next: (data) => {
@@ -50,12 +92,41 @@ export class ForumGeneralComponent implements OnInit {
       error: () => this.loading = false
     });
 
-    // Best-effort: resolve GENERAL space id for creating posts.
-    // (We keep feed compatible with existing /topics/general endpoint for now.)
-    this.forumTopicService.getGeneralSpace().subscribe({
-      next: (space) => this.generalSpaceId = space.id ?? null,
-      error: () => this.generalSpaceId = null
-    });
+  }
+
+  setCurrentUserId(userId: number): void {
+    const next = Number(userId);
+    if (!next || Number.isNaN(next)) {
+      return;
+    }
+    this.currentUserId = next;
+    this.identity.setCurrentUserId(next);
+    this.loadTopics();
+  }
+
+  authorName(authorId: number | undefined): string {
+    if (authorId == null) {
+      return 'Unknown author';
+    }
+    const u = this.userById[authorId];
+    if (u?.firstName || u?.lastName) {
+      return [u.firstName, u.lastName].filter(Boolean).join(' ');
+    }
+    return 'Member';
+  }
+
+  authorRole(authorId: number | undefined): string {
+    if (authorId == null) {
+      return 'Student';
+    }
+    const r = (this.userById[authorId]?.accountRole || 'STUDENT').toUpperCase();
+    if (r === 'TUTOR') {
+      return 'Tutor';
+    }
+    if (r === 'ADMIN') {
+      return 'Team';
+    }
+    return 'Student';
   }
 
   createTopic(): void {
@@ -76,7 +147,7 @@ export class ForumGeneralComponent implements OnInit {
         this.newDescription = '';
         this.newCoverUrl = '';
         this.creating = false;
-        this.ngOnInit();
+        this.loadTopics();
       },
       error: () => this.creating = false
     });

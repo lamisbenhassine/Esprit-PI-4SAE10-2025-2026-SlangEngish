@@ -34,4 +34,7 @@ public class FeedPostDto {
     private long commentCount;
     private long repostCount;
     private boolean repostedByViewer;
+
+    /** Sujet verrouillé : pas de nouveaux commentaires. */
+    private Boolean locked;
 }

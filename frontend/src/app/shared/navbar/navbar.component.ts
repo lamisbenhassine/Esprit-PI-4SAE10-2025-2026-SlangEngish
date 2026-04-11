@@ -1,7 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy } from '@angular/core';
 import { CartService } from '../../core/services/cart.service';
 import { WebSocketService } from '../../core/services/websocket.service';
-import { Observable, Subscription } from 'rxjs';
+import { MessagingUnreadService } from '../../core/services/messaging-unread.service';
+import { Observable, Subscription, combineLatest } from 'rxjs';
 import { Router } from '@angular/router';
 
 @Component({
@@ -16,20 +17,30 @@ export class NavbarComponent implements OnInit, OnDestroy {
   @Input() showSidebarToggle: boolean = true;
   /** When true, listens to admin-only notifications instead of public ones */
   @Input() isAdmin: boolean = false;
+  /** Affiche le lien vers /backoffice/tuteur-messages (front-office et back-office admin). */
+  @Input() showTutorMessagesShortcut = false;
   @Output() sidebarToggle = new EventEmitter<void>();
   @Output() logout = new EventEmitter<void>();
 
   cartCount$: Observable<number>;
   notifications: any[] = [];
   unreadCount = 0;
+  /** Messages privés (DM) non lus — compteur messagerie. */
+  dmUnreadCount = 0;
   private wsSub?: Subscription;
+  private dmUnreadSub?: Subscription;
 
   constructor(
     private cartService: CartService,
     private wsService: WebSocketService,
+    private messagingUnread: MessagingUnreadService,
     private router: Router
   ) {
     this.cartCount$ = this.cartService.getCartCount();
+  }
+
+  get totalBellBadge(): number {
+    return this.unreadCount + this.dmUnreadCount;
   }
 
   ngOnInit(): void {
@@ -51,10 +62,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
         if (this.notifications.length > 10) this.notifications.pop();
       }
     });
+
+    this.dmUnreadSub = combineLatest([
+      this.messagingUnread.tutorUnread$,
+      this.messagingUnread.studentUnread$
+    ]).subscribe(([t, s]) => {
+      this.dmUnreadCount = this.isAdmin ? t : s;
+    });
   }
 
   ngOnDestroy() {
     this.wsSub?.unsubscribe();
+    this.dmUnreadSub?.unsubscribe();
   }
 
   markAsRead() {

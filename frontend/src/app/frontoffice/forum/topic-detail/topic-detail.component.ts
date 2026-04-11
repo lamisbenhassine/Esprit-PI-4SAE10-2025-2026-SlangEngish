@@ -3,7 +3,6 @@ import { ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ForumTopicService, ForumTopic } from '../../../core/services/forum-topic.service';
 import { ForumMessageService, ForumMessage, CreateMessageRequest } from '../../../core/services/forum-message.service';
-import { ForumBlockService } from '../../../core/services/forum-block.service';
 import { ForumReportService } from '../../../core/services/forum-report.service';
 import { ForumMediaService } from '../../../core/services/forum-media.service';
 import { UserProfile, UserProfileService } from '../../../core/services/user-profile.service';
@@ -11,7 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
 
 export interface ForumAttachment {
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'audio';
   url: string;
 }
 
@@ -30,7 +29,7 @@ export class TopicDetailComponent implements OnInit {
   editingMessageId: number | null = null;
   editContent = '';
   editAttachmentsJson = '';
-  currentUserId = 1;
+  currentUserId = 2;
 
   /** Médias optionnels pour le prochain message / réponse */
   composeImageUrl = '';
@@ -39,12 +38,13 @@ export class TopicDetailComponent implements OnInit {
 
   /** Cache prénom / nom / rôle par id utilisateur (microservice user). */
   userById: { [userId: number]: UserProfile } = {};
+  reportedTopicIds = new Set<number>();
+  reportedMessageIds = new Set<number>();
 
   constructor(
     private route: ActivatedRoute,
     private topicService: ForumTopicService,
     private messageService: ForumMessageService,
-    private blockService: ForumBlockService,
     private reportService: ForumReportService,
     private mediaService: ForumMediaService,
     private users: UserProfileService,
@@ -123,7 +123,7 @@ export class TopicDetailComponent implements OnInit {
     if (u?.firstName?.trim() || u?.lastName?.trim()) {
       return [u.firstName, u.lastName].filter(Boolean).join(' ');
     }
-    return `Utilisateur #${authorId}`;
+    return `User #${authorId}`;
   }
 
   userRoleLabel(authorId: number | null | undefined): string | null {
@@ -132,13 +132,13 @@ export class TopicDetailComponent implements OnInit {
     }
     const r = (this.userById[authorId]?.accountRole || '').toUpperCase();
     if (r === 'TUTOR') {
-      return 'Tuteur';
+      return 'Tutor';
     }
     if (r === 'ADMIN') {
-      return 'Équipe';
+      return 'Team';
     }
     if (r === 'STUDENT') {
-      return 'Étudiant';
+      return 'Student';
     }
     return null;
   }
@@ -232,7 +232,7 @@ export class TopicDetailComponent implements OnInit {
           this.composeImageUrl = res.url;
         }
         this.composeUploading = false;
-        this.snackBar.open('Média ajouté', 'OK', { duration: 2000 });
+        this.snackBar.open('Media added.', 'OK', { duration: 2000 });
         input.value = '';
       },
       error: err => {
@@ -256,7 +256,7 @@ export class TopicDetailComponent implements OnInit {
     };
     this.messageService.createMessage(req).subscribe({
       next: () => {
-        this.snackBar.open('Message publié', 'OK', { duration: 3000 });
+        this.snackBar.open('Message posted.', 'OK', { duration: 3000 });
         this.newMessageContent = '';
         this.clearComposeMedia();
         this.loadMessages(this.topic!.id!);
@@ -265,7 +265,7 @@ export class TopicDetailComponent implements OnInit {
         const msg =
           err?.error?.error ||
           (typeof err?.error === 'string' ? err.error : null) ||
-          'Erreur envoi';
+          'Send error.';
         this.snackBar.open(msg, 'OK', { duration: 5000 });
       }
     });
@@ -289,14 +289,14 @@ export class TopicDetailComponent implements OnInit {
     };
     this.messageService.createMessage(req).subscribe({
       next: () => {
-        this.snackBar.open('Réponse envoyée', 'OK', { duration: 3000 });
+        this.snackBar.open('Reply sent.', 'OK', { duration: 3000 });
         this.replyingTo = null;
         this.replyContent = '';
         this.clearComposeMedia();
         this.loadReplies(parentId);
       },
       error: err => {
-        const msg = err?.error?.error || 'Erreur envoi';
+        const msg = err?.error?.error || 'Send error.';
         this.snackBar.open(msg, 'OK', { duration: 5000 });
       }
     });
@@ -315,51 +315,44 @@ export class TopicDetailComponent implements OnInit {
     const att = this.editAttachmentsJson.trim() || null;
     this.messageService.updateMessage(messageId, this.editContent, att).subscribe({
       next: () => {
-        this.snackBar.open('Message mis à jour', 'OK', { duration: 3000 });
+        this.snackBar.open('Message updated.', 'OK', { duration: 3000 });
         this.editingMessageId = null;
         this.loadMessages(this.topic!.id!);
       },
-      error: () => this.snackBar.open('Erreur mise à jour', 'OK', { duration: 3000 })
+      error: () => this.snackBar.open('Update failed.', 'OK', { duration: 3000 })
     });
   }
 
   deleteMessage(messageId: number) {
-    if (confirm('Supprimer ce message ?')) {
+    if (confirm('Delete this message?')) {
       this.messageService.deleteMessage(messageId).subscribe({
         next: () => {
-          this.snackBar.open('Supprimé', 'OK', { duration: 3000 });
+          this.snackBar.open('Deleted.', 'OK', { duration: 3000 });
           this.loadMessages(this.topic!.id!);
         },
-        error: () => this.snackBar.open('Erreur suppression', 'OK', { duration: 3000 })
+        error: () => this.snackBar.open('Delete failed.', 'OK', { duration: 3000 })
       });
     }
-  }
-
-  blockUser(targetAuthorId: number) {
-    if (targetAuthorId === this.currentUserId) {
-      return;
-    }
-    if (!confirm('Masquer tous les messages de cet utilisateur ?')) {
-      return;
-    }
-    this.blockService.block(this.currentUserId, targetAuthorId).subscribe({
-      next: () => {
-        this.snackBar.open('Utilisateur bloqué', 'OK', { duration: 3000 });
-        this.loadMessages(this.topic!.id!);
-        this.loadTopic(this.topic!.id!);
-      },
-      error: () => this.snackBar.open('Déjà bloqué ou erreur', 'OK', { duration: 3000 })
-    });
   }
 
   reportTopic() {
     if (!this.topic?.id) {
       return;
     }
-    const reason = prompt('Raison du signalement (optionnel) :') ?? '';
+    if (!this.canReportTopic()) {
+      this.snackBar.open('You can only report content from another user.', 'OK', { duration: 3000 });
+      return;
+    }
+    const reason = prompt('Report reason (optional):') ?? '';
     this.reportService.submit(this.currentUserId, 'TOPIC', this.topic.id, reason).subscribe({
-      next: () => this.snackBar.open('Signalement envoyé', 'OK', { duration: 3000 }),
-      error: () => this.snackBar.open('Erreur signalement', 'OK', { duration: 3000 })
+      next: () => {
+        this.reportedTopicIds.add(this.topic!.id!);
+        this.snackBar.open('Report submitted.', 'OK', { duration: 3000 });
+      },
+      error: err => {
+        const msg = err?.error?.error || 'Report failed.';
+        this.snackBar.open(msg, 'OK', { duration: 3000 });
+      }
     });
   }
 
@@ -367,10 +360,41 @@ export class TopicDetailComponent implements OnInit {
     if (!m.id) {
       return;
     }
-    const reason = prompt('Raison du signalement :') ?? '';
+    if (!this.canReportMessage(m)) {
+      this.snackBar.open('You can only report content from another user.', 'OK', { duration: 3000 });
+      return;
+    }
+    const reason = prompt('Report reason:') ?? '';
     this.reportService.submit(this.currentUserId, 'MESSAGE', m.id, reason).subscribe({
-      next: () => this.snackBar.open('Signalement envoyé', 'OK', { duration: 3000 }),
-      error: () => this.snackBar.open('Erreur signalement', 'OK', { duration: 3000 })
+      next: () => {
+        this.reportedMessageIds.add(m.id!);
+        this.snackBar.open('Report submitted.', 'OK', { duration: 3000 });
+      },
+      error: err => {
+        const msg = err?.error?.error || 'Report failed.';
+        this.snackBar.open(msg, 'OK', { duration: 3000 });
+      }
     });
+  }
+
+  canReportTopic(): boolean {
+    const topicId = this.topic?.id;
+    if (!topicId || !this.topic?.authorId) {
+      return false;
+    }
+    if (this.topic.authorId === this.currentUserId) {
+      return false;
+    }
+    return !this.reportedTopicIds.has(topicId);
+  }
+
+  canReportMessage(m: ForumMessage): boolean {
+    if (!m.id || !m.authorId) {
+      return false;
+    }
+    if (m.authorId === this.currentUserId) {
+      return false;
+    }
+    return !this.reportedMessageIds.has(m.id);
   }
 }

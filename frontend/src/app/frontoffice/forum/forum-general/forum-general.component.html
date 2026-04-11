@@ -1,35 +1,38 @@
+<app-forum-selection-assist>
 <div class="fo-forum">
   <header class="fo-hero">
     <div class="fo-hero-inner">
       <span class="fo-kicker">Slang English · Communauté</span>
       <h1>Forum</h1>
-      <p>Échangez, partagez des ressources (images, vidéos) et progressez avec d’autres apprenants.</p>
+      <p>Discuss, share resources (images, videos), and improve with other learners.</p>
     </div>
   </header>
 
+  <app-forum-tutors-bar></app-forum-tutors-bar>
+
   <section class="fo-compose">
-    <h2>Nouvelle discussion</h2>
+    <h2>New Discussion</h2>
     <mat-form-field appearance="outline" class="w100">
-      <mat-label>Titre</mat-label>
-      <input matInput [(ngModel)]="newTitle" placeholder="Sujet de votre message" />
+      <mat-label>Title</mat-label>
+      <input matInput [(ngModel)]="newTitle" placeholder="Discussion title" />
     </mat-form-field>
     <mat-form-field appearance="outline" class="w100">
       <mat-label>Description</mat-label>
-      <textarea matInput rows="3" [(ngModel)]="newDescription" placeholder="Détails…"></textarea>
+      <textarea matInput rows="3" [(ngModel)]="newDescription" placeholder="Details..."></textarea>
     </mat-form-field>
     <mat-form-field appearance="outline" class="w100">
-      <mat-label>Image de couverture (URL optionnelle)</mat-label>
+      <mat-label>Cover image (optional URL)</mat-label>
       <input matInput [(ngModel)]="newCoverUrl" />
     </mat-form-field>
     <div class="fo-compose-actions">
       <input type="file" accept="image/*" #coverIn hidden (change)="onCoverFile($event)" />
       <button mat-stroked-button type="button" (click)="coverIn.click()" [disabled]="coverUploading">
-        <mat-icon>image</mat-icon> Télécharger une image
+        <mat-icon>image</mat-icon> Upload an image
       </button>
       <button mat-flat-button color="primary" type="button"
         (click)="createTopic()"
         [disabled]="creating || !newTitle.trim() || !newDescription.trim() || generalSpaceId == null">
-        Publier
+        Publish
       </button>
     </div>
   </section>
@@ -40,32 +43,32 @@
 
   <div *ngIf="filteredTopics.length === 0 && !loading && topics.length === 0" class="fo-empty">
     <mat-icon>forum</mat-icon>
-    <h3>Aucun sujet pour le moment</h3>
-    <p>Lancez la première discussion ci-dessus.</p>
+    <h3>No topics yet</h3>
+    <p>Start the first discussion above.</p>
   </div>
 
   <div *ngIf="filteredTopics.length === 0 && !loading && topics.length > 0" class="fo-empty">
     <mat-icon>search_off</mat-icon>
-    <h3>Aucun résultat</h3>
-    <button mat-button (click)="searchQuery = ''; onSearchChange()">Réinitialiser</button>
+    <h3>No results</h3>
+    <button mat-button (click)="searchQuery = ''; onSearchChange()">Reset</button>
   </div>
 
   <section class="fo-filters" *ngIf="!loading && topics.length > 0">
     <mat-form-field appearance="outline" class="fo-search">
-      <mat-label>Rechercher</mat-label>
+      <mat-label>Search</mat-label>
       <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" />
       <mat-icon matPrefix>search</mat-icon>
     </mat-form-field>
     <mat-form-field appearance="outline" class="fo-sort">
-      <mat-label>Trier</mat-label>
+      <mat-label>Sort</mat-label>
       <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
         <mat-option value="createdAt">Date</mat-option>
-        <mat-option value="title">Titre</mat-option>
-        <mat-option value="category">Catégorie</mat-option>
-        <mat-option value="views">Vues</mat-option>
+        <mat-option value="title">Title</mat-option>
+        <mat-option value="category">Category</mat-option>
+        <mat-option value="views">Views</mat-option>
       </mat-select>
     </mat-form-field>
-    <button mat-icon-button (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()" matTooltip="Ordre">
+    <button mat-icon-button (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()" matTooltip="Order">
       <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
     </button>
   </section>
@@ -81,13 +84,18 @@
       <div class="fo-card-body">
         <div class="fo-card-tags">
           <span class="tag">{{ topic.category }}</span>
-          <span class="tag pin" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> À la une</span>
+          <span class="tag pin" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> Pinned</span>
           <span class="tag soft">{{ topic.createdAt | date : 'mediumDate' }}</span>
         </div>
         <h3>{{ topic.title }}</h3>
         <p>{{ topic.description | slice : 0 : 160 }}{{ (topic.description || '').length > 160 ? '…' : '' }}</p>
         <footer>
-          <span class="meta"><mat-icon>person</mat-icon>#{{ topic.authorId }}</span>
+          <span class="meta author">
+            <mat-icon>person</mat-icon>{{ authorName(topic.authorId) }}
+          </span>
+          <span class="author-badge student" *ngIf="authorRole(topic.authorId) === 'Student'">Student</span>
+          <span class="author-badge tutor" *ngIf="authorRole(topic.authorId) === 'Tutor'">Tutor</span>
+          <span class="author-badge admin" *ngIf="authorRole(topic.authorId) === 'Team'">Team</span>
           <span class="meta"><mat-icon>visibility</mat-icon>{{ topic.views }}</span>
         </footer>
       </div>
@@ -106,3 +114,4 @@
     </button>
   </div>
 </div>
+</app-forum-selection-assist>

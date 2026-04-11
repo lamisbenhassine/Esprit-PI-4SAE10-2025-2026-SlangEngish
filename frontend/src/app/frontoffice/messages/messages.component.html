@@ -1,87 +1,85 @@
-<div class="dm-page">
-  <header class="dm-intro">
-    <h1>Discussions privées</h1>
-    <p>
-      <strong>Collègues</strong> : uniquement entre apprenants (sans tuteur).
-      <strong>Tuteur</strong> : échange réservé à une paire apprenant ↔ formateur.
-      Le <strong>forum général</strong> reste public ; les forums <strong>A1–C2</strong> sont pour les abonnés.
-    </p>
+<div class="dm-page dm-page--li">
+  <header class="dm-hero">
+    <h1>Messagerie</h1>
+    <p class="dm-tagline">Messages privés avec les tuteurs de la plateforme.</p>
+    <div class="dm-profile-row">
+      <label class="dm-profile-label">Profil actif</label>
+      <select class="dm-input dm-input--profile" [ngModel]="currentUserId" (ngModelChange)="setCurrentUserId($event)">
+        <option *ngFor="let u of availableUsers" [ngValue]="u.id">
+          {{ u.firstName }} {{ u.lastName }}
+        </option>
+      </select>
+    </div>
   </header>
 
   <div class="dm-shell">
     <aside class="dm-aside">
-      <mat-tab-group (selectedTabChange)="onTabChange($event)">
-        <mat-tab label="Collègues">
-          <div class="dm-tab-inner">
-            <div class="dm-new">
-              <label>Ouvrir avec l’ID utilisateur</label>
-              <div class="dm-new-row">
-                <input class="dm-input" type="number" [(ngModel)]="peerOtherId" placeholder="ID collègue" />
-                <button mat-flat-button color="primary" type="button" (click)="openPeer()" [disabled]="loading">
-                  Ouvrir
-                </button>
-              </div>
-            </div>
-            <div class="dm-list">
-              <button
-                type="button"
-                class="dm-row"
-                *ngFor="let row of inboxPeer"
-                [class.active]="selected?.id === row.id"
-                (click)="openSummary(row)">
-                <span class="dm-row-user">Utilisateur {{ row.otherUserId }}</span>
-                <span class="dm-row-preview">{{ row.lastMessagePreview || '…' }}</span>
-              </button>
-              <p class="dm-empty" *ngIf="!inboxPeer.length">Aucune conversation.</p>
-            </div>
-          </div>
-        </mat-tab>
-        <mat-tab label="Avec un tuteur">
-          <div class="dm-tab-inner">
-            <p class="dm-hint">Choisissez un tuteur (compte avec rôle TUTOR).</p>
-            <div class="dm-tutors">
-              <button
-                type="button"
-                mat-stroked-button
-                class="dm-tutor-chip"
-                *ngFor="let t of tutors"
-                (click)="openWithTutor(t)"
-                [disabled]="loading">
-                {{ t.firstName }} {{ t.lastName }} · #{{ t.id }}
-              </button>
-              <p class="dm-empty" *ngIf="!tutors.length">Aucun tuteur listé. Définissez accountRole=TUTOR en base.</p>
-            </div>
-            <div class="dm-list dm-list-tight">
-              <button
-                type="button"
-                class="dm-row"
-                *ngFor="let row of inboxTutor"
-                [class.active]="selected?.id === row.id"
-                (click)="openSummary(row)">
-                <span class="dm-row-user">Tuteur / binôme {{ row.otherUserId }}</span>
-                <span class="dm-row-preview">{{ row.lastMessagePreview || '…' }}</span>
-              </button>
-            </div>
-          </div>
-        </mat-tab>
-      </mat-tab-group>
+      <div class="dm-tab-inner">
+        <h3 class="dm-side-title">Tuteurs</h3>
+        <input class="dm-input dm-search" [(ngModel)]="tutorSearch" placeholder="Rechercher un tuteur…" />
+        <div class="dm-list">
+          <button
+            type="button"
+            class="dm-row"
+            *ngFor="let t of filteredTutors()"
+            (click)="openTutorConversation(t)"
+            [disabled]="loading">
+            <span class="dm-row-user">
+              {{ t.firstName }} {{ t.lastName }}
+              <span class="dm-role-badge tutor">Tuteur</span>
+              <span class="dm-status online" *ngIf="tutorOnline(t)">En ligne</span>
+              <span class="dm-status away" *ngIf="!tutorOnline(t)">Hors ligne</span>
+            </span>
+          </button>
+          <p class="dm-empty" *ngIf="!filteredTutors().length">Aucun tuteur disponible.</p>
+        </div>
+
+        <h3 class="dm-side-title secondary">Conversations</h3>
+        <div class="dm-list dm-list-tight">
+          <button
+            type="button"
+            class="dm-row"
+            *ngFor="let row of inboxTutor"
+            [class.active]="selected?.id === row.id"
+            (click)="openSummary(row)">
+            <span class="dm-row-user">
+              {{ userName(row.otherUserId) }}
+              <span class="dm-role-badge student" *ngIf="userRole(row.otherUserId) === 'Student'">Étudiant</span>
+              <span class="dm-role-badge tutor" *ngIf="userRole(row.otherUserId) === 'Tutor'">Tuteur</span>
+              <span class="dm-role-badge admin" *ngIf="userRole(row.otherUserId) === 'Team'">Équipe</span>
+            </span>
+            <span class="dm-row-preview">{{ row.lastMessagePreview || '…' }}</span>
+          </button>
+          <p class="dm-empty" *ngIf="!inboxTutor.length">Aucune conversation.</p>
+        </div>
+      </div>
     </aside>
 
     <section class="dm-thread" *ngIf="selected">
       <div class="dm-thread-head">
-        <span class="dm-thread-title">Conversation · {{ kindLabel(selected.kind) }} · #{{ selected.otherUserId }}</span>
+        <span class="dm-thread-title">{{ userName(selected.otherUserId) }}</span>
+        <span class="dm-role-badge tutor" *ngIf="userRole(selected.otherUserId) === 'Tutor'">Tuteur</span>
+        <span class="dm-role-badge student" *ngIf="userRole(selected.otherUserId) === 'Student'">Étudiant</span>
       </div>
       <div class="dm-bubbles">
         <div *ngFor="let m of thread" class="dm-bubble-wrap" [class.own]="isOwn(m)">
           <div class="dm-bubble">
-            <span class="dm-meta" *ngIf="!isOwn(m)">#{{ m.senderId }}</span>
+            <span class="dm-meta" *ngIf="!isOwn(m)">
+              {{ userName(m.senderId) }}
+            </span>
             <p class="dm-text">{{ m.content }}</p>
             <span class="dm-time">{{ m.createdAt | date : 'short' }}</span>
           </div>
         </div>
       </div>
       <div class="dm-compose">
-        <textarea class="dm-textarea" rows="2" [(ngModel)]="draft" placeholder="Votre message…"></textarea>
+        <textarea
+          class="dm-textarea"
+          rows="2"
+          [(ngModel)]="draft"
+          placeholder="Écrire un message…"
+          (keydown.control.enter)="send()"
+          (keydown.meta.enter)="send()"></textarea>
         <button mat-flat-button color="primary" type="button" (click)="send()" [disabled]="!draft.trim()">
           Envoyer
         </button>
@@ -89,7 +87,7 @@
     </section>
 
     <section class="dm-thread dm-placeholder" *ngIf="!selected">
-      <p>Sélectionnez ou créez une conversation.</p>
+      <p>Sélectionnez une conversation ou un tuteur.</p>
     </section>
   </div>
 </div>

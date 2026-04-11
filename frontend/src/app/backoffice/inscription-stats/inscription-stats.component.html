@@ -44,7 +44,7 @@
           <div class="kpi-icon"><mat-icon>shopping_cart</mat-icon></div>
           <div class="kpi-body">
             <span class="kpi-label">Nouvelles commandes (aujourd’hui)</span>
-            <span class="kpi-value">{{ data.newSubscriptionsToday ?? 0 }}</span>
+            <span class="kpi-value">{{ data.newSubscriptionsToday || 0 }}</span>
           </div>
         </mat-card-content>
       </mat-card>
@@ -76,9 +76,9 @@
         </mat-card-title>
         <mat-card-content>
           <ul class="stat-list">
-            <li><span>Réussis</span><strong>{{ data.completedPayments ?? 0 }}</strong></li>
-            <li><span>En attente</span><strong>{{ data.pendingPayments ?? 0 }}</strong></li>
-            <li><span>Échoués</span><strong>{{ data.failedPayments ?? 0 }}</strong></li>
+            <li><span>Réussis</span><strong>{{ data.completedPayments || 0 }}</strong></li>
+            <li><span>En attente</span><strong>{{ data.pendingPayments || 0 }}</strong></li>
+            <li><span>Échoués</span><strong>{{ data.failedPayments || 0 }}</strong></li>
             <li><span>Plan le plus populaire</span><strong>{{ data.mostPopularPlan || '—' }}</strong></li>
           </ul>
         </mat-card-content>
