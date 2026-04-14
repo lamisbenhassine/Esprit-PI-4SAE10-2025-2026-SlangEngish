@@ -4,8 +4,6 @@ import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SubscriptionPlanService } from '../../../core/services/subscription-plan.service';
 import { PlacementService, CertificateAnalysis } from '../../../core/services/placement.service';
-import { UserProfileService } from '../../../core/services/user-profile.service';
-import { FrontofficeIdentityService } from '../../../core/services/frontoffice-identity.service';
 
 @Component({
     selector: 'app-placement-form',
@@ -54,14 +52,6 @@ export class PlacementFormComponent implements OnInit {
             description: 'Express ideas fluently without much obvious searching for expressions.',
             examplePrice: '79.99 TND',
             benefits: ['Professional Writing', 'Subtle Meanings', 'Academic Success']
-        },
-        {
-            value: 'C2',
-            label: 'Mastery (C2)',
-            icon: 'workspace_premium',
-            description: 'Understand virtually everything heard or read. Summarize from multiple sources.',
-            examplePrice: '89.99 TND',
-            benefits: ['Near-native precision', 'Nuanced expression', 'Specialized domains']
         }
     ];
 
@@ -73,9 +63,7 @@ export class PlacementFormComponent implements OnInit {
         private router: Router,
         private subscriptionPlanService: SubscriptionPlanService,
         private placementService: PlacementService,
-        private snackBar: MatSnackBar,
-        private userProfile: UserProfileService,
-        private identity: FrontofficeIdentityService
+        private snackBar: MatSnackBar
     ) {
         this.placementForm = this.fb.group({
             firstName: ['', Validators.required],
@@ -127,16 +115,27 @@ export class PlacementFormComponent implements OnInit {
             this.placementService.uploadCertificate(this.selectedCertificate).subscribe({
                 next: (analysis) => {
                     this.analysisResult = analysis;
-                    const detectedLevel =
-                        analysis.detectedLevel || this.detectLevelFromFileName(this.selectedCertificate!.name);
-                    const baseParams: Record<string, string> = {};
+                    const detectedLevel = analysis.detectedLevel || this.detectLevelFromFileName(this.selectedCertificate!.name);
+                    const baseParams: any = {};
                     if (detectedLevel) {
                         baseParams.level = detectedLevel;
                     }
                     if (analysis.recommendedPlanId) {
-                        baseParams.planId = String(analysis.recommendedPlanId);
+                        baseParams.planId = analysis.recommendedPlanId;
                     }
-                    this.persistLevelThenNavigate(detectedLevel, baseParams);
+                    // If backend gave at least a level or plan, use it; otherwise, fall back to filename only.
+                    if (Object.keys(baseParams).length > 0) {
+                        this.router.navigate(['/frontoffice/inscription/offers'], { queryParams: baseParams });
+                    } else {
+                        const inferred = this.detectLevelFromFileName(this.selectedCertificate!.name);
+                        if (inferred) {
+                            this.router.navigate(['/frontoffice/inscription/offers'], {
+                                queryParams: { level: inferred }
+                            });
+                        } else {
+                            this.router.navigate(['/frontoffice/inscription/offers']);
+                        }
+                    }
                 },
                 error: () => {
                     // If upload fails, fall back to filename-only inference without showing an error snackbar.
@@ -144,20 +143,24 @@ export class PlacementFormComponent implements OnInit {
                     if (inferredLevel) {
                         this.subscriptionPlanService.getRecommendation({ level: inferredLevel }).subscribe({
                             next: (rec) => {
-                                const queryParams: Record<string, string> = { level: inferredLevel };
+                                const queryParams: any = { level: inferredLevel };
                                 if (rec.recommendedPlanId) {
-                                    queryParams.planId = String(rec.recommendedPlanId);
+                                    queryParams.planId = rec.recommendedPlanId;
                                 }
-                                this.persistLevelThenNavigate(inferredLevel, queryParams);
+                                this.router.navigate(['/frontoffice/inscription/offers'], { queryParams });
                             },
                             error: () => {
-                                this.persistLevelThenNavigate(inferredLevel, { level: inferredLevel });
+                                this.router.navigate(['/frontoffice/inscription/offers'], {
+                                    queryParams: { level: inferredLevel }
+                                });
                             }
                         });
                     } else {
-                        this.navigateOffersAndEnable({});
+                        this.router.navigate(['/frontoffice/inscription/offers']);
                     }
                 }
+            }).add(() => {
+                this.placementForm.enable();
             });
             return;
         }
@@ -168,39 +171,11 @@ export class PlacementFormComponent implements OnInit {
 
     private detectLevelFromFileName(fileName: string): string | null {
         const upper = fileName.toUpperCase();
-        if (upper.includes('C2')) return 'C2';
         if (upper.includes('C1')) return 'C1';
         if (upper.includes('B2')) return 'B2';
         if (upper.includes('B1')) return 'B1';
         if (upper.includes('A2')) return 'A2';
         if (upper.includes('A1')) return 'A1';
         return null;
-    }
-
-    /** Enregistre le niveau sur le microservice user pour le forum / profil, puis redirige. */
-    private persistLevelThenNavigate(level: string | null, queryParams: Record<string, string>): void {
-        if (!level) {
-            this.navigateOffersAndEnable(queryParams);
-            return;
-        }
-        this.userProfile.patchEnglishLevel(this.identity.getCurrentUserId(), level).subscribe({
-            next: () => this.navigateOffersAndEnable(queryParams),
-            error: () => {
-                this.snackBar.open(
-                    'Niveau non enregistré sur le profil (service user arrêté ?). Le forum peut rester sur l’ancien niveau.',
-                    'OK',
-                    { duration: 6000 }
-                );
-                this.navigateOffersAndEnable(queryParams);
-            }
-        });
-    }
-
-    private navigateOffersAndEnable(queryParams: Record<string, string>): void {
-        const extras =
-            queryParams && Object.keys(queryParams).length > 0 ? { queryParams } : undefined;
-        void this.router
-            .navigate(['/frontoffice/inscription/offers'], extras)
-            .finally(() => this.placementForm.enable());
     }
 }

@@ -35,11 +35,6 @@ export class UserProfileService {
     );
   }
 
-  /** Met à jour uniquement le niveau CECRL (certificat / placement). */
-  patchEnglishLevel(id: number, englishLevel: string): Observable<UserProfile> {
-    return this.http.patch<UserProfile>(`${API}/${id}/english-level`, { englishLevel });
-  }
-
   getById(id: number): Observable<UserProfile> {
     return this.http.get<UserProfile>(`${API}/${id}`).pipe(
       catchError(() => {
