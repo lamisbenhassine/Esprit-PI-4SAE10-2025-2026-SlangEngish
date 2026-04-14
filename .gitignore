@@ -1,0 +1,41 @@
+# --- Node / Angular (frontend) ---
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+frontend/dist/
+frontend/.angular/
+frontend/out-tsc/
+frontend/tmp/
+
+# --- Java / Maven (backend) ---
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+
+# --- Env & secrets ---
+.env
+.env.*
+!.env.example
+
+# --- OS & editors ---
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+
+# --- Logs & archives ---
+*.log
+*.zip
+*.mp4
+
+# --- Misc ---
+build/
+dist/
+coverage/

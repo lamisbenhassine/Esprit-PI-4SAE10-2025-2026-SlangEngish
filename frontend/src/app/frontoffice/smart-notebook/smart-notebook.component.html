@@ -1,0 +1,414 @@
+<div class="sn-root">
+  <div class="sn-container">
+    <header class="sn-hero">
+      <div class="sn-hero-glow"></div>
+      <div class="sn-hero-inner">
+        <div class="sn-badge"><mat-icon>auto_awesome</mat-icon> Smart Notebook</div>
+        <h1>Think clearer. Write smarter.</h1>
+        <p>Grammar, summaries, smart definitions, dictate, read aloud, and an AI pronunciation coach — powered by your local Ollama where noted.</p>
+      </div>
+    </header>
+
+    <mat-tab-group [(selectedIndex)]="tabIndex" class="sn-tabs" animationDuration="200ms">
+      <mat-tab label="Notebook">
+        <div class="sn-layout">
+          <aside class="sn-rail">
+            <div class="sn-rail-head">
+              <div class="sn-rail-title">
+                <span class="sn-rail-title-text">Pages</span>
+                <span class="sn-rail-count">{{ notes.length }}</span>
+              </div>
+              <button mat-raised-button color="primary" class="sn-new" (click)="newNote()">
+                <mat-icon>note_add</mat-icon> New page
+              </button>
+            </div>
+
+            <div class="sn-rail-list" *ngIf="!loading && notes?.length">
+              <button type="button" class="sn-note-pill" *ngFor="let n of notes"
+                      [class.active]="selected?.id === n.id" (click)="selectNote(n)">
+                <span class="pill-title">{{ n.title }}</span>
+                <span class="pill-meta">{{ n.updatedAt | date:'short' }}</span>
+              </button>
+            </div>
+
+            <div class="sn-empty-rail" *ngIf="!loading && !notes?.length">
+              <mat-icon>auto_stories</mat-icon>
+              <p>No pages yet. Create your first note to start.</p>
+            </div>
+
+            <div class="sn-loading" *ngIf="loading"><mat-icon class="spin">refresh</mat-icon></div>
+          </aside>
+
+          <main class="sn-paper">
+            <div class="sn-paper-head">
+              <mat-form-field appearance="outline" class="sn-title-field">
+                <mat-label>Title</mat-label>
+                <input matInput [(ngModel)]="titleDraft" placeholder="Give this page a name">
+              </mat-form-field>
+
+              <div class="sn-primary-actions">
+                <button mat-flat-button color="primary" (click)="saveNote()">
+                  <mat-icon>save</mat-icon> Save
+                </button>
+                <button mat-stroked-button type="button" (click)="shareSelectedNote()" *ngIf="selected?.id && !selected?.shared"
+                        matTooltip="Share this note to other students">
+                  <mat-icon>ios_share</mat-icon> Share
+                </button>
+                <button mat-stroked-button type="button" (click)="unshareSelectedNote()" *ngIf="selected?.id && selected?.shared"
+                        matTooltip="Remove from shared space">
+                  <mat-icon>lock</mat-icon> Unshare
+                </button>
+                <button mat-icon-button color="warn" (click)="deleteNote()" *ngIf="selected?.id" matTooltip="Delete">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="sn-tool-row">
+              <button mat-stroked-button (click)="runGrammar()" matTooltip="Local Ollama first, then LanguageTool online">
+                <mat-icon>spellcheck</mat-icon> Grammar
+              </button>
+              <button mat-stroked-button (click)="runSummarize()" matTooltip="Summary via Ollama when available">
+                <mat-icon>summarize</mat-icon> Summary
+              </button>
+              <button mat-stroked-button type="button" (click)="makeBubbleFromSelection(noteEditor)"
+                      matTooltip="Select text in the note, then make it a bubble">
+                <mat-icon>chat_bubble</mat-icon> Make bubble
+              </button>
+              <button mat-stroked-button type="button" (click)="removeSelectedBubble()" [disabled]="bubbleSelectedIndex == null"
+                      matTooltip="Remove the selected bubble">
+                <mat-icon>delete</mat-icon> Remove bubble
+              </button>
+              <button mat-stroked-button [color]="micActive && micRoute === 'dictate' ? 'warn' : 'primary'" (click)="toggleDictate()"
+                      matTooltip="Speech-to-text into your note (unchanged)">
+                <mat-icon>{{ micActive && micRoute === 'dictate' ? 'mic_off' : 'mic' }}</mat-icon>
+                {{ micActive && micRoute === 'dictate' ? 'Stop' : 'Dictate' }}
+              </button>
+              <button mat-stroked-button [color]="speaking ? 'warn' : 'primary'" (click)="toggleReadAloud()"
+                      matTooltip="Text-to-speech: read title + note (browser)">
+                <mat-icon>{{ speaking ? 'stop_circle' : 'volume_up' }}</mat-icon>
+                {{ speaking ? 'Stop' : 'Listen' }}
+              </button>
+              <button mat-stroked-button type="button" (click)="speakSelection(noteEditor)"
+                      matTooltip="Read only the text you highlighted in the note">
+                <mat-icon>short_text</mat-icon> Selection
+              </button>
+            </div>
+
+            <textarea #noteEditor class="sn-editor" [(ngModel)]="contentDraft" rows="18"
+                      placeholder="Start writing… Your lines stay private to your account."></textarea>
+
+            <section class="sn-bubble-editor">
+              <div class="sn-bubbles" *ngIf="bubbles.length; else noBubbles">
+                <button type="button" class="sn-bubble"
+                        *ngFor="let b of bubbles; let i = index"
+                        [class.active]="bubbleSelectedIndex === i"
+                        (click)="selectBubble(i)"
+                        [style.--sn-bubble-accent]="bubbleAccent(i)">
+                  <span class="sn-bubble-idx">{{ i + 1 }}</span>
+                  <span class="sn-bubble-text">{{ b }}</span>
+                </button>
+              </div>
+              <ng-template #noBubbles>
+                <div class="sn-bubbles-empty">
+                  <mat-icon>chat_bubble_outline</mat-icon>
+                  <p>Select text in your note and click <strong>Make bubble</strong>. Then click a bubble and press <strong>Grammar</strong> to correct only that bubble.</p>
+                </div>
+              </ng-template>
+            </section>
+
+            <div class="sn-panels">
+              <section class="sn-coach card-ink">
+            <h3><mat-icon>record_voice_over</mat-icon> AI pronunciation coach</h3>
+            <p class="sn-coach-hint">
+              <strong>Coach mic</strong>: speak, then tap <strong>Stop &amp; analyze</strong> — grammar + pronunciation run automatically and the coach <strong>talks back briefly</strong> (no extra button needed). Full detail stays on screen. <strong>Dictate</strong> still only fills your note.
+            </p>
+            <div class="sn-coach-voice-opts">
+              <mat-checkbox [(ngModel)]="coachSpeakFeedback" color="primary">
+                Short voice when I stop coach mic (phrase twice, then spelling guide)
+              </mat-checkbox>
+              <div class="sn-coach-voice-btns">
+                <button mat-stroked-button type="button" (click)="replayCoachVoice()"
+                        [disabled]="(!coachFeedback && !coachGrammarResult) || coachLoading" matTooltip="Replay the short voice clip">
+                  <mat-icon>record_voice_over</mat-icon> Replay voice
+                </button>
+                <button mat-stroked-button type="button" color="warn" (click)="stopSpeaking()" *ngIf="speaking">
+                  <mat-icon>stop</mat-icon> Stop voice
+                </button>
+              </div>
+            </div>
+            <mat-form-field appearance="outline" class="sn-coach-goal">
+              <mat-label>Practice line (optional if you select text in the note)</mat-label>
+              <textarea matInput rows="2" [(ngModel)]="coachGoalText"
+                        placeholder="e.g. The weather is beautiful today."></textarea>
+            </mat-form-field>
+            <div class="sn-coach-actions">
+              <button mat-stroked-button type="button" (click)="speakCoachTarget(noteEditor)" matTooltip="Hear the target before you practice">
+                <mat-icon>campaign</mat-icon> Hear target
+              </button>
+              <button mat-stroked-button type="button"
+                      [color]="micActive && micRoute === 'coach' ? 'warn' : 'accent'"
+                      (click)="toggleCoachMic(noteEditor)">
+                <mat-icon>{{ micActive && micRoute === 'coach' ? 'mic_off' : 'school' }}</mat-icon>
+                {{ micActive && micRoute === 'coach' ? 'Stop & analyze' : 'Coach mic' }}
+              </button>
+              <button mat-stroked-button color="primary" type="button" (click)="runCoachAnalysis(noteEditor)"
+                      [disabled]="coachLoading || !coachHeard.trim()">
+                <mat-icon>psychology</mat-icon> Analyze again
+              </button>
+            </div>
+            <div class="sn-coach-live" *ngIf="coachHeard.trim() || (micActive && micRoute === 'coach')">
+              <span class="sn-coach-label">Heard (coach)</span>
+              <p class="sn-coach-transcript">{{ coachHeard || '…' }}</p>
+            </div>
+            <div class="sn-coach-loading" *ngIf="coachLoading">
+              <mat-icon class="spin">refresh</mat-icon> Asking your local model…
+            </div>
+            <div class="sn-coach-out" *ngIf="coachFeedback || coachGrammarResult">
+              <div class="sn-feedback-shell">
+                <ng-container *ngIf="coachGrammarResult as gr">
+                  <div class="sn-feedback-block sn-feedback-grammar" *ngIf="coachGrammarShowOnScreen(gr)">
+                    <div class="sn-feedback-block-head">
+                      <mat-icon class="sn-fh-ico">spellcheck</mat-icon>
+                      <h4 class="sn-feedback-heading">Grammar</h4>
+                    </div>
+                    <p class="sn-grammar-heard" *ngIf="coachHeardWhenAnalyzed || coachHeard">
+                      <span class="sn-coach-label">You said</span>
+                      {{ coachHeardWhenAnalyzed || coachHeard }}
+                    </p>
+                    <div class="sn-feedback-say">
+                      <span class="sn-feedback-say-label">Corrected</span>
+                      <p class="sn-feedback-say-text">{{ gr.correctedText }}</p>
+                    </div>
+                    <p class="sn-grammar-meta" *ngIf="gr.source">via {{ gr.source === 'ollama' ? 'Ollama' : gr.source === 'languagetool' ? 'LanguageTool' : gr.source }}</p>
+                  </div>
+                </ng-container>
+
+                <ng-container *ngIf="coachFeedback as cf">
+                <ng-container *ngIf="cf.overallSummary">
+                  <div class="sn-feedback-block sn-feedback-overview">
+                    <div class="sn-feedback-block-head">
+                      <mat-icon class="sn-fh-ico">auto_stories</mat-icon>
+                      <h4 class="sn-feedback-heading">Overview</h4>
+                    </div>
+                    <div class="sn-feedback-summary-body">
+                      <ng-container *ngIf="summaryParagraphs(cf.overallSummary).length; else oneSummary">
+                        <p class="sn-feedback-para" *ngFor="let para of summaryParagraphs(cf.overallSummary)">{{ para }}</p>
+                      </ng-container>
+                      <ng-template #oneSummary>
+                        <p class="sn-feedback-para">{{ cf.overallSummary }}</p>
+                      </ng-template>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <ng-container *ngIf="cf.items?.length">
+                  <div class="sn-feedback-block">
+                    <div class="sn-feedback-block-head">
+                      <mat-icon class="sn-fh-ico">edit_note</mat-icon>
+                      <h4 class="sn-feedback-heading">Word &amp; phrase fixes</h4>
+                    </div>
+                    <div class="sn-feedback-cards">
+                      <article class="sn-feedback-card" *ngFor="let it of cf.items; let idx = index">
+                        <div class="sn-feedback-card-top">
+                          <span class="sn-feedback-badge">{{ idx + 1 }}</span>
+                          <h5 class="sn-feedback-issue">{{ it.issue }}</h5>
+                        </div>
+                        <div class="sn-feedback-say">
+                          <span class="sn-feedback-say-label">Say it like this</span>
+                          <p class="sn-feedback-say-text">{{ it.correction }}</p>
+                        </div>
+                        <div class="sn-feedback-tip-row" *ngIf="it.tip">
+                          <mat-icon class="sn-tip-ico">lightbulb</mat-icon>
+                          <p class="sn-feedback-tip-text">{{ it.tip }}</p>
+                        </div>
+                      </article>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <ng-container *ngIf="cf.overallTips?.length">
+                  <div class="sn-feedback-block sn-feedback-tips-block">
+                    <div class="sn-feedback-block-head">
+                      <mat-icon class="sn-fh-ico">graphic_eq</mat-icon>
+                      <h4 class="sn-feedback-heading">How to sound better</h4>
+                    </div>
+                    <ol class="sn-feedback-tip-list">
+                      <li *ngFor="let tip of cf.overallTips">
+                        <span class="sn-tip-bullet"></span>
+                        <span class="sn-tip-content">{{ tip }}</span>
+                      </li>
+                    </ol>
+                  </div>
+                </ng-container>
+
+                <div class="sn-feedback-block sn-feedback-practice" *ngIf="cf.idealSentence">
+                  <div class="sn-feedback-block-head">
+                    <mat-icon class="sn-fh-ico">format_quote</mat-icon>
+                    <h4 class="sn-feedback-heading">Line to practice</h4>
+                  </div>
+                  <blockquote class="sn-feedback-quote">{{ cf.idealSentence }}</blockquote>
+                  <button mat-stroked-button type="button" class="sn-feedback-tts" (click)="speakIdealSentence()">
+                    <mat-icon>volume_up</mat-icon> Listen to this line
+                  </button>
+                </div>
+
+                <div class="sn-feedback-block sn-feedback-raw" *ngIf="cf.rawCoachText">
+                  <div class="sn-feedback-block-head">
+                    <mat-icon class="sn-fh-ico">description</mat-icon>
+                    <h4 class="sn-feedback-heading">Full coach reply</h4>
+                  </div>
+                  <pre class="sn-coach-raw">{{ cf.rawCoachText }}</pre>
+                </div>
+                </ng-container>
+              </div>
+            </div>
+              </section>
+
+              <section class="sn-dictionary card-ink">
+            <h3><mat-icon>menu_book</mat-icon> Smart dictionary</h3>
+            <div class="sn-dict-row">
+              <mat-form-field appearance="outline" class="sn-dict-input">
+                <mat-label>Word</mat-label>
+                <input matInput [(ngModel)]="dictWord" (keyup.enter)="runDictionary()">
+              </mat-form-field>
+              <button mat-raised-button color="accent" (click)="runDictionary()">Explain</button>
+            </div>
+            <div class="sn-dict-out" *ngIf="dictResult as dr">
+              <p class="phonetic" *ngIf="dr.phonetic">{{ dr.phonetic }}</p>
+              <ul>
+                <li *ngFor="let m of dr.meanings">{{ m }}</li>
+              </ul>
+              <div class="sn-ai-gloss" *ngIf="dr.aiExplanation">
+                <span class="sn-ai-badge"><mat-icon>psychology</mat-icon> Ollama</span>
+                <p>{{ dr.aiExplanation }}</p>
+              </div>
+            </div>
+              </section>
+
+              <section class="sn-summary card-ink" *ngIf="summaryResult as sr">
+            <h3><mat-icon>short_text</mat-icon> Auto summary</h3>
+            <p class="sn-summary-meta">
+              {{ sr.summaryWordCount }} words (from {{ sr.originalWordCount }})
+              <span class="sn-ai-pill" *ngIf="sr.source === 'ollama'"><mat-icon class="sn-pill-ico">smart_toy</mat-icon> Ollama</span>
+              <span class="sn-ai-pill muted" *ngIf="sr.source === 'extractive'">Quick extract</span>
+            </p>
+            <p class="sn-summary-text">{{ sr.summary }}</p>
+            <button mat-stroked-button (click)="insertSummaryIntoNote()">Append to note</button>
+              </section>
+            </div>
+        </main>
+      </div>
+    </mat-tab>
+
+      <mat-tab label="Shared">
+        <div class="sn-shared">
+          <div class="sn-shared-head">
+            <div class="sn-shared-title">
+              <h2>Shared notebook space</h2>
+              <p>Browse notes shared by other students and add a copy to your notebook.</p>
+            </div>
+            <div class="sn-shared-head-actions">
+              <mat-form-field appearance="outline" class="sn-shared-search">
+                <mat-label>Search</mat-label>
+                <input matInput [(ngModel)]="sharedQuery" placeholder="Title or content">
+                <button mat-icon-button matSuffix type="button" *ngIf="sharedQuery" (click)="sharedQuery = ''" aria-label="Clear search">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </mat-form-field>
+
+              <div class="sn-shared-sort">
+                <button mat-stroked-button type="button" (click)="sharedSort = 'recent'" [class.active]="sharedSort === 'recent'">
+                  <mat-icon>schedule</mat-icon> Recent
+                </button>
+                <button mat-stroked-button type="button" (click)="sharedSort = 'score'" [class.active]="sharedSort === 'score'">
+                  <mat-icon>star</mat-icon> Top
+                </button>
+                <button mat-stroked-button type="button" (click)="loadSharedNotes()">
+                  <mat-icon>refresh</mat-icon> Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sn-shared-loading" *ngIf="sharedLoading">
+            <mat-icon class="spin">refresh</mat-icon> Loading shared notes…
+          </div>
+
+          <div class="sn-shared-grid" *ngIf="!sharedLoading && sharedNotesView?.length; else noShared">
+            <article class="sn-shared-card" *ngFor="let n of sharedNotesView">
+              <div class="sn-shared-card-top">
+                <div class="sn-shared-card-title">
+                  <mat-icon>public</mat-icon>
+                  <h3>{{ n.title }}</h3>
+                </div>
+                <span class="sn-shared-badge" *ngIf="n.shareScore != null">
+                  <mat-icon class="sn-badge-ico">auto_graph</mat-icon>
+                  {{ n.shareScore }}
+                </span>
+              </div>
+              <p class="sn-shared-meta">
+                <span *ngIf="n.updatedAt">Updated {{ n.updatedAt | date:'short' }}</span>
+                <span *ngIf="!n.updatedAt && n.createdAt">Created {{ n.createdAt | date:'short' }}</span>
+              </p>
+              <p class="sn-shared-preview">{{ (n.content || '').slice(0, 220) }}{{ (n.content || '').length > 220 ? '…' : '' }}</p>
+
+              <div class="sn-shared-preview-full" *ngIf="sharedExpandedShareId && n.shareId === sharedExpandedShareId">
+                <pre class="sn-shared-fulltext">{{ n.content }}</pre>
+              </div>
+              <div class="sn-shared-actions">
+                <button mat-stroked-button type="button" (click)="toggleSharedPreview(n)">
+                  <mat-icon>{{ sharedExpandedShareId && n.shareId === sharedExpandedShareId ? 'expand_less' : 'expand_more' }}</mat-icon>
+                  {{ sharedExpandedShareId && n.shareId === sharedExpandedShareId ? 'Hide' : 'Preview' }}
+                </button>
+                <button mat-flat-button color="primary" type="button" (click)="importSharedNote(n)">
+                  <mat-icon>add</mat-icon> Add to my notebook
+                </button>
+              </div>
+            </article>
+          </div>
+
+          <ng-template #noShared>
+            <div class="sn-shared-empty" *ngIf="!sharedLoading">
+              <mat-icon>group</mat-icon>
+              <p>No shared notes yet. Be the first: open your note and click <strong>Share</strong>.</p>
+            </div>
+          </ng-template>
+        </div>
+      </mat-tab>
+
+    <mat-tab label="Insights">
+      <div class="sn-dash" *ngIf="dashboard">
+        <div class="sn-dash-card best">
+          <div class="sn-dash-icon"><mat-icon>share</mat-icon></div>
+          <h2>Best note to share</h2>
+          <p class="hint">Ranked by depth &amp; vocabulary spread across your pages.</p>
+          <ng-container *ngIf="dashboard.bestNoteToShare as b; else noBest">
+            <h3>{{ b.title }}</h3>
+            <p class="score">Share score: <strong>{{ b.shareScore }}</strong></p>
+            <p class="preview">{{ (b.content || '').slice(0, 280) }}{{ (b.content || '').length > 280 ? '…' : '' }}</p>
+          </ng-container>
+          <ng-template #noBest>
+            <p class="empty">Write a few longer notes — your standout page will appear here.</p>
+          </ng-template>
+        </div>
+
+        <div class="sn-dash-card words">
+          <div class="sn-dash-icon"><mat-icon>analytics</mat-icon></div>
+          <h2>Most used words</h2>
+          <p class="hint">Across all your notes (common words filtered).</p>
+          <div class="sn-chips">
+            <span class="chip" *ngFor="let w of dashboard.mostUsedWords" [style.font-size.px]="12 + Math.min(14, w.count)">
+              {{ w.word }} <em>{{ w.count }}</em>
+            </span>
+          </div>
+          <p class="empty" *ngIf="!dashboard.mostUsedWords?.length">No vocabulary yet — keep writing!</p>
+        </div>
+      </div>
+      <div class="sn-dash-loading" *ngIf="!dashboard">
+        <mat-icon class="spin">refresh</mat-icon> Loading insights…
+      </div>
+    </mat-tab>
+    </mat-tab-group>
+  </div>
+</div>
