@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { ComposeAssistService } from './compose-assist.service';
 
 const API = '/api/forum/direct';
 
@@ -36,7 +37,10 @@ export interface DirectMessage {
 
 @Injectable({ providedIn: 'root' })
 export class DirectMessageService {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private composeAssist: ComposeAssistService
+  ) {}
 
   open(userId: number, withUserId: number, kind: DirectKind): Observable<DirectConversation> {
     return this.http.post<DirectConversation>(`${API}/open`, { userId, withUserId, kind });
@@ -53,6 +57,17 @@ export class DirectMessageService {
   }
 
   send(conversationId: number, senderId: number, content: string): Observable<DirectMessage> {
+    const v = this.composeAssist.validateForSend(content);
+    if (!v.ok) {
+      return throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 400,
+            statusText: 'Bad Request',
+            error: { error: v.message }
+          })
+      );
+    }
     return this.http.post<DirectMessage>(`${API}/${conversationId}/messages`, { senderId, content });
   }
 }

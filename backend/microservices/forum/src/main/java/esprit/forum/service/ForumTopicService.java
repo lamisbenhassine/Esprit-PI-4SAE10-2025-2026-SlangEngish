@@ -22,6 +22,7 @@ public class ForumTopicService {
     private final ForumTopicRepository forumTopicRepository;
     private final ForumSpaceRepository forumSpaceRepository;
     private final ForumBlockService forumBlockService;
+    private final ContentModerationService contentModerationService;
 
     public List<ForumTopic> getAllPublicTopics(Long viewerUserId) {
         List<ForumTopic> topics = forumTopicRepository.findByIsPublicTrue();
@@ -87,11 +88,15 @@ public class ForumTopicService {
         if (topic.getLocked() == null) {
             topic.setLocked(Boolean.FALSE);
         }
+        contentModerationService.assertTextAcceptable(topic.getTitle());
+        contentModerationService.assertTextAcceptable(topic.getDescription());
         return forumTopicRepository.save(topic);
     }
 
     @Transactional
     public ForumTopic updateTopic(Long id, ForumTopic updatedTopic) {
+        contentModerationService.assertTextAcceptable(updatedTopic.getTitle());
+        contentModerationService.assertTextAcceptable(updatedTopic.getDescription());
         return forumTopicRepository.findById(id)
                 .map(topic -> {
                     topic.setTitle(updatedTopic.getTitle());
@@ -121,7 +126,18 @@ public class ForumTopicService {
                 .orElseThrow(() -> new RuntimeException("Topic not found with id: " + id));
     }
 
-    public void deleteTopic(Long id) {
+    /**
+     * Supprime un sujet. Si {@code actorUserId} est renseigné, seul l’auteur du sujet peut le supprimer
+     * (front-office). Sans {@code actorUserId}, suppression libre (back-office / admin).
+     */
+    public void deleteTopic(Long id, Long actorUserId) {
+        ForumTopic t = forumTopicRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Topic not found"));
+        if (actorUserId != null) {
+            if (t.getAuthorId() == null || !actorUserId.equals(t.getAuthorId())) {
+                throw new IllegalStateException("You can only delete your own topics.");
+            }
+        }
         forumTopicRepository.deleteById(id);
     }
 

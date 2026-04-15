@@ -5,7 +5,9 @@
       <p class="header-subtitle">Sujets, médias, signalements et contrôle d’accès (épinglage / verrou)</p>
     </div>
     <div class="header-actions">
-      <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
+      <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()"
+        [disabled]="topicSource !== 'general'"
+        [matTooltip]="topicSource !== 'general' ? 'Créez un sujet « niveau » depuis le front-office (Forums A1–C2).' : ''">
         <mat-icon>add_comment</mat-icon>
         <span>Nouveau sujet</span>
       </button>
@@ -16,6 +18,13 @@
     <mat-tab label="Sujets">
       <div class="tab-pad">
         <div class="filter-section">
+          <mat-form-field appearance="outline" class="source-field">
+            <mat-label>Portée des sujets</mat-label>
+            <mat-select [(ngModel)]="topicSource" (ngModelChange)="onTopicSourceChange()">
+              <mat-option value="general">Forum général (public)</mat-option>
+              <mat-option value="levels">Forums par niveau (A1 → C2)</mat-option>
+            </mat-select>
+          </mat-form-field>
           <div class="search-box">
             <mat-form-field appearance="outline" class="search-field">
               <mat-label>Rechercher</mat-label>

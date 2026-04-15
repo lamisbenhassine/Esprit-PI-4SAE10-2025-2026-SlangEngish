@@ -78,11 +78,29 @@
           rows="2"
           [(ngModel)]="draft"
           placeholder="Écrire un message…"
+          spellcheck="true"
+          lang="en"
+          composeWordSuggest
+          #dmSuggest="composeWordSuggest"
           (keydown.control.enter)="send()"
           (keydown.meta.enter)="send()"></textarea>
-        <button mat-flat-button color="primary" type="button" (click)="send()" [disabled]="!draft.trim()">
-          Envoyer
-        </button>
+        <div class="compose-suggest-row" *ngIf="dmSuggest.suggestions?.length">
+          <button
+            type="button"
+            mat-stroked-button
+            *ngFor="let w of dmSuggest.suggestions"
+            (click)="dmSuggest.applySuggestion(w)">
+            {{ w }}
+          </button>
+        </div>
+        <div class="dm-compose-actions">
+          <button mat-stroked-button type="button" (click)="polishDraft()" matTooltip="Orthographe et style (Gemini si configuré)">
+            Améliorer (IA)
+          </button>
+          <button mat-flat-button color="primary" type="button" (click)="send()" [disabled]="!draft.trim()">
+            Envoyer
+          </button>
+        </div>
       </div>
     </section>
 

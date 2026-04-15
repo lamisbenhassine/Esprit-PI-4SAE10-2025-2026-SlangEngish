@@ -394,6 +394,15 @@
   color: #0f172a;
 }
 
-.composer-card .send {
+.composer-card .composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  align-items: center;
   margin-top: 0.5rem;
+}
+
+.composer-card .composer-actions .send {
+  margin-top: 0;
 }

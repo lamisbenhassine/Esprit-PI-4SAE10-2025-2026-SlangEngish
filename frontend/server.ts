@@ -1,6 +1,7 @@
 import { APP_BASE_HREF } from '@angular/common';
 import { CommonEngine } from '@angular/ssr';
 import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 import AppServerModule from './src/main.server';
@@ -14,11 +15,34 @@ export function app(): express.Express {
 
   const commonEngine = new CommonEngine();
 
+  /** Même routage API qu’en dev (proxy.conf.json) : sans ceci, /api/* échoue (réseau / statut 0). */
+  server.use(
+    '/api/forum',
+    createProxyMiddleware({
+      target: 'http://localhost:8040',
+      changeOrigin: true,
+      timeout: 300_000,
+      proxyTimeout: 300_000
+    })
+  );
+  server.use(
+    '/api/user',
+    createProxyMiddleware({
+      target: 'http://localhost:8010',
+      changeOrigin: true
+    })
+  );
+  server.use(
+    '/api/inscription',
+    createProxyMiddleware({
+      target: 'http://localhost:8030',
+      changeOrigin: true
+    })
+  );
+
   server.set('view engine', 'html');
   server.set('views', browserDistFolder);
 
-  // Example Express Rest API endpoints
-  // server.get('/api/**', (req, res) => { });
   // Serve static files from /browser
   server.get('**', express.static(browserDistFolder, {
     maxAge: '1y',

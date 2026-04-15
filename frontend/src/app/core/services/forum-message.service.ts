@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { ComposeAssistService } from './compose-assist.service';
 
 // Use relative base URL so Angular proxy can route to backend (dev) or gateway (prod).
 const API_BASE_URL = '/api/forum';
@@ -30,7 +31,10 @@ export interface CreateMessageRequest {
     providedIn: 'root'
 })
 export class ForumMessageService {
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private composeAssist: ComposeAssistService
+    ) {}
 
     getMessagesByTopic(topicId: number, viewerUserId?: number): Observable<ForumMessage[]> {
         let params = new HttpParams();
@@ -49,6 +53,17 @@ export class ForumMessageService {
     }
 
     createMessage(request: CreateMessageRequest): Observable<ForumMessage> {
+        const v = this.composeAssist.validateForSend(request.content);
+        if (!v.ok) {
+            return throwError(
+                () =>
+                    new HttpErrorResponse({
+                        status: 400,
+                        statusText: 'Bad Request',
+                        error: { error: v.message }
+                    })
+            );
+        }
         return this.http.post<ForumMessage>(`${TOPICS_URL}/${request.topicId}/messages`, {
             authorId: request.authorId,
             content: request.content,
@@ -58,6 +73,17 @@ export class ForumMessageService {
     }
 
     updateMessage(id: number, content: string, attachments?: string | null): Observable<ForumMessage> {
+        const v = this.composeAssist.validateForSend(content);
+        if (!v.ok) {
+            return throwError(
+                () =>
+                    new HttpErrorResponse({
+                        status: 400,
+                        statusText: 'Bad Request',
+                        error: { error: v.message }
+                    })
+            );
+        }
         const body: { content: string; attachments?: string | null } = { content };
         if (attachments !== undefined) {
             body.attachments = attachments;

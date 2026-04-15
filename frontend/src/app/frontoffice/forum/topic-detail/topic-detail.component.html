@@ -22,19 +22,27 @@
         <span class="pill pinned" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> Pinned</span>
         <span class="hero-date">{{ topic.createdAt | date : 'mediumDate' }}</span>
       </div>
-      <h1>{{ topic.title }}</h1>
-      <div class="hero-author-row">
-        <div class="avatar">{{ initials(topic.authorId) }}</div>
-        <div>
-          <div class="name">{{ displayName(topic.authorId) }}</div>
-          <div class="role">{{ userRoleLabel(topic.authorId) || 'Member' }}</div>
-        </div>
-        <span class="spacer"></span>
+      <app-topic-post-translate-block
+        variant="hero"
+        [title]="topic.title"
+        [description]="topic.description || ''"
+        [previewMaxLength]="0"
+      >
+        <div class="hero-author-row">
+          <div class="avatar">{{ initials(topic.authorId) }}</div>
+          <div>
+            <div class="name">{{ displayName(topic.authorId) }}</div>
+            <div class="role">{{ userRoleLabel(topic.authorId) || 'Member' }}</div>
+          </div>
+          <span class="spacer"></span>
+        <button mat-stroked-button color="warn" type="button" (click)="deleteTopic()" *ngIf="canDeleteTopic()">
+          <mat-icon>delete_outline</mat-icon> Delete topic
+        </button>
         <button mat-stroked-button color="warn" type="button" (click)="reportTopic()" *ngIf="canReportTopic()">
           <mat-icon>flag</mat-icon> Report
         </button>
-      </div>
-      <p class="desc">{{ topic.description }}</p>
+        </div>
+      </app-topic-post-translate-block>
       <div class="hero-stats">
         <span><mat-icon>visibility</mat-icon> {{ topic.views }} views</span>
         <span><mat-icon>chat_bubble</mat-icon> {{ messages.length }} messages</span>
@@ -75,10 +83,28 @@
           </div>
 
           <div class="edit-box" *ngIf="editingMessageId === message.id">
-            <textarea [(ngModel)]="editContent" rows="3"></textarea>
+            <textarea
+              [(ngModel)]="editContent"
+              rows="3"
+              spellcheck="true"
+              lang="en"
+              composeWordSuggest
+              #editSuggest="composeWordSuggest"></textarea>
+            <div class="compose-suggest-row" *ngIf="editSuggest.suggestions?.length">
+              <button
+                type="button"
+                mat-stroked-button
+                *ngFor="let w of editSuggest.suggestions"
+                (click)="editSuggest.applySuggestion(w)">
+                {{ w }}
+              </button>
+            </div>
             <label class="hint">Attachments (JSON or leave empty)</label>
             <textarea [(ngModel)]="editAttachmentsJson" rows="2" class="mono"></textarea>
             <div class="row-btns">
+              <button mat-stroked-button type="button" (click)="polishEdit()" matTooltip="Orthographe et style (Gemini si configuré)">
+                Améliorer (IA)
+              </button>
               <button mat-button type="button" (click)="editingMessageId = null">Cancel</button>
               <button mat-flat-button color="primary" type="button" (click)="saveEdit(message.id!)">Save</button>
             </div>
@@ -116,7 +142,23 @@
           </div>
 
           <div class="reply-composer" *ngIf="replyingTo === message.id && !topic.locked">
-            <textarea [(ngModel)]="replyContent" placeholder="Your reply..." rows="2"></textarea>
+            <textarea
+              [(ngModel)]="replyContent"
+              placeholder="Your reply..."
+              rows="2"
+              spellcheck="true"
+              lang="en"
+              composeWordSuggest
+              #replySuggest="composeWordSuggest"></textarea>
+            <div class="compose-suggest-row" *ngIf="replySuggest.suggestions?.length">
+              <button
+                type="button"
+                mat-stroked-button
+                *ngFor="let w of replySuggest.suggestions"
+                (click)="replySuggest.applySuggestion(w)">
+                {{ w }}
+              </button>
+            </div>
             <div class="media-helpers">
               <input type="file" accept="image/*,video/*" (change)="onComposeFile($event)" #replyFile hidden />
               <button mat-stroked-button type="button" (click)="replyFile.click()" [disabled]="composeUploading">Attach file</button>
@@ -130,6 +172,9 @@
               </mat-form-field>
             </div>
             <div class="row-btns">
+              <button mat-stroked-button type="button" (click)="polishReply()" matTooltip="Orthographe et style (Gemini si configuré)">
+                Améliorer (IA)
+              </button>
               <button mat-button type="button" (click)="replyingTo = null">Cancel</button>
               <button mat-flat-button color="primary" type="button" (click)="submitReply(message.id!)">Send</button>
             </div>
@@ -140,7 +185,23 @@
 
     <div class="composer-card" *ngIf="!topic.locked">
       <h3>Join the conversation</h3>
-      <textarea [(ngModel)]="newMessageContent" rows="4" placeholder="Your message..."></textarea>
+      <textarea
+        [(ngModel)]="newMessageContent"
+        rows="4"
+        placeholder="Your message..."
+        spellcheck="true"
+        lang="en"
+        composeWordSuggest
+        #mainSuggest="composeWordSuggest"></textarea>
+      <div class="compose-suggest-row" *ngIf="mainSuggest.suggestions?.length">
+        <button
+          type="button"
+          mat-stroked-button
+          *ngFor="let w of mainSuggest.suggestions"
+          (click)="mainSuggest.applySuggestion(w)">
+          {{ w }}
+        </button>
+      </div>
       <div class="media-helpers">
         <input type="file" accept="image/*,video/*" (change)="onComposeFile($event)" #mainFile hidden />
         <button mat-stroked-button type="button" (click)="mainFile.click()" [disabled]="composeUploading">Attach media</button>
@@ -153,9 +214,14 @@
           <input matInput [(ngModel)]="composeVideoUrl" />
         </mat-form-field>
       </div>
-      <button mat-flat-button color="primary" class="send" (click)="postMessage()" [disabled]="!newMessageContent.trim()">
-        Post
-      </button>
+      <div class="row-btns composer-actions">
+        <button mat-stroked-button type="button" (click)="polishNewMessage()" matTooltip="Orthographe et style (Gemini si configuré)">
+          Améliorer (IA)
+        </button>
+        <button mat-flat-button color="primary" class="send" (click)="postMessage()" [disabled]="!newMessageContent.trim()">
+          Post
+        </button>
+      </div>
     </div>
   </section>
 </div>

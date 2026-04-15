@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ForumTopicService, ForumTopic } from '../../../core/services/forum-topic.service';
 import { ForumMessageService, ForumMessage, CreateMessageRequest } from '../../../core/services/forum-message.service';
@@ -7,6 +7,8 @@ import { ForumReportService } from '../../../core/services/forum-report.service'
 import { ForumMediaService } from '../../../core/services/forum-media.service';
 import { UserProfile, UserProfileService } from '../../../core/services/user-profile.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { FrontofficeIdentityService } from '../../../core/services/frontoffice-identity.service';
+import { apiErrorMessage, ComposeAssistService } from '../../../core/services/compose-assist.service';
 import { forkJoin } from 'rxjs';
 
 export interface ForumAttachment {
@@ -43,16 +45,47 @@ export class TopicDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private topicService: ForumTopicService,
     private messageService: ForumMessageService,
     private reportService: ForumReportService,
     private mediaService: ForumMediaService,
     private users: UserProfileService,
     private snackBar: MatSnackBar,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private identity: FrontofficeIdentityService,
+    private composeAssist: ComposeAssistService
   ) {}
 
+  polishNewMessage(): void {
+    this.runSmartPolish(this.newMessageContent, t => (this.newMessageContent = t));
+  }
+
+  polishReply(): void {
+    this.runSmartPolish(this.replyContent, t => (this.replyContent = t));
+  }
+
+  polishEdit(): void {
+    this.runSmartPolish(this.editContent, t => (this.editContent = t));
+  }
+
+  private runSmartPolish(current: string, apply: (t: string) => void): void {
+    this.composeAssist.smartPolish$(current).subscribe({
+      next: ({ text, source }) => {
+        apply(text);
+        this.snackBar.open(
+          source === 'ai' ? 'Texte amélioré (IA).' : 'Corrections locales (sans IA).',
+          'OK',
+          { duration: 2800 }
+        );
+      },
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, this.composeAssist.profanityHint), 'OK', { duration: 6000 })
+    });
+  }
+
   ngOnInit() {
+    this.currentUserId = this.identity.getCurrentUserId();
     const id = +this.route.snapshot.paramMap.get('id')!;
     this.topicService.getTopicById(id).subscribe(t => {
       this.topic = t;
@@ -262,11 +295,7 @@ export class TopicDetailComponent implements OnInit {
         this.loadMessages(this.topic!.id!);
       },
       error: err => {
-        const msg =
-          err?.error?.error ||
-          (typeof err?.error === 'string' ? err.error : null) ||
-          'Send error.';
-        this.snackBar.open(msg, 'OK', { duration: 5000 });
+        this.snackBar.open(apiErrorMessage(err, 'Send error.'), 'OK', { duration: 5000 });
       }
     });
   }
@@ -296,8 +325,7 @@ export class TopicDetailComponent implements OnInit {
         this.loadReplies(parentId);
       },
       error: err => {
-        const msg = err?.error?.error || 'Send error.';
-        this.snackBar.open(msg, 'OK', { duration: 5000 });
+        this.snackBar.open(apiErrorMessage(err, 'Send error.'), 'OK', { duration: 5000 });
       }
     });
   }
@@ -319,7 +347,8 @@ export class TopicDetailComponent implements OnInit {
         this.editingMessageId = null;
         this.loadMessages(this.topic!.id!);
       },
-      error: () => this.snackBar.open('Update failed.', 'OK', { duration: 3000 })
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, 'Update failed.'), 'OK', { duration: 5000 })
     });
   }
 
@@ -373,6 +402,39 @@ export class TopicDetailComponent implements OnInit {
       error: err => {
         const msg = err?.error?.error || 'Report failed.';
         this.snackBar.open(msg, 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  canDeleteTopic(): boolean {
+    return (
+      !!this.topic?.id &&
+      this.topic.authorId != null &&
+      this.topic.authorId === this.currentUserId
+    );
+  }
+
+  deleteTopic(): void {
+    if (!this.topic?.id || !this.canDeleteTopic()) {
+      return;
+    }
+    if (!confirm('Supprimer ce sujet et toute la discussion ?')) {
+      return;
+    }
+    const id = this.topic.id;
+    this.topicService.deleteTopic(id, this.currentUserId).subscribe({
+      next: () => {
+        this.snackBar.open('Sujet supprimé.', 'OK', { duration: 2500 });
+        const cat = (this.topic?.category || '').toUpperCase();
+        const isLevel = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(cat);
+        this.router.navigate([isLevel ? '/frontoffice/forum/levels' : '/frontoffice/forum/general']);
+      },
+      error: err => {
+        const msg =
+          err?.error?.error ||
+          (typeof err?.error === 'string' ? err.error : null) ||
+          'Suppression impossible.';
+        this.snackBar.open(msg, 'OK', { duration: 5000 });
       }
     });
   }

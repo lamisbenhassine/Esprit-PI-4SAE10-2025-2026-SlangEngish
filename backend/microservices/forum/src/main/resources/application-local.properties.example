@@ -1,0 +1,4 @@
+# Copiez ce fichier vers application-local.properties (non versionné) et renseignez la clé,
+# ou définissez la variable d'environnement FORUM_AI_API_KEY.
+#
+# forum.ai.api-key=AIzaSyB91imsi3efCUBXYqFHRQyTscFYAiLnjC0

@@ -410,6 +410,23 @@
   gap: 1rem;
 }
 
+.fl-card-wrap {
+  position: relative;
+}
+
+.fl-card-delete {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.fl-card-delete:hover {
+  background: #ffebee !important;
+}
+
 .fl-card {
   display: flex;
   flex-direction: column;

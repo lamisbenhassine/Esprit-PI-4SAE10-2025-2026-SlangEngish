@@ -114,9 +114,18 @@
   margin-bottom: 0.5rem;
 }
 
-.ig-publish {
-  width: 100%;
+.ig-publish-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  align-items: center;
   margin-top: 0.35rem;
+}
+
+.ig-publish {
+  flex: 1 1 auto;
+  min-width: 120px;
 }
 
 .ig-card {

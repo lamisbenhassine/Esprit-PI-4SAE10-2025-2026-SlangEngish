@@ -100,16 +100,34 @@
           class="msg-dock-input"
           [(ngModel)]="draft"
           placeholder="Écrivez un message…"
+          spellcheck="true"
+          lang="en"
+          composeWordSuggest
+          #dockSuggest="composeWordSuggest"
           (keydown.control.enter)="send()"
           (keydown.meta.enter)="send()"></textarea>
-        <button
-          mat-flat-button
-          color="primary"
-          type="button"
-          (click)="send()"
-          [disabled]="!draft.trim() || loading">
-          Envoyer
-        </button>
+        <div class="compose-suggest-row" *ngIf="dockSuggest.suggestions?.length">
+          <button
+            type="button"
+            mat-stroked-button
+            *ngFor="let w of dockSuggest.suggestions"
+            (click)="dockSuggest.applySuggestion(w)">
+            {{ w }}
+          </button>
+        </div>
+        <div class="msg-dock-compose-actions">
+          <button mat-stroked-button type="button" (click)="polishDraft()" matTooltip="Orthographe et style (Gemini si configuré)">
+            Améliorer (IA)
+          </button>
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            (click)="send()"
+            [disabled]="!draft.trim() || loading">
+            Envoyer
+          </button>
+        </div>
       </div>
     </div>
   </div>

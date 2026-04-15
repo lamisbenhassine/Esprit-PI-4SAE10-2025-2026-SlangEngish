@@ -37,6 +37,8 @@ public class TopicMessageController {
 
             ForumMessage createdMessage = forumMessageService.createMessage(message, topicId);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdMessage);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }

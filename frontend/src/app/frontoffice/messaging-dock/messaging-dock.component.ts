@@ -13,6 +13,7 @@ import { FrontofficeIdentityService } from '../../core/services/frontoffice-iden
 import { DmReadPointerService } from '../../core/services/dm-read-pointer.service';
 import { MessagingUnreadService } from '../../core/services/messaging-unread.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { apiErrorMessage, ComposeAssistService } from '../../core/services/compose-assist.service';
 
 type DockView = 'list' | 'thread';
 
@@ -53,8 +54,24 @@ export class MessagingDockComponent implements OnInit, OnDestroy {
     private messagingUnread: MessagingUnreadService,
     private router: Router,
     private snackBar: MatSnackBar,
+    private composeAssist: ComposeAssistService,
     @Inject(PLATFORM_ID) private platformId: object
   ) {}
+
+  polishDraft(): void {
+    this.composeAssist.smartPolish$(this.draft).subscribe({
+      next: ({ text, source }) => {
+        this.draft = text;
+        this.snackBar.open(
+          source === 'ai' ? 'Texte amélioré (IA).' : 'Corrections locales (sans IA).',
+          'OK',
+          { duration: 2800 }
+        );
+      },
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, this.composeAssist.profanityHint), 'OK', { duration: 6000 })
+    });
+  }
 
   ngOnInit(): void {
     this.currentUserId = this.identity.getCurrentUserId();
@@ -270,8 +287,8 @@ export class MessagingDockComponent implements OnInit, OnDestroy {
         this.draft = '';
         this.loadThread();
       },
-      error: () =>
-        this.snackBar.open('Envoi impossible.', 'OK', { duration: 3000 })
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, 'Envoi impossible.'), 'OK', { duration: 6000 })
     });
   }
 

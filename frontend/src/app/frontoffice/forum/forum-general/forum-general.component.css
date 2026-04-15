@@ -122,6 +122,23 @@
   gap: 1.25rem;
 }
 
+.fo-card-wrap {
+  position: relative;
+}
+
+.fo-card-delete {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+}
+
+.fo-card-delete:hover {
+  background: #ffebee !important;
+}
+
 .fo-card {
   display: flex;
   flex-direction: column;

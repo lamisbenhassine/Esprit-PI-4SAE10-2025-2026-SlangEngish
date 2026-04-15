@@ -28,6 +28,7 @@
     "@types/stompjs": "^2.3.10",
     "apexcharts": "^5.3.6",
     "express": "^4.18.2",
+    "http-proxy-middleware": "^3.0.5",
     "ng-apexcharts": "^2.0.4",
     "rxjs": "~7.8.0",
     "sockjs-client": "^1.6.1",

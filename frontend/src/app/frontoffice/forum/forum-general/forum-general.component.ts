@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
+import { forkJoin, of } from 'rxjs';
 import { ForumTopicService, ForumTopic } from '../../../core/services/forum-topic.service';
 import { ForumMediaService } from '../../../core/services/forum-media.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { UserProfile, UserProfileService } from '../../../core/services/user-profile.service';
 import { FrontofficeIdentityService } from '../../../core/services/frontoffice-identity.service';
+import { apiErrorMessage, ComposeAssistService } from '../../../core/services/compose-assist.service';
 
 @Component({
   selector: 'app-forum-general',
@@ -42,8 +44,32 @@ export class ForumGeneralComponent implements OnInit {
     private forumMediaService: ForumMediaService,
     private usersService: UserProfileService,
     private identity: FrontofficeIdentityService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private composeAssist: ComposeAssistService
   ) {}
+
+  polishNewTopicFields(): void {
+    const title$ = this.newTitle.trim()
+      ? this.composeAssist.smartPolish$(this.newTitle)
+      : of({ text: this.newTitle, source: 'local' as const });
+    const desc$ = this.newDescription.trim()
+      ? this.composeAssist.smartPolish$(this.newDescription)
+      : of({ text: this.newDescription, source: 'local' as const });
+    forkJoin({ t: title$, d: desc$ }).subscribe({
+      next: ({ t, d }) => {
+        this.newTitle = t.text;
+        this.newDescription = d.text;
+        const ai = t.source === 'ai' || d.source === 'ai';
+        this.snackBar.open(
+          ai ? 'Texte amélioré (IA).' : 'Corrections locales (sans IA).',
+          'OK',
+          { duration: 2800 }
+        );
+      },
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, this.composeAssist.profanityHint), 'OK', { duration: 6000 })
+    });
+  }
 
   ngOnInit() {
     this.currentUserId = this.identity.getCurrentUserId();
@@ -129,6 +155,31 @@ export class ForumGeneralComponent implements OnInit {
     return 'Student';
   }
 
+  deleteOwnTopic(topic: ForumTopic, ev: Event): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const id = topic.id;
+    if (id == null || topic.authorId !== this.currentUserId) {
+      return;
+    }
+    if (!confirm('Supprimer ce sujet ? Cette action est définitive.')) {
+      return;
+    }
+    this.forumTopicService.deleteTopic(id, this.currentUserId).subscribe({
+      next: () => {
+        this.snackBar.open('Sujet supprimé.', 'OK', { duration: 2500 });
+        this.loadTopics();
+      },
+      error: err => {
+        const msg =
+          err?.error?.error ||
+          (typeof err?.error === 'string' ? err.error : null) ||
+          'Suppression impossible.';
+        this.snackBar.open(msg, 'OK', { duration: 5000 });
+      }
+    });
+  }
+
   createTopic(): void {
     if (this.creating) return;
     if (!this.newTitle.trim() || !this.newDescription.trim()) return;
@@ -149,7 +200,10 @@ export class ForumGeneralComponent implements OnInit {
         this.creating = false;
         this.loadTopics();
       },
-      error: () => this.creating = false
+      error: err => {
+        this.creating = false;
+        this.snackBar.open(apiErrorMessage(err, 'Publication impossible.'), 'OK', { duration: 6000 });
+      }
     });
   }
 

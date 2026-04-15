@@ -10,12 +10,41 @@
           <span class="ig-create-as">{{ composerLabel() }} · general forum</span>
         </div>
       </div>
-      <input class="ig-input" [(ngModel)]="composeTitle" placeholder="Title" />
+      <input
+        class="ig-input"
+        [(ngModel)]="composeTitle"
+        placeholder="Title"
+        spellcheck="true"
+        lang="en"
+        composeWordSuggest
+        #feedTitleSug="composeWordSuggest" />
+      <div class="compose-suggest-row" *ngIf="feedTitleSug.suggestions?.length">
+        <button
+          type="button"
+          mat-stroked-button
+          *ngFor="let w of feedTitleSug.suggestions"
+          (click)="feedTitleSug.applySuggestion(w)">
+          {{ w }}
+        </button>
+      </div>
       <textarea
         class="ig-textarea ig-textarea-compose"
         [(ngModel)]="composeCaption"
         rows="3"
-        placeholder="Write a clear, engaging post..."></textarea>
+        placeholder="Write a clear, engaging post..."
+        spellcheck="true"
+        lang="en"
+        composeWordSuggest
+        #feedCapSug="composeWordSuggest"></textarea>
+      <div class="compose-suggest-row" *ngIf="feedCapSug.suggestions?.length">
+        <button
+          type="button"
+          mat-stroked-button
+          *ngFor="let w of feedCapSug.suggestions"
+          (click)="feedCapSug.applySuggestion(w)">
+          {{ w }}
+        </button>
+      </div>
       <div class="ig-media-row">
         <input #imgIn type="file" accept="image/*" hidden (change)="onMediaFile($event, 'image')" />
         <input #vidIn type="file" accept="image/*,video/*" hidden (change)="onMediaFile($event, 'video')" />
@@ -24,10 +53,15 @@
       </div>
       <input class="ig-input small" [(ngModel)]="composeImageUrl" placeholder="Image URL (optional)" />
       <input class="ig-input small" [(ngModel)]="composeVideoUrl" placeholder="Video or YouTube URL (optional)" />
-      <button mat-flat-button color="primary" class="ig-publish" (click)="publishPost()"
-        [disabled]="composing || generalSpaceId == null || !composeTitle.trim() || !composeCaption.trim()">
-        Share
-      </button>
+      <div class="ig-publish-row">
+        <button mat-stroked-button type="button" (click)="polishFeedCompose()" matTooltip="Orthographe et style (Gemini si configuré)">
+          Améliorer (IA)
+        </button>
+        <button mat-flat-button color="primary" class="ig-publish" (click)="publishPost()"
+          [disabled]="composing || generalSpaceId == null || !composeTitle.trim() || !composeCaption.trim()">
+          Share
+        </button>
+      </div>
     </section>
 
     <article class="ig-card" *ngFor="let post of feed">
@@ -121,7 +155,20 @@
             class="ig-textarea ig-comment-input"
             rows="2"
             [(ngModel)]="commentText[post.id]"
-            placeholder="Écrire un commentaire…"></textarea>
+            placeholder="Écrire un commentaire…"
+            spellcheck="true"
+            lang="en"
+            composeWordSuggest
+            #cmSug="composeWordSuggest"></textarea>
+          <div class="compose-suggest-row" *ngIf="cmSug.suggestions?.length">
+            <button
+              type="button"
+              mat-stroked-button
+              *ngFor="let w of cmSug.suggestions"
+              (click)="cmSug.applySuggestion(w)">
+              {{ w }}
+            </button>
+          </div>
           <div class="ig-comment-media-row">
             <input
               #cmImg
@@ -145,6 +192,14 @@
             <button mat-stroked-button color="warn" type="button" *ngIf="isRecording(post)" (click)="stopVoiceRecording()">
               <mat-icon>stop</mat-icon>
               Arrêter
+            </button>
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="polishComment(post)"
+              [disabled]="commentBusy[post.id]"
+              matTooltip="Orthographe et style (Gemini si configuré)">
+              Améliorer (IA)
             </button>
             <button
               mat-flat-button

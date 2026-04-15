@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/forum/direct")
@@ -65,7 +66,7 @@ public class DirectMessageController {
             DirectMessage m = directConversationService.send(conversationId, body.getSenderId(), body.getContent());
             return ResponseEntity.status(HttpStatus.CREATED).body(m);
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         }
     }
 }

@@ -71,11 +71,44 @@
         <h4>New topic ({{ selectedLevel }} level)</h4>
         <mat-form-field appearance="outline" class="fl-full">
           <mat-label>Title</mat-label>
-          <input matInput [(ngModel)]="newTitle" placeholder="Ex. Formal email writing practice" />
+          <input
+            matInput
+            [(ngModel)]="newTitle"
+            placeholder="Ex. Formal email writing practice"
+            spellcheck="true"
+            lang="en"
+            composeWordSuggest
+            #flTitleSug="composeWordSuggest" />
+          <div class="compose-suggest-row" *ngIf="flTitleSug.suggestions?.length">
+            <button
+              type="button"
+              mat-stroked-button
+              *ngFor="let w of flTitleSug.suggestions"
+              (click)="flTitleSug.applySuggestion(w)">
+              {{ w }}
+            </button>
+          </div>
         </mat-form-field>
         <mat-form-field appearance="outline" class="fl-full">
           <mat-label>Content</mat-label>
-          <textarea matInput rows="3" [(ngModel)]="newDescription" placeholder="Context, goals, questions..."></textarea>
+          <textarea
+            matInput
+            rows="3"
+            [(ngModel)]="newDescription"
+            placeholder="Context, goals, questions..."
+            spellcheck="true"
+            lang="en"
+            composeWordSuggest
+            #flDescSug="composeWordSuggest"></textarea>
+          <div class="compose-suggest-row" *ngIf="flDescSug.suggestions?.length">
+            <button
+              type="button"
+              mat-stroked-button
+              *ngFor="let w of flDescSug.suggestions"
+              (click)="flDescSug.applySuggestion(w)">
+              {{ w }}
+            </button>
+          </div>
         </mat-form-field>
         <mat-form-field appearance="outline" class="fl-full">
           <mat-label>Cover image URL</mat-label>
@@ -85,6 +118,9 @@
           <input type="file" accept="image/*" #coverIn hidden (change)="onCoverFile($event)" />
           <button mat-stroked-button type="button" (click)="coverIn.click()" [disabled]="coverUploading">
             <mat-icon>image</mat-icon> Upload image
+          </button>
+          <button mat-stroked-button type="button" (click)="polishNewTopicFields()" matTooltip="Orthographe et style (Gemini si configuré)">
+            Améliorer (IA)
           </button>
           <button
             mat-flat-button
@@ -131,38 +167,48 @@
       </div>
 
       <div class="fl-cards" *ngIf="!loading && filteredTopics.length">
-        <a
-          *ngFor="let topic of filteredTopics"
-          [routerLink]="['/frontoffice/forum/topic', topic.id]"
-          class="fl-card">
-          <div class="fl-card-media" *ngIf="topic.coverImageUrl">
-            <img [src]="topic.coverImageUrl" alt="" />
-          </div>
-          <div class="fl-card-placeholder" *ngIf="!topic.coverImageUrl">
-            <mat-icon>forum</mat-icon>
-          </div>
-          <div class="fl-card-body">
-            <div class="fl-card-top">
-              <span class="fl-pill" *ngIf="topic.pinned">Pinned</span>
-              <span class="fl-pill lock" *ngIf="topic.locked">Locked</span>
+        <div class="fl-card-wrap" *ngFor="let topic of filteredTopics">
+          <a [routerLink]="['/frontoffice/forum/topic', topic.id]" class="fl-card">
+            <div class="fl-card-media" *ngIf="topic.coverImageUrl">
+              <img [src]="topic.coverImageUrl" alt="" />
             </div>
-            <h3>{{ topic.title }}</h3>
-            <p class="fl-excerpt">
-              {{ (topic.description || '') | slice : 0 : 160
-              }}{{ (topic.description || '').length > 160 ? '…' : '' }}
-            </p>
-            <div class="fl-card-meta">
-              <div class="fl-author">
-                <span class="fl-av">{{ initials(topic.authorId) }}</span>
-                <span class="fl-name">{{ authorName(topic.authorId) }}</span>
-                <span class="fl-badge student" *ngIf="authorRole(topic.authorId) === 'Student'">Student</span>
-                <span class="fl-badge tutor" *ngIf="authorRole(topic.authorId) === 'Tutor'">Tutor</span>
-                <span class="fl-badge admin" *ngIf="authorRole(topic.authorId) === 'Team'">Team</span>
+            <div class="fl-card-placeholder" *ngIf="!topic.coverImageUrl">
+              <mat-icon>forum</mat-icon>
+            </div>
+            <div class="fl-card-body">
+              <div class="fl-card-top">
+                <span class="fl-pill" *ngIf="topic.pinned">Pinned</span>
+                <span class="fl-pill lock" *ngIf="topic.locked">Locked</span>
               </div>
-              <span class="fl-views"><mat-icon>visibility</mat-icon> {{ topic.views }}</span>
+              <app-topic-post-translate-block
+                class="fl-tpt"
+                variant="card"
+                [title]="topic.title"
+                [description]="topic.description || ''"
+                [previewMaxLength]="160"
+              ></app-topic-post-translate-block>
+              <div class="fl-card-meta">
+                <div class="fl-author">
+                  <span class="fl-av">{{ initials(topic.authorId) }}</span>
+                  <span class="fl-name">{{ authorName(topic.authorId) }}</span>
+                  <span class="fl-badge student" *ngIf="authorRole(topic.authorId) === 'Student'">Student</span>
+                  <span class="fl-badge tutor" *ngIf="authorRole(topic.authorId) === 'Tutor'">Tutor</span>
+                  <span class="fl-badge admin" *ngIf="authorRole(topic.authorId) === 'Team'">Team</span>
+                </div>
+                <span class="fl-views"><mat-icon>visibility</mat-icon> {{ topic.views }}</span>
+              </div>
             </div>
-          </div>
-        </a>
+          </a>
+          <button
+            *ngIf="topic.authorId === currentUserId && topic.id != null"
+            type="button"
+            class="fl-card-delete"
+            mat-icon-button
+            matTooltip="Supprimer mon sujet"
+            (click)="deleteOwnTopic(topic, $event)">
+            <mat-icon>delete_outline</mat-icon>
+          </button>
+        </div>
       </div>
     </main>
   </div>

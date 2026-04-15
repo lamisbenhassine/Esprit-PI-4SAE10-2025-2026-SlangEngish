@@ -8,7 +8,8 @@
     "target": "http://localhost:8040",
     "secure": false,
     "changeOrigin": true,
-    "timeout": 120000
+    "timeout": 300000,
+    "proxyTimeout": 300000
   },
   "/api/inscription": {
     "target": "http://localhost:8030",

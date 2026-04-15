@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/forum/topics")
@@ -52,26 +53,40 @@ public class ForumTopicController {
     }
 
     @PostMapping
-    public ResponseEntity<ForumTopic> createTopic(@RequestBody ForumTopic topic) {
-        ForumTopic createdTopic = forumTopicService.createTopic(topic);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdTopic);
+    public ResponseEntity<?> createTopic(@RequestBody ForumTopic topic) {
+        try {
+            ForumTopic createdTopic = forumTopicService.createTopic(topic);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdTopic);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ForumTopic> updateTopic(@PathVariable Long id,
+    public ResponseEntity<?> updateTopic(@PathVariable Long id,
             @RequestBody ForumTopic topic) {
         try {
             ForumTopic updatedTopic = forumTopicService.updateTopic(id, topic);
             return ResponseEntity.ok(updatedTopic);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTopic(@PathVariable Long id) {
-        forumTopicService.deleteTopic(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteTopic(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long actorUserId) {
+        try {
+            forumTopicService.deleteTopic(id, actorUserId);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        }
     }
 
     /** Épinglage / verrouillage (backoffice modération). */

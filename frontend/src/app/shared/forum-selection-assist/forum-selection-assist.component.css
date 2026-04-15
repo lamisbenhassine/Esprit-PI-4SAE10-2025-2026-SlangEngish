@@ -16,6 +16,26 @@
   transform: translateX(-50%);
 }
 
+.fsa-lang-sel {
+  width: 118px;
+  max-width: 32vw;
+  font-size: 0.75rem;
+  margin: 0 2px;
+  padding: 0 4px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.fsa-lang-sel ::ng-deep .mat-mdc-select-trigger {
+  min-height: 36px;
+  align-items: center;
+}
+
+.fsa-lang-sel ::ng-deep .mat-mdc-select-value {
+  font-size: 0.75rem;
+}
+
 .fsa-btn {
   width: 40px;
   height: 40px;

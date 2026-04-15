@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { forkJoin, of, Subscription } from 'rxjs';
 import { ForumTopicService, ForumTopic } from '../../../core/services/forum-topic.service';
 import { UserProfile, UserProfileService } from '../../../core/services/user-profile.service';
 import { ForumMediaService } from '../../../core/services/forum-media.service';
@@ -9,6 +9,7 @@ import {
   isForumLevelUnlockedForUser,
   parseCefrFromProfile
 } from '../../../core/utils/cefr-level.util';
+import { apiErrorMessage, ComposeAssistService } from '../../../core/services/compose-assist.service';
 
 export interface LevelMeta {
   code: string;
@@ -100,8 +101,32 @@ export class ForumLevelsComponent implements OnInit, OnDestroy {
     private users: UserProfileService,
     private media: ForumMediaService,
     private snackBar: MatSnackBar,
-    private identity: FrontofficeIdentityService
+    private identity: FrontofficeIdentityService,
+    private composeAssist: ComposeAssistService
   ) {}
+
+  polishNewTopicFields(): void {
+    const title$ = this.newTitle.trim()
+      ? this.composeAssist.smartPolish$(this.newTitle)
+      : of({ text: this.newTitle, source: 'local' as const });
+    const desc$ = this.newDescription.trim()
+      ? this.composeAssist.smartPolish$(this.newDescription)
+      : of({ text: this.newDescription, source: 'local' as const });
+    forkJoin({ t: title$, d: desc$ }).subscribe({
+      next: ({ t, d }) => {
+        this.newTitle = t.text;
+        this.newDescription = d.text;
+        const ai = t.source === 'ai' || d.source === 'ai';
+        this.snackBar.open(
+          ai ? 'Texte amélioré (IA).' : 'Corrections locales (sans IA).',
+          'OK',
+          { duration: 2800 }
+        );
+      },
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, this.composeAssist.profanityHint), 'OK', { duration: 6000 })
+    });
+  }
 
   ngOnInit(): void {
     this.currentUserId = this.identity.getCurrentUserId();
@@ -318,6 +343,31 @@ export class ForumLevelsComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
+  deleteOwnTopic(topic: ForumTopic, ev: Event): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const id = topic.id;
+    if (id == null || topic.authorId !== this.currentUserId) {
+      return;
+    }
+    if (!confirm('Supprimer ce sujet ? Cette action est définitive.')) {
+      return;
+    }
+    this.forumTopicService.deleteTopic(id, this.currentUserId).subscribe({
+      next: () => {
+        this.snackBar.open('Sujet supprimé.', 'OK', { duration: 2500 });
+        this.fetchTopicsFor(this.selectedLevel);
+      },
+      error: err => {
+        const msg =
+          err?.error?.error ||
+          (typeof err?.error === 'string' ? err.error : null) ||
+          'Suppression impossible.';
+        this.snackBar.open(msg, 'OK', { duration: 5000 });
+      }
+    });
+  }
+
   createTopic(): void {
     if (!this.isPaid || this.levelSpaceId == null || this.creating) {
       return;
@@ -347,12 +397,11 @@ export class ForumLevelsComponent implements OnInit, OnDestroy {
         },
         error: err => {
           this.creating = false;
-          const body = err?.error;
-          const msg =
-            typeof body === 'string' && body.trim()
-              ? body.trim()
-              : body?.message || err?.message || 'Publishing failed. Check forum (8040) and try again.';
-          this.snackBar.open(msg, 'OK', { duration: 7000 });
+          this.snackBar.open(
+            apiErrorMessage(err, 'Publishing failed. Check forum (8040) and try again.'),
+            'OK',
+            { duration: 7000 }
+          );
         }
       });
   }

@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { ForumTopicService, ForumTopic } from '../../core/services/forum-topic.service';
 import { ForumReportService, ForumReport, ForumReportStatus } from '../../core/services/forum-report.service';
 import { ForumDialogComponent } from './forum-dialog/forum-dialog.component';
@@ -30,6 +32,12 @@ export class ForumManagementComponent implements OnInit {
     reports: ForumReport[] = [];
     reportsLoading = false;
     userById: { [id: number]: UserProfile } = {};
+
+    /** Sujets forum général vs tous les espaces niveau (A1–C2). */
+    topicSource: 'general' | 'levels' = 'general';
+    readonly levelForumCodes = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+    /** Utilisateur utilisé pour les appels API niveau (accès back-office). */
+    readonly adminForumViewerUserId = 1;
 
     constructor(
         private forumTopicService: ForumTopicService,
@@ -143,25 +151,51 @@ export class ForumManagementComponent implements OnInit {
         });
     }
 
+    onTopicSourceChange(): void {
+        this.currentPage = 1;
+        this.searchQuery = '';
+        this.refreshTopics();
+    }
+
     refreshTopics(): void {
         this.loading = true;
-        this.forumTopicService.getGeneralTopics().subscribe({
-            next: (data) => {
-                const list = Array.isArray(data) ? data : [];
-                console.log('Topics loaded successfully:', list.length, 'topics');
-                this.topics = list;
+        if (this.topicSource === 'general') {
+            this.forumTopicService.getGeneralTopics().subscribe({
+                next: (data) => {
+                    const list = Array.isArray(data) ? data : [];
+                    this.topics = list;
+                    this.applyFilters();
+                    this.loading = false;
+                },
+                error: (err) => {
+                    console.error('Error loading topics:', err);
+                    if (err.status === 200) {
+                        this.topics = [];
+                        this.applyFilters();
+                    } else {
+                        const status = err.status ? `(HTTP ${err.status})` : '';
+                        this.snackBar.open(`Error loading topics ${status}`, 'Close', { duration: 5000 });
+                    }
+                    this.loading = false;
+                }
+            });
+            return;
+        }
+
+        forkJoin(
+            this.levelForumCodes.map(code =>
+                this.forumTopicService.getTopicsByLevel(code, this.adminForumViewerUserId).pipe(
+                    catchError(() => of([] as ForumTopic[]))
+                )
+            )
+        ).subscribe({
+            next: (arrays) => {
+                this.topics = arrays.flat();
                 this.applyFilters();
                 this.loading = false;
             },
-            error: (err) => {
-                console.error('Error loading topics:', err);
-                if (err.status === 200) {
-                    this.topics = [];
-                    this.applyFilters();
-                } else {
-                    const status = err.status ? `(HTTP ${err.status})` : '';
-                    this.snackBar.open(`✕ Error loading topics ${status}`, 'Close', { duration: 5000 });
-                }
+            error: () => {
+                this.snackBar.open('Erreur chargement forums niveau', 'Close', { duration: 5000 });
                 this.loading = false;
             }
         });
@@ -265,7 +299,7 @@ export class ForumManagementComponent implements OnInit {
                 const newTopic = { ...result, views: 0 };
                 this.forumTopicService.createTopic(newTopic).subscribe({
                     next: () => {
-                        this.snackBar.open('✓ Topic created successfully', 'Close', {
+                        this.snackBar.open('Topic created successfully', 'Close', {
                             duration: 3000,
                             panelClass: ['success-snackbar']
                         });
@@ -277,7 +311,7 @@ export class ForumManagementComponent implements OnInit {
                         this.loading = false;
                         console.error('Error creating topic:', err);
                         const errorMsg = err.status ? `(HTTP ${err.status}: ${err.statusText || 'Error'})` : err.message || 'Unknown error';
-                        this.snackBar.open(`✕ Error creating topic: ${errorMsg}`, 'Close', { duration: 7000 });
+                        this.snackBar.open(`Error creating topic: ${errorMsg}`, 'Close', { duration: 7000 });
                     }
                 });
             }
@@ -295,7 +329,7 @@ export class ForumManagementComponent implements OnInit {
                 this.loading = true;
                 this.forumTopicService.updateTopic(topic.id!, result).subscribe({
                     next: () => {
-                        this.snackBar.open('✓ Topic updated successfully', 'Close', {
+                        this.snackBar.open('Topic updated successfully', 'Close', {
                             duration: 3000,
                             panelClass: ['success-snackbar']
                         });
@@ -305,7 +339,7 @@ export class ForumManagementComponent implements OnInit {
                         this.loading = false;
                         console.error('Update error:', err);
                         const errorMsg = err.status ? `(HTTP ${err.status}: ${err.statusText || 'Error'})` : err.message || 'Unknown error';
-                        this.snackBar.open(`✕ Error updating topic: ${errorMsg}`, 'Close', { duration: 7000 });
+                        this.snackBar.open(`Error updating topic: ${errorMsg}`, 'Close', { duration: 7000 });
                     }
                 });
             }
@@ -316,7 +350,7 @@ export class ForumManagementComponent implements OnInit {
         if (confirm('Are you sure you want to delete this forum topic?')) {
             this.forumTopicService.deleteTopic(id).subscribe({
                 next: () => {
-                    this.snackBar.open('✓ Topic deleted successfully', 'Close', {
+                    this.snackBar.open('Topic deleted successfully', 'Close', {
                         duration: 3000,
                         panelClass: ['success-snackbar']
                     });
@@ -325,7 +359,7 @@ export class ForumManagementComponent implements OnInit {
                 error: (err) => {
                     console.error('Delete error:', err);
                     const errorMsg = err.status ? `(HTTP ${err.status}: ${err.statusText || 'Error'})` : err.message || 'Unknown error';
-                    this.snackBar.open(`✕ Error deleting topic: ${errorMsg}`, 'Close', { duration: 7000 });
+                    this.snackBar.open(`Error deleting topic: ${errorMsg}`, 'Close', { duration: 7000 });
                 }
             });
         }

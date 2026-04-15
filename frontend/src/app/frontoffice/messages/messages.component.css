@@ -321,14 +321,22 @@
 
 .dm-compose {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  align-items: flex-end;
+  align-items: stretch;
   padding: 0.75rem 1rem;
   border-top: 1px solid #efefef;
 }
 
+.dm-compose-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
 .dm-textarea {
-  flex: 1;
+  width: 100%;
   border: 1px solid #dbdbdb;
   border-radius: 10px;
   padding: 0.5rem 0.65rem;

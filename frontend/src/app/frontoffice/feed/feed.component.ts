@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { forkJoin, of } from 'rxjs';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import {
@@ -12,6 +13,7 @@ import { ForumMessageService, ForumMessage, CreateMessageRequest } from '../../c
 import { UserProfileService, UserProfile } from '../../core/services/user-profile.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FrontofficeIdentityService } from '../../core/services/frontoffice-identity.service';
+import { apiErrorMessage, ComposeAssistService } from '../../core/services/compose-assist.service';
 
 export interface FeedCommentAttachment {
   type: 'image' | 'video' | 'audio';
@@ -63,8 +65,48 @@ export class FeedComponent implements OnInit, OnDestroy {
     private identity: FrontofficeIdentityService,
     private snackBar: MatSnackBar,
     private router: Router,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private composeAssist: ComposeAssistService
   ) {}
+
+  polishFeedCompose(): void {
+    const title$ = this.composeTitle.trim()
+      ? this.composeAssist.smartPolish$(this.composeTitle)
+      : of({ text: this.composeTitle, source: 'local' as const });
+    const cap$ = this.composeCaption.trim()
+      ? this.composeAssist.smartPolish$(this.composeCaption)
+      : of({ text: this.composeCaption, source: 'local' as const });
+    forkJoin({ t: title$, c: cap$ }).subscribe({
+      next: ({ t, c }) => {
+        this.composeTitle = t.text;
+        this.composeCaption = c.text;
+        const ai = t.source === 'ai' || c.source === 'ai';
+        this.snackBar.open(
+          ai ? 'Texte amélioré (IA).' : 'Corrections locales (sans IA).',
+          'OK',
+          { duration: 2800 }
+        );
+      },
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, this.composeAssist.profanityHint), 'OK', { duration: 6000 })
+    });
+  }
+
+  polishComment(post: FeedPost): void {
+    const cur = this.commentText[post.id] || '';
+    this.composeAssist.smartPolish$(cur).subscribe({
+      next: ({ text, source }) => {
+        this.commentText[post.id] = text;
+        this.snackBar.open(
+          source === 'ai' ? 'Commentaire amélioré (IA).' : 'Corrections locales (sans IA).',
+          'OK',
+          { duration: 2500 }
+        );
+      },
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, this.composeAssist.profanityHint), 'OK', { duration: 6000 })
+    });
+  }
 
   ngOnInit(): void {
     this.currentUserId = this.identity.getCurrentUserId();
@@ -146,9 +188,9 @@ export class FeedComponent implements OnInit, OnDestroy {
           this.snackBar.open('Post created.', 'OK', { duration: 2500 });
           this.refreshAll();
         },
-        error: () => {
+        error: err => {
           this.composing = false;
-          this.snackBar.open('Failed to publish post.', 'OK', { duration: 4000 });
+          this.snackBar.open(apiErrorMessage(err, 'Failed to publish post.'), 'OK', { duration: 6000 });
         }
       });
   }
@@ -394,8 +436,7 @@ export class FeedComponent implements OnInit, OnDestroy {
       },
       error: err => {
         this.commentBusy[post.id] = false;
-        const msg = err?.error?.error || 'Envoi impossible.';
-        this.snackBar.open(msg, 'OK', { duration: 5000 });
+        this.snackBar.open(apiErrorMessage(err, 'Envoi impossible.'), 'OK', { duration: 6000 });
       }
     });
   }

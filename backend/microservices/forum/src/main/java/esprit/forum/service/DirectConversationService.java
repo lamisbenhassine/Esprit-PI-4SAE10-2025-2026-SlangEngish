@@ -23,6 +23,7 @@ public class DirectConversationService {
     private final DirectConversationRepository conversationRepository;
     private final DirectMessageRepository messageRepository;
     private final UserClient userClient;
+    private final ContentModerationService contentModerationService;
 
     private static boolean isTutor(UserProfileDto u) {
         return u != null && u.getAccountRole() != null && "TUTOR".equalsIgnoreCase(u.getAccountRole().trim());
@@ -144,6 +145,7 @@ public class DirectConversationService {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("Message vide");
         }
+        contentModerationService.assertTextAcceptable(content);
         DirectConversation c = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new IllegalArgumentException("Conversation introuvable"));
         DirectMessage m = new DirectMessage();

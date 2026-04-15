@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, map, of } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, map, of, switchMap, throwError, timer } from 'rxjs';
+import { retry } from 'rxjs/operators';
 
 interface SummarizeApiResponse {
   summary?: string;
@@ -8,6 +9,15 @@ interface SummarizeApiResponse {
 
 interface TranslateApiResponse {
   translatedText?: string;
+}
+
+interface TranslateTopicApiResponse {
+  trTitle?: string;
+  trDescription?: string;
+}
+
+interface PolishEnglishApiResponse {
+  correctedText?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -37,17 +47,103 @@ export class TextAiService {
   }
 
   /**
-   * Translation to English via backend Gemini (same key as summarize).
-   * On error or missing AI, returns the original text for TTS fallback.
+   * Traduction vers une langue cible (codes ISO 639-1, liste côté serveur).
+   * En cas d’erreur ou d’IA indisponible, renvoie le texte d’origine.
    */
+  translate(text: string, targetLanguage: string): Observable<string> {
+    const clean = (text || '').trim();
+    const lang = (targetLanguage || 'en').trim().toLowerCase().slice(0, 2);
+    if (!clean) {
+      return of('');
+    }
+    return this.retryHttpOn429(
+      this.http.post<TranslateApiResponse>('/api/forum/ai/translate', { text: clean, targetLanguage: lang }),
+      1
+    ).pipe(
+        switchMap(res => {
+          const out = (res?.translatedText ?? '').trim();
+          if (!out) {
+            return throwError(
+              () => new Error('Réponse de traduction vide (vérifiez le microservice forum et la clé IA).')
+            );
+          }
+          return of(out);
+        })
+      );
+  }
+
+  /** Équivalent à {@link translate} avec la cible anglais (TTS / sélection). */
   translateToEnglish(text: string): Observable<string> {
+    return this.translate(text, 'en');
+  }
+
+  /**
+   * Traduction titre + description en un seul appel (moins de 429 que deux /translate).
+   */
+  /**
+   * Orthographe / grammaire / style via Gemini (microservice forum).
+   * En cas d’erreur réseau ou d’IA indisponible, renvoie une chaîne vide (le caller applique le fallback local).
+   */
+  polishEnglish(text: string): Observable<string> {
     const clean = (text || '').trim();
     if (!clean) {
       return of('');
     }
-    return this.http.post<TranslateApiResponse>('/api/forum/ai/translate-to-english', { text: clean }).pipe(
-      map(res => (res?.translatedText || clean).trim()),
-      catchError(() => of(clean))
+    return this.http.post<PolishEnglishApiResponse>('/api/forum/ai/polish-english', { text: clean }).pipe(
+      map(res => (res?.correctedText ?? '').trim()),
+      catchError(() => of(''))
+    );
+  }
+
+  translateTopicPost(
+    title: string,
+    description: string,
+    targetLanguage: string
+  ): Observable<{ trTitle: string; trDescription: string }> {
+    const lang = (targetLanguage || 'en').trim().toLowerCase().slice(0, 2);
+    return this.retryHttpOn429(
+      this.http.post<TranslateTopicApiResponse>('/api/forum/ai/translate-topic', {
+        title: (title || '').trim(),
+        description: (description || '').trim(),
+        targetLanguage: lang
+      }),
+      0
+    ).pipe(
+        switchMap(res => {
+          const trTitle = (res?.trTitle ?? '').trim();
+          const trDescription = (res?.trDescription ?? '').trim();
+          if (!trTitle && !trDescription) {
+            return throwError(
+              () => new Error('Réponse de traduction vide (vérifiez le microservice forum).')
+            );
+          }
+          return of({ trTitle, trDescription });
+        })
+      );
+  }
+
+  /**
+   * Nouvelle clé API ≠ nouveau quota : Google limite par projet / minute.
+   * Retente automatiquement sur 429 avec délais croissants (en plus des retries serveur).
+   */
+  /**
+   * @param maxRetries 0 = pas de retry client (évite d’empiler avec les retries serveur → timeouts proxy / ERR_EMPTY_RESPONSE).
+   */
+  private retryHttpOn429<T>(request$: Observable<T>, maxRetries = 2): Observable<T> {
+    if (maxRetries <= 0) {
+      return request$;
+    }
+    return request$.pipe(
+      retry({
+        count: maxRetries,
+        delay: (error: unknown, retryCount: number) => {
+          if (error instanceof HttpErrorResponse && error.status === 429) {
+            const ms = Math.min(8000 * retryCount, 45_000);
+            return timer(ms);
+          }
+          return throwError(() => error);
+        }
+      })
     );
   }
 

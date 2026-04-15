@@ -10,6 +10,7 @@ import { BackofficeTutorIdentityService } from '../../core/services/backoffice-t
 import { DmReadPointerService } from '../../core/services/dm-read-pointer.service';
 import { MessagingUnreadService } from '../../core/services/messaging-unread.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { apiErrorMessage, ComposeAssistService } from '../../core/services/compose-assist.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -43,8 +44,24 @@ export class TutorInboxComponent implements OnInit, OnDestroy {
     private readPtr: DmReadPointerService,
     private messagingUnread: MessagingUnreadService,
     private snackBar: MatSnackBar,
+    private composeAssist: ComposeAssistService,
     @Inject(PLATFORM_ID) private platformId: object
   ) {}
+
+  polishDraft(): void {
+    this.composeAssist.smartPolish$(this.draft).subscribe({
+      next: ({ text, source }) => {
+        this.draft = text;
+        this.snackBar.open(
+          source === 'ai' ? 'Texte amélioré (IA).' : 'Corrections locales (sans IA).',
+          'OK',
+          { duration: 2800 }
+        );
+      },
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, this.composeAssist.profanityHint), 'OK', { duration: 6000 })
+    });
+  }
 
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId) && typeof Notification !== 'undefined') {
@@ -187,7 +204,8 @@ export class TutorInboxComponent implements OnInit, OnDestroy {
         this.draft = '';
         this.refreshInbox();
       },
-      error: () => this.snackBar.open('Envoi impossible.', 'OK', { duration: 3000 })
+      error: err =>
+        this.snackBar.open(apiErrorMessage(err, 'Envoi impossible.'), 'OK', { duration: 6000 })
     });
   }
 

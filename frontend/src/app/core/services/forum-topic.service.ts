@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map, retry } from 'rxjs/operators';
+import { ComposeAssistService } from './compose-assist.service';
 
 // Use relative base URL so Angular proxy can route to backend (dev) or gateway (prod).
 const API_BASE_URL = '/api/forum';
@@ -38,7 +39,39 @@ export interface ForumSpace {
     providedIn: 'root'
 })
 export class ForumTopicService {
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private composeAssist: ComposeAssistService
+    ) {}
+
+    private rejectIfTopicTextBad(
+        title: string | null | undefined,
+        description: string | null | undefined
+    ): Observable<never> | null {
+        const vt = this.composeAssist.validateForSend(title ?? '');
+        if (!vt.ok) {
+            return throwError(
+                () =>
+                    new HttpErrorResponse({
+                        status: 400,
+                        statusText: 'Bad Request',
+                        error: { error: vt.message }
+                    })
+            );
+        }
+        const vd = this.composeAssist.validateForSend(description ?? '');
+        if (!vd.ok) {
+            return throwError(
+                () =>
+                    new HttpErrorResponse({
+                        status: 400,
+                        statusText: 'Bad Request',
+                        error: { error: vd.message }
+                    })
+            );
+        }
+        return null;
+    }
 
     private handleError(error: HttpErrorResponse) {
         console.error('API Error:', error);
@@ -103,6 +136,10 @@ export class ForumTopicService {
     }
 
     createTopic(topic: ForumTopic): Observable<ForumTopic> {
+        const bad = this.rejectIfTopicTextBad(topic.title, topic.description);
+        if (bad) {
+            return bad;
+        }
         return this.http.post<ForumTopic>(API_URL, topic).pipe(
             catchError(this.handleError)
         );
@@ -119,6 +156,10 @@ export class ForumTopicService {
             coverVideoUrl?: string | null;
         }
     ): Observable<ForumTopic> {
+        const bad = this.rejectIfTopicTextBad(request.title, request.description);
+        if (bad) {
+            return bad;
+        }
         return this.http.post<ForumTopic>(`${SPACES_URL}/${spaceId}/topics`, request).pipe(
             catchError(this.handleError)
         );
@@ -138,13 +179,24 @@ export class ForumTopicService {
     }
 
     updateTopic(id: number, topic: ForumTopic): Observable<ForumTopic> {
+        const bad = this.rejectIfTopicTextBad(topic.title, topic.description);
+        if (bad) {
+            return bad;
+        }
         return this.http.put<ForumTopic>(`${API_URL}/${id}`, topic).pipe(
             catchError(this.handleError)
         );
     }
 
-    deleteTopic(id: number): Observable<void> {
-        return this.http.delete<void>(`${API_URL}/${id}`).pipe(
+    /**
+     * @param actorUserId Si défini, l’API n’accepte la suppression que si l’utilisateur est l’auteur du sujet.
+     */
+    deleteTopic(id: number, actorUserId?: number): Observable<void> {
+        let params = new HttpParams();
+        if (actorUserId != null) {
+            params = params.set('actorUserId', String(actorUserId));
+        }
+        return this.http.delete<void>(`${API_URL}/${id}`, { params }).pipe(
             catchError(this.handleError)
         );
     }

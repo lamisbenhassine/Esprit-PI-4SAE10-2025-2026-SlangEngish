@@ -31,11 +31,16 @@ import { PaymentService } from '../../../core/services/payment.service';
       <div *ngIf="!loading && topics.length > 0" class="list-group mt-3">
         <a *ngFor="let topic of topics" [routerLink]="['/frontoffice/forum/topic', topic.id]"
            class="list-group-item list-group-item-action">
-          <div class="d-flex w-100 justify-content-between">
-            <h5 class="mb-1">{{ topic.title }}</h5>
-            <small>👁️ {{ topic.views }}</small>
+          <div class="d-flex w-100 justify-content-between align-items-start gap-2">
+            <app-topic-post-translate-block
+              class="flex-grow-1"
+              variant="card"
+              [title]="topic.title"
+              [description]="topic.description || ''"
+              [previewMaxLength]="220"
+            ></app-topic-post-translate-block>
+            <small class="text-nowrap">Views: {{ topic.views }}</small>
           </div>
-          <p class="mb-1">{{ topic.description }}</p>
         </a>
       </div>
     </div>
@@ -97,4 +102,3 @@ export class ForumCoursesComponent {
     });
   }
 }
-

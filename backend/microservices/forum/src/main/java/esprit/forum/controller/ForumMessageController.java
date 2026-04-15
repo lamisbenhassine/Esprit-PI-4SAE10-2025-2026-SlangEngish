@@ -102,7 +102,7 @@ public class ForumMessageController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ForumMessage> updateMessage(@PathVariable Long id,
+    public ResponseEntity<?> updateMessage(@PathVariable Long id,
             @RequestBody UpdateMessageRequest request) {
         try {
             ForumMessage message = new ForumMessage();
@@ -111,6 +111,8 @@ public class ForumMessageController {
 
             ForumMessage updatedMessage = forumMessageService.updateMessage(id, message);
             return ResponseEntity.ok(updatedMessage);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

@@ -14,11 +14,44 @@
     <h2>New Discussion</h2>
     <mat-form-field appearance="outline" class="w100">
       <mat-label>Title</mat-label>
-      <input matInput [(ngModel)]="newTitle" placeholder="Discussion title" />
+      <input
+        matInput
+        [(ngModel)]="newTitle"
+        placeholder="Discussion title"
+        spellcheck="true"
+        lang="en"
+        composeWordSuggest
+        #fgTitleSug="composeWordSuggest" />
+      <div class="compose-suggest-row" *ngIf="fgTitleSug.suggestions?.length">
+        <button
+          type="button"
+          mat-stroked-button
+          *ngFor="let w of fgTitleSug.suggestions"
+          (click)="fgTitleSug.applySuggestion(w)">
+          {{ w }}
+        </button>
+      </div>
     </mat-form-field>
     <mat-form-field appearance="outline" class="w100">
       <mat-label>Description</mat-label>
-      <textarea matInput rows="3" [(ngModel)]="newDescription" placeholder="Details..."></textarea>
+      <textarea
+        matInput
+        rows="3"
+        [(ngModel)]="newDescription"
+        placeholder="Details..."
+        spellcheck="true"
+        lang="en"
+        composeWordSuggest
+        #fgDescSug="composeWordSuggest"></textarea>
+      <div class="compose-suggest-row" *ngIf="fgDescSug.suggestions?.length">
+        <button
+          type="button"
+          mat-stroked-button
+          *ngFor="let w of fgDescSug.suggestions"
+          (click)="fgDescSug.applySuggestion(w)">
+          {{ w }}
+        </button>
+      </div>
     </mat-form-field>
     <mat-form-field appearance="outline" class="w100">
       <mat-label>Cover image (optional URL)</mat-label>
@@ -28,6 +61,9 @@
       <input type="file" accept="image/*" #coverIn hidden (change)="onCoverFile($event)" />
       <button mat-stroked-button type="button" (click)="coverIn.click()" [disabled]="coverUploading">
         <mat-icon>image</mat-icon> Upload an image
+      </button>
+      <button mat-stroked-button type="button" (click)="polishNewTopicFields()" matTooltip="Orthographe et style (Gemini si configuré)">
+        Améliorer (IA)
       </button>
       <button mat-flat-button color="primary" type="button"
         (click)="createTopic()"
@@ -74,32 +110,47 @@
   </section>
 
   <div class="fo-grid" *ngIf="!loading">
-    <a *ngFor="let topic of filteredTopics" [routerLink]="['/frontoffice/forum/topic', topic.id]" class="fo-card">
-      <div class="fo-card-media" *ngIf="topic.coverImageUrl">
-        <img [src]="topic.coverImageUrl" alt="" />
-      </div>
-      <div class="fo-card-media fo-placeholder" *ngIf="!topic.coverImageUrl">
-        <mat-icon>chat_bubble</mat-icon>
-      </div>
-      <div class="fo-card-body">
-        <div class="fo-card-tags">
-          <span class="tag">{{ topic.category }}</span>
-          <span class="tag pin" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> Pinned</span>
-          <span class="tag soft">{{ topic.createdAt | date : 'mediumDate' }}</span>
+    <div class="fo-card-wrap" *ngFor="let topic of filteredTopics">
+      <a [routerLink]="['/frontoffice/forum/topic', topic.id]" class="fo-card">
+        <div class="fo-card-media" *ngIf="topic.coverImageUrl">
+          <img [src]="topic.coverImageUrl" alt="" />
         </div>
-        <h3>{{ topic.title }}</h3>
-        <p>{{ topic.description | slice : 0 : 160 }}{{ (topic.description || '').length > 160 ? '…' : '' }}</p>
-        <footer>
-          <span class="meta author">
-            <mat-icon>person</mat-icon>{{ authorName(topic.authorId) }}
-          </span>
-          <span class="author-badge student" *ngIf="authorRole(topic.authorId) === 'Student'">Student</span>
-          <span class="author-badge tutor" *ngIf="authorRole(topic.authorId) === 'Tutor'">Tutor</span>
-          <span class="author-badge admin" *ngIf="authorRole(topic.authorId) === 'Team'">Team</span>
-          <span class="meta"><mat-icon>visibility</mat-icon>{{ topic.views }}</span>
-        </footer>
-      </div>
-    </a>
+        <div class="fo-card-media fo-placeholder" *ngIf="!topic.coverImageUrl">
+          <mat-icon>chat_bubble</mat-icon>
+        </div>
+        <div class="fo-card-body">
+          <div class="fo-card-tags">
+            <span class="tag">{{ topic.category }}</span>
+            <span class="tag pin" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> Pinned</span>
+            <span class="tag soft">{{ topic.createdAt | date : 'mediumDate' }}</span>
+          </div>
+          <app-topic-post-translate-block
+            variant="card"
+            [title]="topic.title"
+            [description]="topic.description || ''"
+            [previewMaxLength]="160"
+          ></app-topic-post-translate-block>
+          <footer>
+            <span class="meta author">
+              <mat-icon>person</mat-icon>{{ authorName(topic.authorId) }}
+            </span>
+            <span class="author-badge student" *ngIf="authorRole(topic.authorId) === 'Student'">Student</span>
+            <span class="author-badge tutor" *ngIf="authorRole(topic.authorId) === 'Tutor'">Tutor</span>
+            <span class="author-badge admin" *ngIf="authorRole(topic.authorId) === 'Team'">Team</span>
+            <span class="meta"><mat-icon>visibility</mat-icon>{{ topic.views }}</span>
+          </footer>
+        </div>
+      </a>
+      <button
+        *ngIf="topic.authorId === currentUserId && topic.id != null"
+        type="button"
+        class="fo-card-delete"
+        mat-icon-button
+        matTooltip="Supprimer mon sujet"
+        (click)="deleteOwnTopic(topic, $event)">
+        <mat-icon>delete_outline</mat-icon>
+      </button>
+    </div>
   </div>
 
   <div class="fo-pagination" *ngIf="totalPages > 1 && !loading">

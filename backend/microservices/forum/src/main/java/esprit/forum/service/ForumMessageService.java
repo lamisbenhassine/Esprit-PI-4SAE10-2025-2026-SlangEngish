@@ -20,6 +20,7 @@ public class ForumMessageService {
     private final ForumMessageRepository forumMessageRepository;
     private final ForumTopicRepository forumTopicRepository;
     private final ForumBlockService forumBlockService;
+    private final ContentModerationService contentModerationService;
 
     public List<ForumMessage> getMessagesByTopicId(Long topicId, Long viewerUserId) {
         List<ForumMessage> all = forumMessageRepository.findByTopicId(topicId);
@@ -53,6 +54,7 @@ public class ForumMessageService {
         if (Boolean.TRUE.equals(topic.getLocked())) {
             throw new RuntimeException("Topic is locked — no new messages");
         }
+        contentModerationService.assertTextAcceptable(message.getContent());
 
         message.setTopic(topic);
         return forumMessageRepository.save(message);
@@ -60,6 +62,7 @@ public class ForumMessageService {
 
     @Transactional
     public ForumMessage updateMessage(Long id, ForumMessage updatedMessage) {
+        contentModerationService.assertTextAcceptable(updatedMessage.getContent());
         return forumMessageRepository.findById(id)
                 .map(message -> {
                     message.setContent(updatedMessage.getContent());

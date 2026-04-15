@@ -7,13 +7,22 @@
   *ngIf="barVisible && selectedText"
   [style.top.px]="barTop"
   [style.left.px]="barLeft"
-  (mousedown)="$event.preventDefault()"
+  (mousedown)="$event.stopPropagation()"
 >
+  <mat-select
+    [(ngModel)]="ttsTargetLang"
+    class="fsa-lang-sel"
+    panelClass="fsa-lang-panel"
+    (click)="$event.stopPropagation()"
+    [disabled]="translating"
+    aria-label="Langue de traduction pour la lecture">
+    <mat-option *ngFor="let l of readLanguages" [value]="l.code">{{ l.label }}</mat-option>
+  </mat-select>
   <button
     mat-icon-button
     type="button"
     class="fsa-btn"
-    matTooltip="Écouter (anglais, voix féminine si dispo)"
+    matTooltip="Traduire vers la langue choisie puis lire à voix haute"
     [disabled]="translating"
     (click)="readAloud($event)"
   >

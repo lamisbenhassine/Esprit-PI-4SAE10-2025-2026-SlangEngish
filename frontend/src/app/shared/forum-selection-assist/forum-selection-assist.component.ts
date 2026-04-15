@@ -7,6 +7,10 @@ import {
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TextAiService } from '../../core/services/text-ai.service';
+import {
+  TRANSLATION_TARGET_LANGUAGES,
+  TranslationTarget
+} from '../../core/data/translation-target-languages';
 
 @Component({
   selector: 'app-forum-selection-assist',
@@ -29,6 +33,10 @@ export class ForumSelectionAssistComponent implements OnDestroy {
   summarySource: 'ai' | 'fallback' | '' = '';
 
   readonly longTextThreshold = 220;
+
+  /** Langue cible pour traduction + lecture vocale de la sélection. */
+  ttsTargetLang = 'en';
+  readonly readLanguages: TranslationTarget[] = TRANSLATION_TARGET_LANGUAGES;
 
   private selectedUtterance?: SpeechSynthesisUtterance;
   private availableVoices: SpeechSynthesisVoice[] = [];
@@ -139,14 +147,14 @@ export class ForumSelectionAssistComponent implements OnDestroy {
       return;
     }
     this.translating = true;
-    this.textAi.translateToEnglish(this.selectedText).subscribe({
+    this.textAi.translate(this.selectedText, this.ttsTargetLang).subscribe({
       next: translated => {
         this.translating = false;
-        this.speakEnglish(translated || this.selectedText);
+        this.speakTranslated(translated || this.selectedText, this.ttsTargetLang);
       },
       error: () => {
         this.translating = false;
-        this.speakEnglish(this.selectedText);
+        this.speakTranslated(this.selectedText, this.ttsTargetLang);
       }
     });
   }
@@ -203,28 +211,57 @@ export class ForumSelectionAssistComponent implements OnDestroy {
     synth.onvoiceschanged = refresh;
   }
 
-  private pickPreferredEnglishFemaleVoice(): SpeechSynthesisVoice | undefined {
-    const englishVoices = this.availableVoices.filter(v =>
-      (v.lang || '').toLowerCase().startsWith('en')
-    );
-    if (!englishVoices.length) {
+  private pickPreferredVoiceForLang(lang: string): SpeechSynthesisVoice | undefined {
+    const prefix = (lang || 'en').toLowerCase().slice(0, 2);
+    const candidates = this.availableVoices.filter(v => (v.lang || '').toLowerCase().startsWith(prefix));
+    if (!candidates.length) {
       return undefined;
     }
-    const feminineHint = ['female', 'woman', 'zira', 'aria', 'samantha', 'victoria', 'karen'];
-    const femaleVoice = englishVoices.find(v => {
-      const n = (v.name || '').toLowerCase();
-      return feminineHint.some(h => n.includes(h));
-    });
-    return femaleVoice || englishVoices[0];
+    if (prefix === 'en') {
+      const feminineHint = ['female', 'woman', 'zira', 'aria', 'samantha', 'victoria', 'karen'];
+      const femaleVoice = candidates.find(v => {
+        const n = (v.name || '').toLowerCase();
+        return feminineHint.some(h => n.includes(h));
+      });
+      return femaleVoice || candidates[0];
+    }
+    return candidates[0];
   }
 
-  private speakEnglish(text: string): void {
+  private defaultBcp47ForLang(iso2: string): string {
+    const map: Record<string, string> = {
+      en: 'en-US',
+      fr: 'fr-FR',
+      ar: 'ar-SA',
+      es: 'es-ES',
+      de: 'de-DE',
+      it: 'it-IT',
+      pt: 'pt-PT',
+      tr: 'tr-TR',
+      nl: 'nl-NL',
+      pl: 'pl-PL',
+      ru: 'ru-RU',
+      ja: 'ja-JP',
+      zh: 'zh-CN',
+      hi: 'hi-IN',
+      vi: 'vi-VN',
+      ko: 'ko-KR',
+      sv: 'sv-SE',
+      da: 'da-DK',
+      no: 'nb-NO',
+      fi: 'fi-FI'
+    };
+    return map[iso2.toLowerCase()] || `${iso2}-${iso2.toUpperCase()}`;
+  }
+
+  private speakTranslated(text: string, langCode: string): void {
     this.stopReading();
+    const iso = (langCode || 'en').toLowerCase().slice(0, 2);
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
+    utterance.lang = this.defaultBcp47ForLang(iso);
     utterance.rate = 0.92;
-    utterance.pitch = 1.1;
-    const preferredVoice = this.pickPreferredEnglishFemaleVoice();
+    utterance.pitch = iso === 'en' ? 1.08 : 1.0;
+    const preferredVoice = this.pickPreferredVoiceForLang(iso);
     if (preferredVoice) {
       utterance.voice = preferredVoice;
       utterance.lang = preferredVoice.lang || utterance.lang;

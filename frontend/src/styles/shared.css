@@ -97,3 +97,18 @@
 .p-1 { padding: 8px; }
 .p-2 { padding: 16px; }
 .p-3 { padding: 24px; }
+
+/* Prédictions de mots (composeWordSuggest) */
+.compose-suggest-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.compose-suggest-row button {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  max-width: 100%;
+}

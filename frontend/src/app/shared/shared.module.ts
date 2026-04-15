@@ -19,13 +19,18 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { ForumSelectionAssistComponent } from './forum-selection-assist/forum-selection-assist.component';
+import { TopicPostTranslateBlockComponent } from './topic-post-translate-block/topic-post-translate-block.component';
+import { ComposeWordSuggestDirective } from './compose-word-suggest.directive';
 
 @NgModule({
   declarations: [
     NavbarComponent,
     SidebarComponent,
-    ForumSelectionAssistComponent
+    ForumSelectionAssistComponent,
+    TopicPostTranslateBlockComponent,
+    ComposeWordSuggestDirective
   ],
   imports: [
     CommonModule,
@@ -46,12 +51,15 @@ import { ForumSelectionAssistComponent } from './forum-selection-assist/forum-se
     MatBadgeModule,
     MatChipsModule,
     MatSnackBarModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSelectModule
   ],
   exports: [
     NavbarComponent,
     SidebarComponent,
     ForumSelectionAssistComponent,
+    TopicPostTranslateBlockComponent,
+    ComposeWordSuggestDirective,
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -70,7 +78,8 @@ import { ForumSelectionAssistComponent } from './forum-selection-assist/forum-se
     MatBadgeModule,
     MatChipsModule,
     MatSnackBarModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSelectModule
   ]
 })
 export class SharedModule { }

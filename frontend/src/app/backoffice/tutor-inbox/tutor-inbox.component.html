@@ -60,10 +60,32 @@
         </div>
       </div>
       <div class="ti-compose">
-        <textarea class="ti-textarea" rows="3" [(ngModel)]="draft" placeholder="Réponse à l’apprenant…"></textarea>
-        <button mat-flat-button color="primary" type="button" (click)="send()" [disabled]="!draft.trim()">
-          Envoyer la réponse
-        </button>
+        <textarea
+          class="ti-textarea"
+          rows="3"
+          [(ngModel)]="draft"
+          placeholder="Réponse à l’apprenant…"
+          spellcheck="true"
+          lang="en"
+          composeWordSuggest
+          #tiSuggest="composeWordSuggest"></textarea>
+        <div class="compose-suggest-row" *ngIf="tiSuggest.suggestions?.length">
+          <button
+            type="button"
+            mat-stroked-button
+            *ngFor="let w of tiSuggest.suggestions"
+            (click)="tiSuggest.applySuggestion(w)">
+            {{ w }}
+          </button>
+        </div>
+        <div class="ti-compose-actions">
+          <button mat-stroked-button type="button" (click)="polishDraft()" matTooltip="Orthographe et style (Gemini si configuré)">
+            Améliorer (IA)
+          </button>
+          <button mat-flat-button color="primary" type="button" (click)="send()" [disabled]="!draft.trim()">
+            Envoyer la réponse
+          </button>
+        </div>
       </div>
     </section>
 
