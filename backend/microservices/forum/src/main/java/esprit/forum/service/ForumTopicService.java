@@ -5,6 +5,7 @@ import esprit.forum.entity.ForumTopic;
 import esprit.forum.repository.ForumSpaceRepository;
 import esprit.forum.repository.ForumTopicRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -152,5 +153,19 @@ public class ForumTopicService {
             t.setLocked(locked);
         }
         return forumTopicRepository.save(t);
+    }
+
+    /**
+     * File « personne n’a encore répondu » : aucune ligne {@code forum_message} pour le sujet.
+     * Filtre les auteurs bloqués par le lecteur (cohérent avec le reste du forum).
+     */
+    @Transactional(readOnly = true)
+    public List<ForumTopic> listUnansweredTopics(int maxResults, Long viewerUserId) {
+        int cap = Math.min(Math.max(maxResults, 1), 100);
+        List<ForumTopic> raw = forumTopicRepository.findTopicsWithNoMessages(PageRequest.of(0, cap));
+        Set<Long> blocked = forumBlockService.getBlockedUserIds(viewerUserId);
+        return raw.stream()
+                .filter(t -> t.getAuthorId() == null || !blocked.contains(t.getAuthorId()))
+                .collect(Collectors.toList());
     }
 }

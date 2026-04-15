@@ -3,7 +3,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { ForumTopicService, ForumTopic } from '../../core/services/forum-topic.service';
+import { ForumTopicService, ForumTopic, ForumSpace } from '../../core/services/forum-topic.service';
 import { ForumReportService, ForumReport, ForumReportStatus } from '../../core/services/forum-report.service';
 import { ForumDialogComponent } from './forum-dialog/forum-dialog.component';
 import { UserProfile, UserProfileService } from '../../core/services/user-profile.service';
@@ -33,6 +33,10 @@ export class ForumManagementComponent implements OnInit {
     reportsLoading = false;
     userById: { [id: number]: UserProfile } = {};
 
+    /** Sujets sans aucun message (file d’attente tuteurs / équipe). */
+    unansweredTopics: ForumTopic[] = [];
+    unansweredLoading = false;
+
     /** Sujets forum général vs tous les espaces niveau (A1–C2). */
     topicSource: 'general' | 'levels' = 'general';
     readonly levelForumCodes = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
@@ -51,6 +55,7 @@ export class ForumManagementComponent implements OnInit {
         this.loadUsers();
         this.refreshTopics();
         this.loadReports();
+        this.loadUnanswered();
     }
 
     loadUsers(): void {
@@ -101,6 +106,40 @@ export class ForumManagementComponent implements OnInit {
         const colors = ['43e97b', '38f9d7', 'fa709a', 'fee140'];
         const index = (topic.id || 0) % colors.length;
         return `https://via.placeholder.com/300x200/${colors[index]}/333333?text=${topic.category}`;
+    }
+
+    loadUnanswered(): void {
+        this.unansweredLoading = true;
+        this.forumTopicService.getUnansweredTopics(60, this.adminForumViewerUserId).subscribe({
+            next: rows => {
+                this.unansweredTopics = Array.isArray(rows) ? rows : [];
+                this.unansweredLoading = false;
+            },
+            error: () => {
+                this.unansweredTopics = [];
+                this.unansweredLoading = false;
+                this.snackBar.open('Impossible de charger les sujets sans réponse (forum).', 'OK', { duration: 4000 });
+            }
+        });
+    }
+
+    spaceLabel(topic: ForumTopic): string {
+        const s = topic.space as ForumSpace | null | undefined;
+        if (s?.title?.trim()) {
+            return s.title.trim();
+        }
+        if (s?.key?.trim()) {
+            return s.key.trim();
+        }
+        return (topic.category || '—').toString();
+    }
+
+    openFrontTopic(topic: ForumTopic): void {
+        if (!topic.id) {
+            return;
+        }
+        const url = `/frontoffice/forum/topic/${topic.id}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
     }
 
     loadReports(): void {
@@ -348,13 +387,14 @@ export class ForumManagementComponent implements OnInit {
 
     deleteTopic(id: number): void {
         if (confirm('Are you sure you want to delete this forum topic?')) {
-            this.forumTopicService.deleteTopic(id).subscribe({
+                this.forumTopicService.deleteTopic(id).subscribe({
                 next: () => {
                     this.snackBar.open('Topic deleted successfully', 'Close', {
                         duration: 3000,
                         panelClass: ['success-snackbar']
                     });
                     this.refreshTopics();
+                    this.loadUnanswered();
                 },
                 error: (err) => {
                     console.error('Delete error:', err);

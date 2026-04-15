@@ -24,6 +24,17 @@ public class ForumTopicController {
         return ResponseEntity.ok(forumTopicService.getAllPublicTopics(viewerUserId));
     }
 
+    /**
+     * Sujets sans aucun message (file tuteurs / équipe). Déclaré avant {@code /{id}} pour éviter
+     * la capture du segment « unanswered » comme identifiant.
+     */
+    @GetMapping("/unanswered")
+    public ResponseEntity<List<ForumTopic>> listUnansweredTopics(
+            @RequestParam(defaultValue = "40") int limit,
+            @RequestParam(required = false) Long viewerUserId) {
+        return ResponseEntity.ok(forumTopicService.listUnansweredTopics(limit, viewerUserId));
+    }
+
     @GetMapping("/level/{category}")
     public ResponseEntity<?> getTopicsByLevel(@PathVariable String category,
             @RequestParam Long userId) {

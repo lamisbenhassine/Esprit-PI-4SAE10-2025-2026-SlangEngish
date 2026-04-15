@@ -23,6 +23,8 @@ export interface ForumTopic {
     coverVideoUrl?: string | null;
     pinned?: boolean | null;
     locked?: boolean | null;
+    /** Présent sur certains endpoints (ex. sujets sans réponse) pour afficher l’espace forum. */
+    space?: ForumSpace | null;
 }
 
 export interface ForumSpace {
@@ -76,6 +78,21 @@ export class ForumTopicService {
     private handleError(error: HttpErrorResponse) {
         console.error('API Error:', error);
         return throwError(() => error);
+    }
+
+    /**
+     * Sujets sans aucun message dans le fil (priorité aux plus anciens côté API).
+     * Utile back-office tuteurs / équipe.
+     */
+    getUnansweredTopics(limit = 40, viewerUserId?: number): Observable<ForumTopic[]> {
+        let params = new HttpParams().set('limit', String(limit));
+        if (viewerUserId != null) {
+            params = params.set('viewerUserId', String(viewerUserId));
+        }
+        return this.http.get<ForumTopic[]>(`${API_URL}/unanswered`, { params }).pipe(
+            map((body: unknown) => (Array.isArray(body) ? body : []) as ForumTopic[]),
+            catchError(this.handleError)
+        );
     }
 
     getGeneralTopics(viewerUserId?: number): Observable<ForumTopic[]> {

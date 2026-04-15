@@ -143,6 +143,66 @@
       </div>
     </mat-tab>
 
+    <mat-tab label="Sans réponse">
+      <div class="tab-pad">
+        <div class="reports-hint">
+          Sujets où <strong>aucun message</strong> n’a encore été posté dans le fil (seule la description du sujet existe).
+          Tri du plus ancien au plus récent pour prioriser les étudiants en attente.
+          <br /><br />
+          <strong>Pourquoi la liste peut être vide :</strong> dès qu’une personne poste un <em>premier</em> commentaire sur la page du sujet,
+          il n’est plus « sans réponse » — même sans tuteur. Les publications du fil d’actualité avec commentaires comptent aussi.
+        </div>
+        <div class="unanswered-toolbar">
+          <button mat-stroked-button type="button" (click)="loadUnanswered()" [disabled]="unansweredLoading">
+            <mat-icon>refresh</mat-icon>
+            Actualiser
+          </button>
+        </div>
+        <div *ngIf="unansweredLoading" class="loading-state">
+          <mat-spinner diameter="40"></mat-spinner>
+        </div>
+        <table class="reports-table unanswered-table" *ngIf="!unansweredLoading && unansweredTopics.length">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Date</th>
+              <th>Espace</th>
+              <th>Cat.</th>
+              <th>Titre</th>
+              <th>Auteur</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of unansweredTopics">
+              <td>{{ t.id }}</td>
+              <td>{{ t.createdAt | date : 'short' }}</td>
+              <td>{{ spaceLabel(t) }}</td>
+              <td><span class="mini-cat">{{ t.category }}</span></td>
+              <td class="unanswered-title">{{ t.title }}</td>
+              <td>
+                <span class="tag user">{{ authorName(t.authorId) }}</span>
+                <span class="tag role student" *ngIf="authorRole(t.authorId) === 'Étudiant'">Étudiant</span>
+              </td>
+              <td class="rep-actions">
+                <button mat-flat-button color="primary" type="button" (click)="openFrontTopic(t)">Ouvrir</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="empty-state" *ngIf="!unansweredLoading && !unansweredTopics.length">
+          <mat-icon>check_circle</mat-icon>
+          <h3>Aucun sujet en attente</h3>
+          <p>Tous les sujets ont déjà au moins <strong>un message</strong> dans le fil de discussion, ou le forum ne répond pas.</p>
+          <p class="empty-test-hint">
+            <strong>Comment tester :</strong> créez un <em>nouveau</em> sujet (forum général ou niveau), ouvrez sa page, et
+            <strong>ne postez aucun</strong> message dans « Discussion » — puis actualisez cet onglet. Dès qu’un commentaire
+            est envoyé, le sujet disparaît de cette liste.
+          </p>
+        </div>
+      </div>
+    </mat-tab>
+
     <mat-tab label="Signalements">
       <div class="tab-pad">
         <div class="reports-hint">File des signalements utilisateurs (contenu inapproprié, spam…). Traiter puis marquer

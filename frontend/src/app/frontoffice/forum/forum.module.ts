@@ -16,6 +16,7 @@ import { ForumLevelsComponent } from './forum-levels/forum-levels.component';
 import { TopicDetailComponent } from './topic-detail/topic-detail.component';
 import { ForumCoursesComponent } from './forum-courses/forum-courses.component';
 import { ForumTutorsBarComponent } from './forum-tutors-bar/forum-tutors-bar.component';
+import { ForumUnansweredListComponent } from './forum-unanswered-list/forum-unanswered-list.component';
 import { SharedModule } from '../../shared/shared.module';
 
 const routes: Routes = [
@@ -23,6 +24,7 @@ const routes: Routes = [
     { path: 'levels', component: ForumLevelsComponent },
     { path: 'courses', component: ForumCoursesComponent },
     { path: 'courses/:courseKey', component: ForumCoursesComponent },
+    { path: 'unanswered', component: ForumUnansweredListComponent },
     { path: 'topic/:id', component: TopicDetailComponent }
 ];
 
@@ -32,7 +34,8 @@ const routes: Routes = [
         ForumLevelsComponent,
         ForumCoursesComponent,
         TopicDetailComponent,
-        ForumTutorsBarComponent
+        ForumTutorsBarComponent,
+        ForumUnansweredListComponent
     ],
     imports: [
         CommonModule,

@@ -1,4 +1,21 @@
-<section class="ftb" *ngIf="!loading && tutors.length">
+<section class="ftb" *ngIf="!loading && (tutors.length || showStaffForumQueue)">
+  <div class="ftb-staff" *ngIf="showStaffForumQueue">
+    <a
+      mat-stroked-button
+      color="accent"
+      class="ftb-queue"
+      routerLink="/frontoffice/forum/unanswered"
+      matTooltip="Sujets où aucun message n’a encore été posté dans le fil (pas seulement l’absence de tuteur).">
+      <mat-icon>forum</mat-icon>
+      Sujets sans réponse
+      <span class="ftb-count" *ngIf="unansweredCount > 0">{{ unansweredCount }}</span>
+      <span class="ftb-count ftb-zero" *ngIf="!loadingUnanswered && unansweredCount === 0">0</span>
+    </a>
+    <span class="ftb-queue-hint" *ngIf="!loadingUnanswered && unansweredCount === 0">
+      Aucune discussion sans <strong>premier message</strong> dans le fil.
+    </span>
+  </div>
+
   <div class="ftb-header">
     <mat-icon class="ftb-icon">forum</mat-icon>
     <div class="ftb-titles">
@@ -11,7 +28,7 @@
     </a>
   </div>
 
-  <div class="ftb-scroll" role="list">
+  <div class="ftb-scroll" role="list" *ngIf="tutors.length">
     <button
       type="button"
       class="ftb-card"

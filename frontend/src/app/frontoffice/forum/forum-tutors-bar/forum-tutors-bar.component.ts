@@ -1,19 +1,30 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { UserProfile, UserProfileService } from '../../../core/services/user-profile.service';
+import { ForumTopicService } from '../../../core/services/forum-topic.service';
+import { FrontofficeIdentityService } from '../../../core/services/frontoffice-identity.service';
 
 @Component({
   selector: 'app-forum-tutors-bar',
   templateUrl: './forum-tutors-bar.component.html',
   styleUrls: ['./forum-tutors-bar.component.css']
 })
-export class ForumTutorsBarComponent implements OnInit {
+export class ForumTutorsBarComponent implements OnInit, OnDestroy {
   tutors: UserProfile[] = [];
   loading = false;
 
+  /** File « sujet sans aucun message dans le fil » — visible tuteur / équipe. */
+  showStaffForumQueue = false;
+  unansweredCount = 0;
+  loadingUnanswered = false;
+  private identitySub?: Subscription;
+
   constructor(
     private users: UserProfileService,
-    private router: Router
+    private router: Router,
+    private forumTopics: ForumTopicService,
+    private identity: FrontofficeIdentityService
   ) {}
 
   ngOnInit(): void {
@@ -26,6 +37,45 @@ export class ForumTutorsBarComponent implements OnInit {
       error: () => {
         this.tutors = [];
         this.loading = false;
+      }
+    });
+    this.refreshStaffRoleAndQueue();
+    this.identitySub = this.identity.userId$.subscribe(() => this.refreshStaffRoleAndQueue());
+  }
+
+  ngOnDestroy(): void {
+    this.identitySub?.unsubscribe();
+  }
+
+  private refreshStaffRoleAndQueue(): void {
+    const uid = this.identity.getCurrentUserId();
+    this.users.getById(uid).subscribe({
+      next: u => {
+        const r = (u?.accountRole || 'STUDENT').toUpperCase();
+        this.showStaffForumQueue = r === 'TUTOR' || r === 'ADMIN';
+        if (this.showStaffForumQueue) {
+          this.loadUnansweredCount(uid);
+        } else {
+          this.unansweredCount = 0;
+        }
+      },
+      error: () => {
+        this.showStaffForumQueue = false;
+        this.unansweredCount = 0;
+      }
+    });
+  }
+
+  private loadUnansweredCount(viewerUserId: number): void {
+    this.loadingUnanswered = true;
+    this.forumTopics.getUnansweredTopics(100, viewerUserId).subscribe({
+      next: rows => {
+        this.unansweredCount = Array.isArray(rows) ? rows.length : 0;
+        this.loadingUnanswered = false;
+      },
+      error: () => {
+        this.unansweredCount = 0;
+        this.loadingUnanswered = false;
       }
     });
   }
