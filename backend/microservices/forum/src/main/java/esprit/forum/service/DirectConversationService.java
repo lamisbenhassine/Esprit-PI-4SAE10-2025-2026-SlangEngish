@@ -145,13 +145,13 @@ public class DirectConversationService {
         if (content == null || content.isBlank()) {
             throw new IllegalArgumentException("Message vide");
         }
-        contentModerationService.assertTextAcceptable(content);
+        String sanitizedContent = contentModerationService.sanitizeText(content);
         DirectConversation c = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new IllegalArgumentException("Conversation introuvable"));
         DirectMessage m = new DirectMessage();
         m.setConversation(c);
         m.setSenderId(senderId);
-        m.setContent(content.trim());
+        m.setContent(sanitizedContent == null ? null : sanitizedContent.trim());
         DirectMessage saved = messageRepository.save(m);
         c.setUpdatedAt(LocalDateTime.now());
         conversationRepository.save(c);

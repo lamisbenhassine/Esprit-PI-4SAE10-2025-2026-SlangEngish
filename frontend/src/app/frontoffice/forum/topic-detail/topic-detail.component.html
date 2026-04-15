@@ -51,7 +51,19 @@
   </article>
 
   <section class="thread-section">
-    <h2>Discussion</h2>
+    <div class="discussion-head">
+      <h2>Discussion</h2>
+      <button
+        mat-stroked-button
+        color="primary"
+        type="button"
+        (click)="requestTutorCall()"
+        [disabled]="tutorAssistBusy"
+        matTooltip="Start tutor call via VAPI/n8n">
+        <mat-icon>support_agent</mat-icon>
+        {{ tutorAssistBusy ? 'Checking slots...' : 'Call Tutor (VAPI)' }}
+      </button>
+    </div>
 
     <div class="thread-list">
       <div class="post" *ngFor="let message of messages">

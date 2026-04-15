@@ -60,6 +60,22 @@
         <span class="dm-thread-title">{{ userName(selected.otherUserId) }}</span>
         <span class="dm-role-badge tutor" *ngIf="userRole(selected.otherUserId) === 'Tutor'">Tuteur</span>
         <span class="dm-role-badge student" *ngIf="userRole(selected.otherUserId) === 'Student'">Étudiant</span>
+        <span class="dm-thread-spacer"></span>
+        <button
+          mat-stroked-button
+          [color]="vapiCallActive ? 'warn' : 'primary'"
+          type="button"
+          *ngIf="selected.kind === 'WITH_TUTOR'"
+          (click)="requestTutorCallFromDiscussion()"
+          [disabled]="tutorAssistBusy"
+          matTooltip="Démarrer / arrêter l'appel vocal VAPI">
+          <mat-icon>{{ vapiCallActive ? 'call_end' : 'support_agent' }}</mat-icon>
+          {{
+            tutorAssistBusy
+              ? (vapiCallActive ? 'Ending call...' : 'Connecting...')
+              : (vapiCallActive ? 'End Call' : 'Call Tutor')
+          }}
+        </button>
       </div>
       <div class="dm-bubbles">
         <div *ngFor="let m of thread" class="dm-bubble-wrap" [class.own]="isOwn(m)">
@@ -106,6 +122,16 @@
 
     <section class="dm-thread dm-placeholder" *ngIf="!selected">
       <p>Sélectionnez une conversation ou un tuteur.</p>
+      <button
+        mat-stroked-button
+        color="primary"
+        type="button"
+        class="dm-call-empty"
+        [disabled]="tutorAssistBusy"
+        (click)="requestTutorCallFromDiscussion()">
+        <mat-icon>support_agent</mat-icon>
+        {{ tutorAssistBusy ? 'Connecting...' : 'Call Tutor' }}
+      </button>
     </section>
   </div>
 </div>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   DirectMessageService,
   DirectConversationSummary,
@@ -12,13 +12,16 @@ import { FrontofficeIdentityService } from '../../core/services/frontoffice-iden
 import { DmReadPointerService } from '../../core/services/dm-read-pointer.service';
 import { MessagingUnreadService } from '../../core/services/messaging-unread.service';
 import { ActivatedRoute } from '@angular/router';
+import { TutorAssistService } from '../../core/services/tutor-assist.service';
+import { firstValueFrom } from 'rxjs';
+import type Vapi from '@vapi-ai/web';
 
 @Component({
   selector: 'app-messages',
   templateUrl: './messages.component.html',
   styleUrls: ['./messages.component.css']
 })
-export class MessagesComponent implements OnInit {
+export class MessagesComponent implements OnInit, OnDestroy {
   currentUserId = 2;
   availableUsers: UserProfile[] = [];
   userById: { [id: number]: UserProfile } = {};
@@ -35,6 +38,12 @@ export class MessagesComponent implements OnInit {
   peerOtherId = '';
   loading = false;
   pendingTargetUserId: number | null = null;
+  tutorAssistBusy = false;
+  vapiCallActive = false;
+  private vapiClient: Vapi | null = null;
+  private vapiListenersBound = false;
+  private micStream: MediaStream | null = null;
+  private micDeviceId = '';
 
   constructor(
     private dm: DirectMessageService,
@@ -44,7 +53,8 @@ export class MessagesComponent implements OnInit {
     private messagingUnread: MessagingUnreadService,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private composeAssist: ComposeAssistService
+    private composeAssist: ComposeAssistService,
+    private tutorAssist: TutorAssistService
   ) {}
 
   polishDraft(): void {
@@ -72,6 +82,15 @@ export class MessagesComponent implements OnInit {
       this.pendingTargetUserId = Number.isFinite(raw) && raw > 0 ? raw : null;
       this.tryOpenPendingTarget();
     });
+  }
+
+  ngOnDestroy(): void {
+    if (this.vapiClient) {
+      void this.vapiClient.stop().catch(() => undefined);
+      this.vapiCallActive = false;
+      this.tutorAssistBusy = false;
+    }
+    this.releaseMicStream();
   }
 
   loadUsers(): void {
@@ -281,6 +300,137 @@ export class MessagesComponent implements OnInit {
 
   openTutorConversation(tutor: UserProfile): void {
     this.openWithTutor(tutor);
+  }
+
+  async requestTutorCallFromDiscussion(): Promise<void> {
+    if (!this.selected) {
+      this.snackBar.open('Sélectionnez d’abord une conversation avec un tuteur.', 'OK', { duration: 3500 });
+      return;
+    }
+    if (this.tutorAssistBusy) {
+      return;
+    }
+    if (this.selected.kind !== 'WITH_TUTOR') {
+      this.snackBar.open('Appel disponible uniquement dans une conversation avec un tuteur.', 'OK', { duration: 4000 });
+      return;
+    }
+
+    this.tutorAssistBusy = true;
+    try {
+      if (this.vapiCallActive && this.vapiClient) {
+        await this.vapiClient.stop();
+        this.vapiCallActive = false;
+        this.releaseMicStream();
+        this.snackBar.open('Appel terminé.', 'OK', { duration: 2500 });
+        return;
+      }
+
+      await this.ensureMicrophoneAccess();
+
+      const cfg = await firstValueFrom(this.tutorAssist.getVapiConfig());
+      const publicKey = (cfg?.publicKey || '').trim();
+      const assistantId = (cfg?.assistantId || '').trim();
+      if (!publicKey || !assistantId) {
+        this.snackBar.open(
+          'VAPI non configuré. Ajoutez forum.tutor-assist.vapi-public-key et forum.tutor-assist.vapi-assistant-id.',
+          'OK',
+          { duration: 7000 }
+        );
+        return;
+      }
+
+      const vapi = await this.ensureVapiClient(publicKey);
+      await vapi.start(assistantId, {
+        metadata: {
+          studentId: this.currentUserId,
+          tutorId: this.selected.otherUserId,
+          conversationId: this.selected.id
+        }
+      } as any);
+      this.vapiCallActive = true;
+      this.snackBar.open('Connexion à l’assistant vocal... Parlez maintenant.', 'OK', { duration: 3000 });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Impossible de démarrer l’appel vocal.';
+      this.snackBar.open(msg, 'OK', { duration: 6000 });
+    } finally {
+      this.tutorAssistBusy = false;
+    }
+  }
+
+  private async ensureVapiClient(publicKey: string): Promise<Vapi> {
+    if (!this.vapiClient) {
+      const mod = await import('@vapi-ai/web');
+      this.vapiClient = new mod.default(publicKey, undefined, undefined, {
+        startAudioOff: false
+      } as any);
+    }
+    const client = this.vapiClient;
+    if (!client) {
+      throw new Error('VAPI client non disponible.');
+    }
+    if (!this.vapiListenersBound) {
+      this.vapiListenersBound = true;
+      client.on('call-start', () => {
+        this.vapiCallActive = true;
+        try {
+          if (client.getDailyCallObject()) {
+            const audioTrack = this.micStream?.getAudioTracks()?.[0];
+            void client.setInputDevicesAsync({
+              audioDeviceId: this.micDeviceId || undefined,
+              audioSource: audioTrack || undefined
+            });
+            client.setMuted(false);
+          }
+        } catch {
+          // Ignore: some providers expose call object slightly after call-start.
+        }
+      });
+      client.on('call-end', () => {
+        this.vapiCallActive = false;
+        this.releaseMicStream();
+      });
+      client.on('error', () => {
+        this.vapiCallActive = false;
+        this.releaseMicStream();
+      });
+      client.on('call-start-failed', () => {
+        this.vapiCallActive = false;
+        this.releaseMicStream();
+        this.snackBar.open('Échec démarrage appel (audio/micro).', 'OK', { duration: 4500 });
+      });
+    }
+    return client;
+  }
+
+  private async ensureMicrophoneAccess(): Promise<void> {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('Navigateur incompatible avec l’accès micro.');
+    }
+    if (!this.micStream) {
+      this.micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+    }
+    const hasLiveTrack = this.micStream.getAudioTracks().some(t => t.readyState === 'live');
+    if (!hasLiveTrack) {
+      this.releaseMicStream();
+      throw new Error('Aucune piste micro active détectée.');
+    }
+    const mainTrack = this.micStream.getAudioTracks()[0];
+    this.micDeviceId = mainTrack?.getSettings?.().deviceId || '';
+  }
+
+  private releaseMicStream(): void {
+    if (!this.micStream) {
+      return;
+    }
+    this.micStream.getTracks().forEach(t => t.stop());
+    this.micStream = null;
+    this.micDeviceId = '';
   }
 
   private tryOpenPendingTarget(): void {

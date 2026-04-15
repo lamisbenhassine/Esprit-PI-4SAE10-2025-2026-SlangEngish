@@ -3,6 +3,7 @@ package esprit.forum.service;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -36,5 +37,23 @@ public class ContentModerationService {
 
     public boolean containsProfanity(String content) {
         return StringUtils.hasText(content) && PROFANITY.matcher(content).find();
+    }
+
+    /**
+     * Remplace les mots inappropriés par des étoiles, sans bloquer l'envoi.
+     */
+    public String sanitizeText(String content) {
+        if (!StringUtils.hasText(content)) {
+            return content;
+        }
+        Matcher matcher = PROFANITY.matcher(content);
+        StringBuilder out = new StringBuilder();
+        while (matcher.find()) {
+            String found = matcher.group();
+            String stars = "*".repeat(Math.max(found.length(), 3));
+            matcher.appendReplacement(out, Matcher.quoteReplacement(stars));
+        }
+        matcher.appendTail(out);
+        return out.toString();
     }
 }

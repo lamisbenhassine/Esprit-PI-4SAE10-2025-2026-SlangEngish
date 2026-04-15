@@ -54,7 +54,7 @@ public class ForumMessageService {
         if (Boolean.TRUE.equals(topic.getLocked())) {
             throw new RuntimeException("Topic is locked — no new messages");
         }
-        contentModerationService.assertTextAcceptable(message.getContent());
+        message.setContent(contentModerationService.sanitizeText(message.getContent()));
 
         message.setTopic(topic);
         return forumMessageRepository.save(message);
@@ -62,10 +62,9 @@ public class ForumMessageService {
 
     @Transactional
     public ForumMessage updateMessage(Long id, ForumMessage updatedMessage) {
-        contentModerationService.assertTextAcceptable(updatedMessage.getContent());
         return forumMessageRepository.findById(id)
                 .map(message -> {
-                    message.setContent(updatedMessage.getContent());
+                    message.setContent(contentModerationService.sanitizeText(updatedMessage.getContent()));
                     if (updatedMessage.getAttachments() != null) {
                         message.setAttachments(updatedMessage.getAttachments());
                     }

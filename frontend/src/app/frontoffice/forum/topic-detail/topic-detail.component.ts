@@ -9,6 +9,7 @@ import { UserProfile, UserProfileService } from '../../../core/services/user-pro
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { FrontofficeIdentityService } from '../../../core/services/frontoffice-identity.service';
 import { apiErrorMessage, ComposeAssistService } from '../../../core/services/compose-assist.service';
+import { TutorAssistService, TutorAssistSlot } from '../../../core/services/tutor-assist.service';
 import { forkJoin } from 'rxjs';
 
 export interface ForumAttachment {
@@ -42,6 +43,7 @@ export class TopicDetailComponent implements OnInit {
   userById: { [userId: number]: UserProfile } = {};
   reportedTopicIds = new Set<number>();
   reportedMessageIds = new Set<number>();
+  tutorAssistBusy = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -54,8 +56,92 @@ export class TopicDetailComponent implements OnInit {
     private snackBar: MatSnackBar,
     private sanitizer: DomSanitizer,
     private identity: FrontofficeIdentityService,
-    private composeAssist: ComposeAssistService
+    private composeAssist: ComposeAssistService,
+    private tutorAssist: TutorAssistService
   ) {}
+
+  requestTutorCall(): void {
+    if (!this.topic?.id || this.tutorAssistBusy) {
+      return;
+    }
+    const problemType = (prompt('Type of help (grammar/speaking/vocabulary/exam)?', 'grammar') || 'grammar').trim();
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    const start = new Date();
+    const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    this.tutorAssistBusy = true;
+    this.tutorAssist
+      .getSlots({
+        topicId: this.topic.id,
+        studentId: this.currentUserId,
+        studentName: this.displayName(this.currentUserId),
+        level: (this.topic.category || '').toUpperCase(),
+        problemType,
+        timezone,
+        durationMin: 30,
+        windowStart: start.toISOString(),
+        windowEnd: end.toISOString()
+      })
+      .subscribe({
+        next: res => {
+          const slots = Array.isArray(res?.slots) ? res.slots.slice(0, 5) : [];
+          if (!slots.length) {
+            this.tutorAssistBusy = false;
+            this.snackBar.open('No slot found right now. Please try later.', 'OK', { duration: 4500 });
+            return;
+          }
+          const pick = this.pickSlot(slots);
+          if (!pick) {
+            this.tutorAssistBusy = false;
+            return;
+          }
+          this.tutorAssist
+            .book({
+              topicId: this.topic!.id!,
+              studentId: this.currentUserId,
+              studentName: this.displayName(this.currentUserId),
+              tutorId: pick.tutorId ?? null,
+              tutorName: pick.tutorName ?? null,
+              start: pick.start,
+              end: pick.end,
+              timezone,
+              problemType,
+              meetingMode: 'google-meet'
+            })
+            .subscribe({
+              next: out => {
+                this.tutorAssistBusy = false;
+                if (out?.success === false) {
+                  this.snackBar.open('Booking failed on calendar side.', 'OK', { duration: 4500 });
+                  return;
+                }
+                const link = out?.meetLink ? ` Meet: ${out.meetLink}` : '';
+                this.snackBar.open(`Tutor call booked.${link}`, 'OK', { duration: 7000 });
+              },
+              error: err => {
+                this.tutorAssistBusy = false;
+                this.snackBar.open(apiErrorMessage(err, 'Booking failed.'), 'OK', { duration: 6000 });
+              }
+            });
+        },
+        error: err => {
+          this.tutorAssistBusy = false;
+          this.snackBar.open(apiErrorMessage(err, 'Unable to load tutor slots.'), 'OK', { duration: 6000 });
+        }
+      });
+  }
+
+  private pickSlot(slots: TutorAssistSlot[]): TutorAssistSlot | null {
+    const lines = slots
+      .map((s, i) => `${i + 1}) ${new Date(s.start).toLocaleString()} - ${new Date(s.end).toLocaleTimeString()} ${s.tutorName ? `(${s.tutorName})` : ''}`)
+      .join('\n');
+    const raw = prompt(`Choose a slot number:\n${lines}`, '1');
+    const idx = Number(raw);
+    if (!Number.isFinite(idx) || idx < 1 || idx > slots.length) {
+      return null;
+    }
+    return slots[idx - 1];
+  }
 
   polishNewMessage(): void {
     this.runSmartPolish(this.newMessageContent, t => (this.newMessageContent = t));
