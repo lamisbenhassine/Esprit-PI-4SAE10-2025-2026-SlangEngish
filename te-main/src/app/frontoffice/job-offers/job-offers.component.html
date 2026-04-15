@@ -7,6 +7,7 @@
       </h1>
       <p class="subtitle">{{ filteredOffers.length }} offre(s) disponible(s)</p>
     </div>
+
     <button mat-raised-button (click)="toggleView()" class="map-toggle-btn">
       <mat-icon>{{ showMap ? 'view_list' : 'map' }}</mat-icon>
       {{ showMap ? 'Vue Liste' : 'Vue Carte' }}
@@ -23,6 +24,7 @@
           <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()"
                  placeholder="Titre, entreprise, lieu..." />
         </mat-form-field>
+
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>Type de contrat</mat-label>
           <mat-select [(ngModel)]="selectedContractType" (selectionChange)="onContractTypeChange()">
@@ -32,11 +34,19 @@
             </mat-option>
           </mat-select>
         </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Trier par</mat-label>
+          <mat-select [value]="sortMode" (selectionChange)="setSortMode($event.value)">
+            <mat-option value="MATCHING">Compatibilité</mat-option>
+            <mat-option value="RECENT">Plus récentes</mat-option>
+          </mat-select>
+        </mat-form-field>
       </div>
     </mat-card-content>
   </mat-card>
 
-  <!-- Skeleton -->
+  <!-- Skeleton loader pendant le chargement -->
   <div *ngIf="loading" class="skeleton-wrapper">
     <div class="skeleton-grid">
       <mat-card *ngFor="let i of [1,2,3,4,5,6]" class="skeleton-card">
@@ -58,7 +68,8 @@
   <div *ngIf="!loading && showMap">
     <div *ngIf="!hasOffersWithCoords()" class="no-map-data">
       <mat-icon>location_off</mat-icon>
-      <p>Aucune offre avec localisation GPS disponible.</p>
+      <p>Aucune offre avec localisation GPS disponible.<br>
+         Créez des offres avec un lieu réel pour les voir sur la carte.</p>
     </div>
     <div id="offers-map" class="map-container"></div>
   </div>
@@ -66,7 +77,6 @@
   <!-- Vue Liste -->
   <div *ngIf="!loading && !showMap && filteredOffers.length > 0" class="offers-grid">
     <mat-card *ngFor="let offer of paginatedOffers" class="offer-card" (click)="viewDetails(offer.id!)">
-      
       <mat-card-header>
         <div mat-card-avatar class="offer-avatar">
           <mat-icon>business_center</mat-icon>
@@ -88,8 +98,8 @@
             <span>{{ offer.location || '-' }}</span>
           </div>
           <div class="info-item" *ngIf="offer.salary">
-            <mat-icon>euro</mat-icon>
-            <span>{{ offer.salary }} TND/an</span>
+            <mat-icon></mat-icon>
+            <span>{{ offer.salary | number }} TND/an</span>
           </div>
           <div class="info-item deadline" *ngIf="offer.deadline">
             <mat-icon>event</mat-icon>
@@ -99,18 +109,10 @@
 
         <p class="offer-description">{{ offer.description || '' }}</p>
 
-      <!-- ✅ Timer expiration -->
-<div class="expiry-timer"
-     *ngIf="getExpiryTimer(offer.id!) !== 'Sans expiration'"
-     [ngStyle]="{'color': getExpiryColor(offer.id!)}">
-  <mat-icon>timer</mat-icon>
-  <span>{{ getExpiryTimer(offer.id!) === 'Expirée' ? '⏰ Expirée' : 'Expire dans : ' + getExpiryTimer(offer.id!) }}</span>
-</div>
-
-        <!-- ✅ Badge Matching — DANS le *ngFor -->
+        <!-- Badge de compatibilité (matching) -->
         <div class="match-badge"
-             [ngStyle]="{'background': getMatchBgColor(offer.id!),
-                         'border-color': getMatchColor(offer.id!)}">
+             *ngIf="hasMatch(offer.id!)"
+             [ngStyle]="{'background': getMatchBgColor(offer.id!), 'border-color': getMatchColor(offer.id!)}">
           <div class="match-header">
             <span class="match-label">
               <mat-icon [ngStyle]="{'color': getMatchColor(offer.id!)}">psychology</mat-icon>
@@ -126,11 +128,15 @@
                  [ngStyle]="{'background': getMatchColor(offer.id!)}">
             </div>
           </div>
-          <span class="match-level" [ngStyle]="{'color': getMatchColor(offer.id!)}">
-            {{ getMatchLevel(offer.id!) }}
-          </span>
         </div>
 
+        <!-- ✅ Compteur / date d'expiration (affiché uniquement si expirationDate définie) -->
+        <div class="expiry-timer"
+             *ngIf="offer.expirationDate"
+             [ngStyle]="{'color': getExpiryColor(offer.id!)}">
+          <mat-icon>timer</mat-icon>
+          <span>{{ getExpiryTimer(offer.id!) }}</span>
+        </div>
       </mat-card-content>
 
       <mat-card-actions>
@@ -146,10 +152,12 @@
         </button>
       </mat-card-actions>
 
-    </mat-card>
+    </mat-card>  <!-- ✅ fermeture mat-card -->
   </div>
 
-  <!-- Pagination -->
+  
+
+  <!-- Pagination liste offres -->
   <app-pagination
     *ngIf="!loading && !showMap && filteredOffers.length > 0"
     [totalItems]="filteredOffers.length"
@@ -159,11 +167,13 @@
     (pageSizeChange)="onPageSizeChange($event)">
   </app-pagination>
 
-  <!-- État vide -->
+  <!-- État vide : uniquement si chargement terminé ET liste réellement vide (évite doublon avec les cartes) -->
   <mat-card *ngIf="loadCompleted && !loading && !showMap && filteredOffers.length === 0" class="empty-state">
     <mat-icon class="empty-icon">inbox</mat-icon>
     <h3>Aucune offre trouvée</h3>
     <p>{{ searchTerm || selectedContractType !== 'ALL' ? 'Modifiez vos filtres.' : 'Aucune offre disponible.' }}</p>
   </mat-card>
+  <!-- ✅ Ajoute ICI -->
+<app-chatbot></app-chatbot>
 
 </div>

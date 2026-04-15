@@ -12,6 +12,7 @@ import { StudentPreferencesComponent } from './student-preferences/student-prefe
 
 
 
+
 const routes: Routes = [
   {
     path: '',

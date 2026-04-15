@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { SavedOfferService } from '../../services/saved-offer.service';
 import { JobOfferService } from '../../services/job-offer.service';
 import { SavedOffer, JobOffer } from '../../models/job-offer.model';
+import { VisitorService } from '../../services/visitor.service';
 
 @Component({
   selector: 'app-saved-offers',
@@ -23,6 +24,7 @@ export class SavedOffersComponent implements OnInit {
   constructor(
     private savedOfferService: SavedOfferService,
     private jobOfferService: JobOfferService,
+    private visitorService: VisitorService,
     public router: Router
   ) {}
 
@@ -32,7 +34,8 @@ export class SavedOffersComponent implements OnInit {
 
   loadAll(): void {
     this.loading = true;
-    this.savedOfferService.findAll().subscribe({
+    const studentId = this.visitorService.getVisitorId();
+    this.savedOfferService.findByStudent(studentId).subscribe({
       next: (saved: SavedOffer[]) => {
         this.savedOffers = saved;
         this.loadJobOffers();

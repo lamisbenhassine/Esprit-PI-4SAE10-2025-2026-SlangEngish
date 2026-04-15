@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { MatchingService, StudentProfile } from '../../services/matching.service';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { MatchingService, VisitorPreferences } from '../../services/matching.service';
+import { JobOfferService } from '../../services/job-offer.service';
 
 @Component({
   selector: 'app-student-preferences',
@@ -7,16 +10,16 @@ import { MatchingService, StudentProfile } from '../../services/matching.service
   styleUrls: ['./student-preferences.component.css']
 })
 export class StudentPreferencesComponent implements OnInit {
-  studentId = 1;
   loading = false;
   saving = false;
   saved = false;
 
-  profile: StudentProfile = {
-    preferredLocation: '',
-    preferredContractType: '',
-    expectedSalary: undefined,
-    skills: ''
+  /** Préférences du visiteur (session uniquement). */
+  profile: VisitorPreferences = {
+    ville: '',
+    typeContrat: '',
+    salaireSouhaite: undefined,
+    competences: ''
   };
 
   skillInput = '';
@@ -24,27 +27,44 @@ export class StudentPreferencesComponent implements OnInit {
 
   contractTypes = ['CDI', 'CDD', 'STAGE', 'ALTERNANCE', 'FREELANCE'];
 
-  constructor(private matchingService: MatchingService) {}
+  // Autocomplétion de ville via Nominatim.
+  locationSuggestions: any[] = [];
+  showSuggestions = false;
+  private locationSearch$ = new Subject<string>();
+
+  constructor(
+    private matchingService: MatchingService,
+    private jobOfferService: JobOfferService
+  ) {}
 
   ngOnInit(): void {
     this.loadProfile();
+
+    this.locationSearch$.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      switchMap((query: string) =>
+        query.length > 2 ? this.jobOfferService.searchLocations(query) : []
+      )
+    ).subscribe((results: any[]) => {
+      this.locationSuggestions = results;
+      this.showSuggestions = results.length > 0;
+    });
   }
 
   loadProfile(): void {
     this.loading = true;
-    this.matchingService.getProfile(this.studentId).subscribe({
-      next: (data) => {
-        this.profile = data;
-        // ✅ Convertit skills string en tableau
-        if (data.skills) {
-          this.skillsList = data.skills.split(',')
-            .map(s => s.trim())
-            .filter(s => s.length > 0);
-        }
-        this.loading = false;
-      },
-      error: () => { this.loading = false; }
-    });
+    const stored = this.matchingService.getLocalPreferences();
+    if (stored) {
+      this.profile = stored;
+      if (stored.competences) {
+        this.skillsList = stored.competences
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((s: string) => s.length > 0);
+      }
+    }
+    this.loading = false;
   }
 
   addSkill(): void {
@@ -66,14 +86,30 @@ export class StudentPreferencesComponent implements OnInit {
     }
   }
 
+  onLocationInput(event: Event): void {
+    const target = event.target as HTMLInputElement | null;
+    const query = target?.value ?? '';
+    this.locationSearch$.next(query);
+  }
+
+  selectLocation(suggestion: any): void {
+    const displayName = suggestion.display_name.split(',').slice(0, 2).join(',').trim();
+    this.profile.ville = displayName;
+    this.showSuggestions = false;
+    this.locationSuggestions = [];
+  }
+
+  hideSuggestions(): void {
+    setTimeout(() => { this.showSuggestions = false; }, 200);
+  }
+
   saveProfile(): void {
     this.saving = true;
-    this.saved = false;
+    this.profile.competences = this.skillsList.join(',');
 
-    // ✅ Convertit tableau skills en string
-    this.profile.skills = this.skillsList.join(',');
+    this.matchingService.saveLocalPreferences(this.profile);
 
-    this.matchingService.saveProfile(this.studentId, this.profile).subscribe({
+    this.matchingService.getMatchingForVisitor(this.profile).subscribe({
       next: () => {
         this.saving = false;
         this.saved = true;
@@ -105,3 +141,4 @@ export class StudentPreferencesComponent implements OnInit {
     }
   }
 }
+

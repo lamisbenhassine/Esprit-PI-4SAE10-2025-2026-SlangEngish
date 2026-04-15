@@ -48,5 +48,25 @@ public class JobOfferController {
     service.delete(id);
     return ResponseEntity.noContent().build();
   }
+
+  // ✅ Incrémente les vues
+  @PostMapping("/{id}/view")
+  public ResponseEntity<Void> incrementView(@PathVariable Long id) {
+    service.incrementViewCount(id);
+    return ResponseEntity.ok().build();
+  }
+
+  // ✅ Change l'URL pour éviter le conflit avec /{id}
+  @GetMapping("/views/top")
+  public ResponseEntity<List<JobOffer>> getViewStats() {
+    return ResponseEntity.ok(
+            service.findAll().stream()
+                    .filter(o -> o.getActive() != null && o.getActive())
+                    .sorted((a, b) -> Long.compare(
+                            b.getViewCount() == null ? 0 : b.getViewCount(),
+                            a.getViewCount() == null ? 0 : a.getViewCount()))
+                    .collect(java.util.stream.Collectors.toList())
+    );
+  }
 }
 

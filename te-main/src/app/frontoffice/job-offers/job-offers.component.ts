@@ -8,6 +8,7 @@ import { JobOfferService } from '../../services/job-offer.service';
 import { NewOfferNotificationService } from '../../services/new-offer-notification.service';
 import { SavedOfferService } from '../../services/saved-offer.service';
 import { MatchingService, MatchingResult } from '../../services/matching.service';
+import { VisitorService } from '../../services/visitor.service';
 
 
 @Component({
@@ -30,11 +31,13 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
   private iconDefault: any | null = null;
   private readonly platformId = inject(PLATFORM_ID);
   private readonly injector = inject(Injector);
+  
 
   contractTypes = ['ALL', 'CDI', 'CDD', 'STAGE', 'ALTERNANCE', 'FREELANCE'];
+  /** Mode de tri courant: par compatibilité ou par date (récentes). */
+  sortMode: 'MATCHING' | 'RECENT' = 'MATCHING';
 
   savedOffers: SavedOffer[] = [];
-  studentId = 1;
   matchingScores: Map<number, MatchingResult> = new Map();
 
   
@@ -67,7 +70,9 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
     private router: Router,
     private newOfferNotification: NewOfferNotificationService,
     private savedOfferService: SavedOfferService,
-    private matchingService: MatchingService // ✅ ajoute
+    private matchingService: MatchingService ,// ✅ ajoute
+    private visitorService: VisitorService
+
 
   ) {}
 
@@ -78,8 +83,7 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
     this.loadSavedOffers();
     this.startExpiryTimers();
     this.startSyncInterval();
-    this.loadMatchingScores();
-
+ 
 
     this.newOfferNotification.onNewOffer
       .pipe(takeUntil(this.destroy$))
@@ -121,6 +125,7 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
         const list = Array.isArray(data) ? data : [];
         this.jobOffers = list.filter((offer: JobOffer) => offer.active !== false);
         this.applyFilters();
+        this.loadMatchingScores();
         this.loading = false;
         this.loadCompleted = true;
       },
@@ -129,6 +134,31 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
         this.filteredOffers = [];
         this.loading = false;
         this.loadCompleted = true;
+      }
+    });
+  }
+
+  /** Charge les scores de matching pour le visiteur courant (basé sur ses préférences en sessionStorage). */
+  private loadMatchingScores(): void {
+    const prefs = this.matchingService.getLocalPreferences?.();
+    if (!prefs) {
+      this.matchingScores.clear();
+      return;
+    }
+    this.matchingService.getMatchingForVisitor(prefs).subscribe({
+      next: (results: MatchingResult[]) => {
+        this.matchingScores.clear();
+        results.forEach(r => {
+          if (r.offerId != null) {
+            this.matchingScores.set(r.offerId, r);
+          }
+        });
+        // Réapplique les filtres pour trier les offres par compatibilité après chargement des scores.
+        this.applyFilters();
+      },
+      error: () => {
+        // en cas d'erreur de matching, on laisse les valeurs par défaut (50 %, Moyen)
+        this.matchingScores.clear();
       }
     });
   }
@@ -146,6 +176,17 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
         (o.location?.toLowerCase() ?? '').includes(term)
       );
     }
+    // Tri selon le mode choisi
+    if (this.sortMode === 'RECENT') {
+      filtered = [...filtered].sort((a, b) => {
+        const da = a.date ? new Date(a.date).getTime() : 0;
+        const db = b.date ? new Date(b.date).getTime() : 0;
+        return db - da; // plus récentes en haut
+      });
+    } else if (this.matchingScores.size > 0) {
+      // Tri par compatibilité (par défaut)
+      filtered = [...filtered].sort((a, b) => this.getMatchPercent(b.id!) - this.getMatchPercent(a.id!));
+    }
     this.filteredOffers = filtered;
     this.currentPage = 1; // ✅ reset pagination
     if (this.showMap && isPlatformBrowser(this.platformId) && this.L) {
@@ -153,7 +194,7 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  /** Timer d'expiration : uniquement si expirationDate est définie ; sinon "Sans expiration". */
+  /** Timer d'expiration : format intelligent selon le temps restant. */
   startExpiryTimers(): void {
     timer(0, 1000)
       .pipe(takeUntil(this.destroy$))
@@ -166,8 +207,8 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
     this.filteredOffers.forEach(offer => {
       if (!offer.id) return;
       if (!offer.expirationDate) {
-        this.expiryTimers.set(offer.id, 'Sans expiration');
-        this.expiryColors.set(offer.id, 'green');
+        this.expiryTimers.delete(offer.id);
+        this.expiryColors.delete(offer.id);
         return;
       }
 
@@ -186,10 +227,30 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
           needsReload = true;
         }
       } else {
-        const minutes = Math.floor(remaining / 60000);
-        const seconds = Math.floor((remaining % 60000) / 1000);
-        newTimer = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        newColor = remaining <= 60000 ? 'red' : 'green';
+        const totalSeconds = Math.floor(remaining / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+        const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+
+        if (remaining > ONE_DAY_MS) {
+          // Affiche la date JJ-MM-AAAA
+          const d = new Date(offer.expirationDate);
+          const day = String(d.getDate()).padStart(2, '0');
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const year = d.getFullYear();
+          newTimer = `${day}-${month}-${year}`;
+        } else if (totalSeconds >= 3600) {
+          // Compte à rebours HH:mm:ss
+          newTimer = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        } else {
+          // Moins d'une heure : mm:ss
+          newTimer = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        newColor = remaining <= TWO_HOURS_MS ? 'red' : 'green';
       }
 
       if (this.expiryTimers.get(offer.id) !== newTimer) {
@@ -326,9 +387,15 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
   onSearchChange(): void { this.applyFilters(); }
   onContractTypeChange(): void { this.applyFilters(); }
 
+  setSortMode(mode: 'MATCHING' | 'RECENT'): void {
+    this.sortMode = mode;
+    this.applyFilters();
+  }
+
   loadSavedOffers(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.savedOfferService.findAll().subscribe({
+    const studentId = this.visitorService.getVisitorId();
+    this.savedOfferService.findByStudent(studentId).subscribe({
       next: (data: SavedOffer[]) => { this.savedOffers = data; },
       error: () => {}
     });
@@ -354,7 +421,8 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
         });
       }
     } else {
-      this.savedOfferService.save(offer.id!, this.studentId).subscribe({
+      this.savedOfferService.save(offer.id!, this.visitorService.getVisitorId()).subscribe({
+
         next: (saved: SavedOffer) => {
           this.savedOffers.push(saved);
         }
@@ -363,37 +431,29 @@ export class JobOffersComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
 
-  loadMatchingScores(): void {
-  if (!isPlatformBrowser(this.platformId)) return;
-  this.matchingService.getMatchingOffers(this.studentId).subscribe({
-    next: (results: MatchingResult[]) => {
-      results.forEach(r => {
-        this.matchingScores.set(r.offerId, r);
-      });
-    },
-    error: () => {}
-  });
-}
 
-getMatchPercent(offerId: number): number {
-  return this.matchingScores.get(offerId)?.matchPercent ?? 50;
-}
 
-getMatchLevel(offerId: number): string {
-  return this.matchingScores.get(offerId)?.matchLevel ?? 'Moyen';
-}
+  hasMatch(offerId: number): boolean {
+    return !!offerId && this.matchingScores.has(offerId);
+  }
 
-getMatchColor(offerId: number): string {
-  const percent = this.getMatchPercent(offerId);
-  if (percent >= 75) return '#4CAF50'; // vert
-  if (percent >= 50) return '#FF9800'; // orange
-  return '#F44336';                    // rouge
-}
+  getMatchPercent(offerId: number): number {
+    if (!offerId) return 0;
+    const result = this.matchingScores.get(offerId);
+    return result ? result.matchPercent : 0;
+  }
 
-getMatchBgColor(offerId: number): string {
-  const percent = this.getMatchPercent(offerId);
-  if (percent >= 75) return '#E8F5E9';
-  if (percent >= 50) return '#FFF3E0';
-  return '#FFEBEE';
-}
+  getMatchColor(offerId: number): string {
+    const percent = this.getMatchPercent(offerId);
+    if (percent >= 75) return '#4CAF50'; // vert
+    if (percent >= 50) return '#FF9800'; // orange
+    return '#F44336';                    // rouge
+  }
+
+  getMatchBgColor(offerId: number): string {
+    const percent = this.getMatchPercent(offerId);
+    if (percent >= 75) return '#E8F5E9';
+    if (percent >= 50) return '#FFF3E0';
+    return '#FFEBEE';
+  }
 }

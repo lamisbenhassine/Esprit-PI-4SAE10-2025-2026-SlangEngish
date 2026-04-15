@@ -1,30 +1,32 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
 import { SavedOffer } from '../models/job-offer.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class SavedOfferService {
-  private readonly baseUrl = `${environment.apiUrl}/api/saved-offers`;
+  private readonly base = `${environment.apiUrl}/api/saved-offers`;
 
-  constructor(private readonly http: HttpClient) {}
-
-  findAll(): Observable<SavedOffer[]> {
-    return this.http.get<SavedOffer[]>(this.baseUrl);
-  }
+  constructor(private http: HttpClient) {}
 
   save(jobOfferId: number, studentId: number): Observable<SavedOffer> {
-    const payload: Partial<SavedOffer> = {
+    return this.http.post<SavedOffer>(this.base, {
       jobOfferId,
       studentId,
-    };
-    return this.http.post<SavedOffer>(this.baseUrl, payload);
+      savedAt: new Date().toISOString()
+    });
   }
 
   unsave(savedOfferId: number): Observable<void> {
-    const url = `${this.baseUrl}/${savedOfferId}/remove`;
-    return this.http.delete<void>(url);
+    return this.http.delete<void>(`${this.base}/${savedOfferId}`);
+  }
+
+  findAll(): Observable<SavedOffer[]> {
+    return this.http.get<SavedOffer[]>(this.base);
+  }
+
+  findByStudent(studentId: number): Observable<SavedOffer[]> {
+    return this.http.get<SavedOffer[]>(`${this.base}?studentId=${studentId}`);
   }
 }
-

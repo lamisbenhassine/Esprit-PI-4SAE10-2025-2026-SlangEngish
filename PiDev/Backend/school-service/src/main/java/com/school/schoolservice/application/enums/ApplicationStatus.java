@@ -5,6 +5,7 @@ public enum ApplicationStatus {
   INTERVIEW,
   ACCEPTED,
   REJECTED,
-  CANCELLED
+  CANCELLED,
+  BLOCKED
 }
 

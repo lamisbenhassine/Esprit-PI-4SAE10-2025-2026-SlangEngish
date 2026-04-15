@@ -60,5 +60,14 @@ public class SavedOfferServiceImpl implements SavedOfferService {
   public void remove(Long id) {
     delete(id);
   }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<SavedOffer> findByStudentId(Long studentId) {
+    if (studentId == null) {
+      return List.of();
+    }
+    return repository.findByStudentId(studentId);
+  }
 }
 

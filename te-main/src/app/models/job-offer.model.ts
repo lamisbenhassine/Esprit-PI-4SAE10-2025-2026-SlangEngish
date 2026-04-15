@@ -14,20 +14,27 @@ export interface JobOffer {
   longitude?: number;
   /** Si définie, l'offre expire à cette date (backend la désactive). Null = pas d'expiration automatique. */
   expirationDate?: string;
+  viewCount?: number; // ✅ ajoute
 
 }
 
 export interface Application {
   id?: number;
   jobOfferId: number;
+  studentId?: number;
   applicantName: string;
   applicantEmail: string;
   coverLetter?: string;
   cvUrl?: string;
   coverLetterUrl?: string;
-  status?: 'PENDING' | 'REVIEWED' | 'ACCEPTED' | 'REJECTED';
+  status?: 'PENDING' | 'REVIEWED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'INTERVIEW' | 'BLOCKED'; // ✅ ajoute
   appliedAt?: string;
-  
+  date?: string;
+  interviewDate?: string; // ✅ ajoute
+
+
+
+
 }
 
 export interface SavedOffer {

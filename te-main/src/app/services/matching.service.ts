@@ -18,34 +18,41 @@ export interface MatchingResult {
   keywordScore: number;
 }
 
-export interface StudentProfile {
-  id?: number;
-  studentId?: number;
-  preferredLocation?: string;
-  preferredContractType?: string;
-  expectedSalary?: number;
-  skills?: string;
+export interface VisitorPreferences {
+  ville?: string;
+  secteur?: string;
+  competences?: string;
+  typeContrat?: string;
+  salaireSouhaite?: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class MatchingService {
   private base = '/api/matching';
+  private readonly STORAGE_KEY = 'visitorPreferences';
 
   constructor(private http: HttpClient) {}
 
-  getMatchingOffers(studentId: number): Observable<MatchingResult[]> {
-    return this.http.get<MatchingResult[]>(`${this.base}/${studentId}`);
+  saveLocalPreferences(prefs: VisitorPreferences): void {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(prefs));
+    } catch {}
   }
 
-  getMatchScore(studentId: number, offerId: number): Observable<MatchingResult> {
-    return this.http.get<MatchingResult>(`${this.base}/${studentId}/offer/${offerId}`);
+  getLocalPreferences(): VisitorPreferences | null {
+    if (typeof window === 'undefined') return null;
+    const raw = sessionStorage.getItem(this.STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as VisitorPreferences;
+    } catch {
+      return null;
+    }
   }
 
-  getProfile(studentId: number): Observable<StudentProfile> {
-    return this.http.get<StudentProfile>(`${this.base}/profile/${studentId}`);
-  }
-
-  saveProfile(studentId: number, profile: StudentProfile): Observable<StudentProfile> {
-    return this.http.post<StudentProfile>(`${this.base}/profile/${studentId}`, profile);
+  // ✅ URL corrigée → /visitor
+  getMatchingForVisitor(prefs: VisitorPreferences): Observable<MatchingResult[]> {
+    return this.http.post<MatchingResult[]>(`${this.base}/visitor`, prefs);
   }
 }

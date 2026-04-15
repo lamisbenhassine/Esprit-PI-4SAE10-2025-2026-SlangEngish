@@ -13,5 +13,6 @@ public interface JobOfferService {
   JobOffer update(Long id, JobOffer updated);
 
   void delete(Long id);
+  JobOffer incrementViewCount(Long id);
 }
 

@@ -62,6 +62,9 @@
     @Column(nullable = false)
     private LocalDateTime date;
 
+    @Column(name = "interview_date")
+    private LocalDateTime interviewDate;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_offer_id", insertable = false, updatable = false)

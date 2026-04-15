@@ -44,9 +44,21 @@
             <mat-label>Ville (ex: Tunis, Sfax, Paris...)</mat-label>
             <mat-icon matPrefix>place</mat-icon>
             <input matInput
-                   [(ngModel)]="profile.preferredLocation"
+                   [(ngModel)]="profile.ville"
+                   (input)="onLocationInput($event)"
                    placeholder="Entrez une ville..."/>
           </mat-form-field>
+
+          <!-- Suggestions de villes depuis l'API Map -->
+          <div class="location-suggestions"
+               *ngIf="showSuggestions && locationSuggestions.length > 0"
+               (mouseleave)="hideSuggestions()">
+            <div class="suggestion-item"
+                 *ngFor="let s of locationSuggestions"
+                 (click)="selectLocation(s)">
+              {{ s.display_name }}
+            </div>
+          </div>
         </mat-card-content>
       </mat-card>
 
@@ -63,13 +75,13 @@
           <div class="contract-chips">
             <button *ngFor="let type of contractTypes"
                     class="contract-chip-btn"
-                    [class.selected]="profile.preferredContractType === type"
-                    [ngStyle]="profile.preferredContractType === type ? {
+                    [class.selected]="profile.typeContrat === type"
+                    [ngStyle]="profile.typeContrat === type ? {
                       'background': getContractBg(type),
                       'color': getContractColor(type),
                       'border-color': getContractColor(type)
                     } : {}"
-                    (click)="profile.preferredContractType = type">
+                    (click)="profile.typeContrat = type">
               {{ type }}
             </button>
           </div>
@@ -91,7 +103,7 @@
             <mat-icon matPrefix>euro</mat-icon>
             <input matInput
                    type="number"
-                   [(ngModel)]="profile.expectedSalary"
+                   [(ngModel)]="profile.salaireSouhaite"
                    placeholder="ex: 30000"/>
             <mat-hint>Laissez vide si non important</mat-hint>
           </mat-form-field>

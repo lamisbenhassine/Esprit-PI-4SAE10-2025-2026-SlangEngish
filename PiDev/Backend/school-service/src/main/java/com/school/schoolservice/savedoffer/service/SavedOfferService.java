@@ -15,5 +15,7 @@ public interface SavedOfferService {
   void delete(Long id);
 
   void remove(Long id);
+
+  List<SavedOffer> findByStudentId(Long studentId);
 }
 

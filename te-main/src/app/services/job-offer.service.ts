@@ -84,6 +84,13 @@ export class JobOfferService {
     );
   }
 
+// ✅ Incrémente les vues
+incrementView(id: number): Observable<void> {
+  return this.http.post<void>(`${this.base}/${id}/view`, {});
+}
 
-
+// ✅ Stats vues pour dashboard
+getViewStats(): Observable<JobOffer[]> {
+  return this.http.get<JobOffer[]>(`${this.base}/views/top`);
+}
 }

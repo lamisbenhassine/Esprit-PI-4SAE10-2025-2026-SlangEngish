@@ -40,6 +40,32 @@
           <th mat-header-cell *matHeaderCellDef>Salaire</th>
           <td mat-cell *matCellDef="let row">{{ row.salary != null ? (row.salary | number) + ' €' : '-' }}</td>
         </ng-container>
+
+        <!-- ✅ Colonne Vues -->
+<ng-container matColumnDef="views">
+  <th mat-header-cell *matHeaderCellDef>
+    <div class="views-header">
+      <mat-icon>visibility</mat-icon>
+      Vues
+    </div>
+  </th>
+  <td mat-cell *matCellDef="let row">
+    <div class="views-cell">
+      <div class="views-badge"
+           [ngStyle]="{'background': getViewsBg(row.viewCount),
+                       'color': getViewsColor(row.viewCount)}">
+        <mat-icon>visibility</mat-icon>
+        {{ row.viewCount || 0 }}
+      </div>
+      <div class="views-bar-track">
+        <div class="views-bar-fill"
+             [style.width]="getViewsBarWidth(row.viewCount) + '%'"
+             [ngStyle]="{'background': getViewsColor(row.viewCount)}">
+        </div>
+      </div>
+    </div>
+  </td>
+</ng-container>
         <ng-container matColumnDef="active">
           <th mat-header-cell *matHeaderCellDef>Active</th>
           <td mat-cell *matCellDef="let row">

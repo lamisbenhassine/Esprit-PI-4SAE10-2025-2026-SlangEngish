@@ -72,6 +72,9 @@ public class JobOffer {
   @Column(name = "expiration_date", nullable = true)
   private LocalDateTime expirationDate;
 
+  @Column(name = "view_count", nullable = false)
+  @Builder.Default
+  private Long viewCount = 0L;
 
   @OneToMany(mappedBy = "jobOffer", cascade = CascadeType.ALL, orphanRemoval = true)
   @JsonIgnore

@@ -90,5 +90,12 @@ public class JobOfferServiceImpl implements JobOfferService {
     JobOffer existing = findById(id);
     repository.delete(existing);
   }
+
+  @Override
+  public JobOffer incrementViewCount(Long id) {
+    JobOffer offer = findById(id);
+    offer.setViewCount(offer.getViewCount() == null ? 1L : offer.getViewCount() + 1);
+    return repository.save(offer);
+  }
 }
 

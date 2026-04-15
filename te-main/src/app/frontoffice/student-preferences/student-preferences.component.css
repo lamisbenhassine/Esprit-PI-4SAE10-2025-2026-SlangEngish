@@ -162,6 +162,31 @@
 /* Input */
 .full-width { width: 100%; }
 
+/* Suggestions de villes (API Map) */
+.location-suggestions {
+  margin-top: 4px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+  position: relative;
+}
+
+.suggestion-item {
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.suggestion-item:hover {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
 /* Contract chips */
 .contract-chips {
   display: flex;

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -29,7 +30,11 @@ public class SavedOfferController {
   }
 
   @GetMapping
-  public ResponseEntity<List<SavedOffer>> findAll() {
+  public ResponseEntity<List<SavedOffer>> findAll(
+      @RequestParam(value = "studentId", required = false) Long studentId) {
+    if (studentId != null) {
+      return ResponseEntity.ok(service.findByStudentId(studentId));
+    }
     return ResponseEntity.ok(service.findAll());
   }
 

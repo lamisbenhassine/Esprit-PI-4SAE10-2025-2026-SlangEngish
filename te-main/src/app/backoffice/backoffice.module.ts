@@ -13,6 +13,9 @@ import { CoursesManagementComponent } from './courses-management/courses-managem
 import { ClubsManagementComponent } from './clubs-management/clubs-management.component';
 import { JobsManagementComponent } from './jobs-management/jobs-management.component';
 import { ApplicationsManagementComponent } from './applications-management/applications-management.component';
+import { JobOfferStatsComponent } from './job-offer-stats/job-offer-stats.component';
+
+
 
 // Angular Material Modules
 import { MatCardModule } from '@angular/material/card';
@@ -31,7 +34,9 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { JobOfferStatsComponent } from './job-offer-stats/job-offer-stats.component';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatBadgeModule } from '@angular/material/badge';
+import { InterviewCalendarComponent } from './interview-calendar/interview-calendar.component'; 
 
 // Dans imports:
 
@@ -45,6 +50,8 @@ import { JobOfferStatsComponent } from './job-offer-stats/job-offer-stats.compon
     JobsManagementComponent,
     ApplicationsManagementComponent,
     JobOfferStatsComponent,
+    InterviewCalendarComponent
+
   ],
   imports: [
     CommonModule,
@@ -68,7 +75,10 @@ import { JobOfferStatsComponent } from './job-offer-stats/job-offer-stats.compon
     MatDatepickerModule,
     MatNativeDateModule,
     MatProgressSpinnerModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatChipsModule,
+    MatBadgeModule,
+
   ]
 })
 export class BackofficeModule { }

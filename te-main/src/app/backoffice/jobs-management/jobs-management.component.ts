@@ -17,7 +17,7 @@ export class JobsManagementComponent implements OnInit, AfterViewInit {
   jobOffers: JobOffer[] = [];
   dataSource = new MatTableDataSource<JobOffer>([]);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
-  displayedColumns: string[] = ['title', 'company', 'contractType', 'location', 'salary', 'active', 'actions'];
+  displayedColumns: string[] = ['title', 'company', 'contractType', 'location', 'salary', 'views','active', 'actions'];
   loading = false;
   showForm = false;
   isEditMode = false;
@@ -187,4 +187,29 @@ export class JobsManagementComponent implements OnInit, AfterViewInit {
     const control = this.jobForm.get(fieldName);
     return !!(control && control.invalid && (control.dirty || control.touched));
   }
+
+  // ✅ Max des vues pour les barres
+get maxViews(): number {
+  return Math.max(...this.jobOffers.map(o => o.viewCount || 0), 1);
+}
+
+getViewsBarWidth(views: number): number {
+  return Math.round(((views || 0) / this.maxViews) * 100);
+}
+
+getViewsColor(views: number): string {
+  if (!views || views === 0) return '#94a3b8';
+  if (views >= 50) return '#166534';
+  if (views >= 20) return '#1e40af';
+  if (views >= 10) return '#92400e';
+  return '#475569';
+}
+
+getViewsBg(views: number): string {
+  if (!views || views === 0) return '#f1f5f9';
+  if (views >= 50) return '#dcfce7';
+  if (views >= 20) return '#dbeafe';
+  if (views >= 10) return '#fef3c7';
+  return '#f8fafc';
+}
 }

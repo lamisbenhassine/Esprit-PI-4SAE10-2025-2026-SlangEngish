@@ -32,6 +32,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { SavedOffersComponent } from './saved-offers/saved-offers.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
+import { ChatbotComponent } from './chatbot/chatbot.component';
 
 
 @NgModule({
@@ -42,7 +43,9 @@ import { MatChipsModule } from '@angular/material/chips';
     CoursesComponent,
     ChatComponent,
     JobOffersComponent,   // ← NOUVEAU
-    JobDetailsComponent, SavedOffersComponent, StudentPreferencesComponent   // ← NOUVEAU
+    JobDetailsComponent, SavedOffersComponent, StudentPreferencesComponent, ChatbotComponent,  // ← NOUVEAU
+    ChatbotComponent // ✅
+
   ],
   imports: [
     CommonModule,
