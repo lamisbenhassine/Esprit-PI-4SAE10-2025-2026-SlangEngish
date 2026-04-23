@@ -511,6 +511,340 @@
   gap: 1rem;
 }
 
+.sn-game-new {
+  margin-left: 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  color: rgba(153, 27, 27, 0.95);
+}
+
+.sn-game-shell {
+  margin-top: 1rem;
+}
+
+.sn-game-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.sn-game-top-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex: 1 1 420px;
+}
+
+.sn-game-title {
+  margin: 0 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 1.15rem;
+}
+
+.sn-game-desc {
+  margin: 0;
+  opacity: 0.82;
+  line-height: 1.5;
+}
+
+.sn-game-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sn-game-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.sn-game-entries {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.sn-game-entry {
+  border-radius: 18px;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.sn-game-entry-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+
+.sn-game-entry-clue {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  flex: 1 1 320px;
+}
+
+.sn-game-entry-idx {
+  font-weight: 900;
+  color: rgba(49, 46, 129, 0.95);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  padding: 0.15rem 0.45rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.sn-game-entry-text {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: rgba(15, 23, 42, 0.92);
+  font-family: ui-serif, Georgia, 'Times New Roman', serif;
+}
+
+.sn-game-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.sn-game-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: rgba(15, 23, 42, 0.82);
+}
+
+.sn-game-chip.ok {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.22);
+  color: rgba(21, 128, 61, 0.95);
+}
+
+.sn-game-chip.subtle {
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.85;
+}
+
+.sn-game-hint {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px dashed rgba(245, 158, 11, 0.3);
+}
+
+.sn-game-hint-text {
+  margin: 0;
+  line-height: 1.55;
+  color: rgba(120, 53, 15, 0.95);
+  font-family: ui-serif, Georgia, 'Times New Roman', serif;
+}
+
+.sn-game-entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.sn-game-answer {
+  flex: 1 1 240px;
+  min-width: 220px;
+}
+
+/* ---- Crossword board ---- */
+
+.sn-cross-shell {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .sn-cross-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sn-cross-sub {
+  margin: 0 0 0.75rem;
+  opacity: 0.8;
+}
+
+.sn-grid {
+  --cw-rows: 15;
+  --cw-cols: 15;
+  display: grid;
+  grid-template-rows: repeat(var(--cw-rows), 1fr);
+  grid-template-columns: repeat(var(--cw-cols), 1fr);
+  gap: 4px;
+  padding: 0.75rem;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background:
+    radial-gradient(620px 260px at 15% 0%, rgba(99, 102, 241, 0.08), transparent 55%),
+    rgba(255, 255, 255, 0.85);
+  overflow: auto;
+  max-width: 100%;
+}
+
+.sn-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  display: grid;
+  place-items: center;
+}
+
+.sn-cell.black {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: none;
+}
+
+.sn-cell.active:not(.black) {
+  border-color: rgba(99, 102, 241, 0.7);
+  box-shadow:
+    0 0 0 3px rgba(99, 102, 241, 0.16),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+}
+
+.sn-cell-in {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  text-align: center;
+  font-weight: 900;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  color: rgba(15, 23, 42, 0.95);
+  border-radius: 10px;
+}
+
+.sn-cell-num {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.sn-cross-clues-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sn-cross-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sn-clue-cols {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+
+.sn-clue-col h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.sn-clue {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.6rem;
+  align-items: start;
+  padding: 0.6rem 0.65rem;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.02);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sn-clue:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.sn-clue.active {
+  border-color: rgba(99, 102, 241, 0.6);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.sn-clue .n {
+  font-weight: 900;
+  min-width: 1.8rem;
+  text-align: center;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 10px;
+  padding: 0.1rem 0.45rem;
+}
+
+.sn-clue .t {
+  line-height: 1.35;
+  font-family: ui-serif, Georgia, 'Times New Roman', serif;
+}
+
+.sn-clue .m {
+  font-weight: 900;
+  opacity: 0.65;
+}
+
+.sn-clue .m.ok {
+  opacity: 1;
+  color: rgba(21, 128, 61, 0.95);
+}
+
 .sn-shared-card {
   border-radius: 18px;
   padding: 1rem 1.1rem;

@@ -301,6 +301,170 @@
       </div>
     </mat-tab>
 
+      <mat-tab>
+        <ng-template mat-tab-label>
+          Games
+          <span class="sn-game-new" *ngIf="gamesNewCount > 0">{{ gamesNewCount }} new</span>
+        </ng-template>
+
+        <div class="sn-shared">
+          <div class="sn-shared-head">
+            <div class="sn-shared-title">
+              <h2>Word games</h2>
+              <p>Play teacher-made crossword challenges. Stuck? Tap <strong>Hint</strong> for a creative clue ladder.</p>
+            </div>
+            <div class="sn-shared-head-actions">
+              <div class="sn-shared-sort">
+                <button mat-stroked-button type="button" (click)="loadGames()">
+                  <mat-icon>refresh</mat-icon> Refresh
+                </button>
+                <button mat-stroked-button type="button" (click)="markGamesSeenNow()" [disabled]="gamesNewCount === 0">
+                  <mat-icon>done_all</mat-icon> Mark seen
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sn-shared-loading" *ngIf="gamesLoading">
+            <mat-icon class="spin">refresh</mat-icon> Loading games…
+          </div>
+
+          <ng-container *ngIf="!gamesLoading">
+            <div class="sn-game-shell" *ngIf="selectedGame as sg; else gamesList">
+              <div class="sn-game-top card-ink">
+                <div class="sn-game-top-left">
+                  <button mat-stroked-button type="button" (click)="backToGamesList()">
+                    <mat-icon>arrow_back</mat-icon> Back
+                  </button>
+                  <div>
+                    <h3 class="sn-game-title"><mat-icon>sports_esports</mat-icon> {{ sg.title }}</h3>
+                    <p class="sn-game-desc" *ngIf="sg.description">{{ sg.description }}</p>
+                  </div>
+                </div>
+                <div class="sn-game-stats">
+                  <span class="sn-shared-badge">
+                    <mat-icon class="sn-badge-ico">check_circle</mat-icon>
+                    {{ gameSolvedCount() }}/{{ gameTotalCount() }} solved
+                  </span>
+                </div>
+              </div>
+
+              <div class="sn-cross-shell">
+                <section class="sn-cross-board card-ink">
+                  <h3><mat-icon>grid_on</mat-icon> Crossword</h3>
+                  <p class="sn-cross-sub" *ngIf="!(sg.cellMaskRows?.length)">This game has no crossword layout yet (recreate it).</p>
+
+                  <div class="sn-grid"
+                       *ngIf="sg.cellMaskRows?.length"
+                       [style.--cw-rows]="cwRows()"
+                       [style.--cw-cols]="cwCols()">
+                    <ng-container *ngFor="let rowMask of (sg.cellMaskRows || []); let r = index">
+                      <ng-container *ngFor="let _ of rowMask.split(''); let c = index">
+                        <div class="sn-cell" [class.black]="!cwPlayable(r,c)" [class.active]="cwIsActiveCell(r,c)">
+                          <input *ngIf="cwPlayable(r,c)"
+                                 class="sn-cell-in"
+                                 [id]="cwDomId(r,c)"
+                                 maxlength="1"
+                                 autocomplete="off"
+                                 autocapitalize="characters"
+                                 inputmode="text"
+                                 [value]="cwValue(r,c)"
+                                 (click)="onCwCellClick(r,c)"
+                                 (input)="onCwCellInput(r,c,$event)"
+                                 (keydown)="onCwCellKeyDown(r,c,$event)" />
+                          <span class="sn-cell-num" *ngIf="cwPlayable(r,c)">
+                            {{ cwNumberAt(r,c) || '' }}
+                          </span>
+                        </div>
+                      </ng-container>
+                    </ng-container>
+                  </div>
+                </section>
+
+                <aside class="sn-cross-clues card-ink">
+                  <div class="sn-cross-clues-head">
+                    <h3><mat-icon>format_list_numbered</mat-icon> Clues</h3>
+                    <div class="sn-cross-actions" *ngIf="cwSelectedEntryId as sid">
+                      <button mat-flat-button color="primary" type="button"
+                              (click)="submitEntryAnswer(sid)"
+                              [disabled]="gameWorkingEntryId === sid || !(cwEntryAnswer(sid) || '').trim()">
+                        <mat-icon>send</mat-icon> Submit
+                      </button>
+                      <button mat-stroked-button type="button"
+                              (click)="requestHint(sid)"
+                              [disabled]="gameWorkingEntryId === sid">
+                        <mat-icon>lightbulb</mat-icon> Hint
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="sn-game-hint" *ngIf="cwSelectedEntryId && gameHintByEntryId[cwSelectedEntryId]?.hint">
+                    <span class="sn-coach-label">Hint</span>
+                    <p class="sn-game-hint-text">{{ gameHintByEntryId[cwSelectedEntryId].hint }}</p>
+                  </div>
+
+                  <div class="sn-clue-cols">
+                    <div class="sn-clue-col">
+                      <h4>Across</h4>
+                      <button type="button" class="sn-clue"
+                              *ngFor="let e of cwEntriesAcross()"
+                              [class.active]="cwSelectedEntryId === e.id"
+                              (click)="selectCwEntry(e.id)">
+                        <span class="n">{{ e.number || e.order }}</span>
+                        <span class="t">{{ e.clue }}</span>
+                        <span class="m" [class.ok]="entrySolved(e.id)">{{ entrySolved(e.id) ? '✓' : (e.answerLength + '') }}</span>
+                      </button>
+                    </div>
+                    <div class="sn-clue-col">
+                      <h4>Down</h4>
+                      <button type="button" class="sn-clue"
+                              *ngFor="let e of cwEntriesDown()"
+                              [class.active]="cwSelectedEntryId === e.id"
+                              (click)="selectCwEntry(e.id)">
+                        <span class="n">{{ e.number || e.order }}</span>
+                        <span class="t">{{ e.clue }}</span>
+                        <span class="m" [class.ok]="entrySolved(e.id)">{{ entrySolved(e.id) ? '✓' : (e.answerLength + '') }}</span>
+                      </button>
+                    </div>
+                  </div>
+                </aside>
+              </div>
+            </div>
+
+            <ng-template #gamesList>
+              <div class="sn-game-grid" *ngIf="games?.length; else noGames">
+                <article class="sn-shared-card" *ngFor="let g of games">
+                  <div class="sn-shared-card-top">
+                    <div class="sn-shared-card-title">
+                      <mat-icon>extension</mat-icon>
+                      <h3>{{ g.title }}</h3>
+                    </div>
+                    <span class="sn-shared-badge">
+                      <mat-icon class="sn-badge-ico">grid_4x4</mat-icon>
+                      {{ g.entryCount || 0 }} clues
+                    </span>
+                  </div>
+                  <p class="sn-shared-meta" *ngIf="g.createdAt">Created {{ g.createdAt | date:'short' }}</p>
+                  <p class="sn-shared-preview" *ngIf="g.description">{{ g.description }}</p>
+                  <div class="sn-shared-actions">
+                    <button mat-flat-button color="primary" type="button" (click)="selectGame(g)">
+                      <mat-icon>play_arrow</mat-icon> Play
+                    </button>
+                  </div>
+                </article>
+              </div>
+
+              <ng-template #noGames>
+                <div class="sn-shared-empty">
+                  <mat-icon>sports_esports</mat-icon>
+                  <p>No games yet. Ask your teacher to create a crossword game for the class.</p>
+                </div>
+              </ng-template>
+            </ng-template>
+          </ng-container>
+        </div>
+      </mat-tab>
+
       <mat-tab label="Shared">
         <div class="sn-shared">
           <div class="sn-shared-head">

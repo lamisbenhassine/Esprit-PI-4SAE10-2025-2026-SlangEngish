@@ -17,6 +17,7 @@ import { EvaluationFormComponent } from './evaluation-form/evaluation-form.compo
 import { EvaluationQuestionsComponent } from './evaluation-questions/evaluation-questions.component';
 import { EvaluationAttemptsComponent } from './evaluation-attempts/evaluation-attempts.component';
 import { SharedModule } from '../shared/shared.module';
+import { NotebookGamesComponent } from './notebook-games/notebook-games.component';
 
 // Angular Material Modules
 import { MatTableModule } from '@angular/material/table';
@@ -43,7 +44,8 @@ import { MatSelectModule } from '@angular/material/select';
     EvaluationQuestionsComponent,
     EvaluationAttemptsComponent,
     LayoutComponent,
-    BackofficeProfileComponent
+    BackofficeProfileComponent,
+    NotebookGamesComponent
   ],
   imports: [
     CommonModule,

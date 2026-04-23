@@ -2,6 +2,7 @@ package esprit.notebook.controller;
 
 import esprit.notebook.dto.*;
 import esprit.notebook.service.DictionaryService;
+import esprit.notebook.service.GameService;
 import esprit.notebook.service.GrammarService;
 import esprit.notebook.service.NotebookService;
 import esprit.notebook.service.PronunciationCoachService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/notebook")
@@ -25,6 +27,7 @@ public class NotebookController {
     private final DictionaryService dictionaryService;
     private final SummaryService summaryService;
     private final PronunciationCoachService pronunciationCoachService;
+    private final GameService gameService;
 
     @GetMapping("/notes")
     public List<NoteDto> list(@RequestParam Long userId) {
@@ -106,6 +109,54 @@ public class NotebookController {
     @PostMapping("/ai/pronunciation-coach")
     public PronunciationCoachResponse pronunciationCoach(@RequestBody PronunciationCoachRequest req) {
         return pronunciationCoachService.coach(req.getTargetText(), req.getHeardText());
+    }
+
+    // ----- Games (teacher creates, students play) -----
+
+    @PostMapping("/games")
+    public ResponseEntity<GameDtos.GameDetail> createGame(@RequestBody GameDtos.CreateGameRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(gameService.create(req));
+    }
+
+    /** Teacher listing (includes unpublished). */
+    @GetMapping("/games/teacher")
+    public List<GameDtos.GameSummary> listTeacherGames(@RequestParam Long teacherId) {
+        return gameService.listForTeacher(teacherId);
+    }
+
+    /** Student listing (published only). Optional createdAfter epochMillis for "new games" badge. */
+    @GetMapping("/games")
+    public List<GameDtos.GameSummary> listPublishedGames(@RequestParam(required = false) Long createdAfter) {
+        Instant after = createdAfter != null ? Instant.ofEpochMilli(createdAfter) : null;
+        return gameService.listPublished(after);
+    }
+
+    @GetMapping("/games/{gameId}")
+    public GameDtos.GameDetail gameDetail(@PathVariable Long gameId) {
+        return gameService.getDetail(gameId);
+    }
+
+    @GetMapping("/games/{gameId}/progress")
+    public List<GameDtos.ProgressRow> gameProgress(@PathVariable Long gameId, @RequestParam Long userId) {
+        return gameService.progress(userId, gameId);
+    }
+
+    @PostMapping("/games/{gameId}/entries/{entryId}/answer")
+    public GameDtos.SubmitAnswerResponse submitAnswer(
+            @PathVariable Long gameId,
+            @PathVariable Long entryId,
+            @RequestBody GameDtos.SubmitAnswerRequest req
+    ) {
+        return gameService.submitAnswer(gameId, entryId, req);
+    }
+
+    @PostMapping("/games/{gameId}/entries/{entryId}/hint")
+    public GameDtos.HintResponse hint(
+            @PathVariable Long gameId,
+            @PathVariable Long entryId,
+            @RequestParam Long userId
+    ) {
+        return gameService.nextHint(gameId, entryId, userId);
     }
 
     @ExceptionHandler({ NoSuchElementException.class })

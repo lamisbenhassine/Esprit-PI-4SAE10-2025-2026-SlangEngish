@@ -10,6 +10,7 @@ import { EvaluationsManagementComponent } from './evaluations-management/evaluat
 import { EvaluationFormComponent } from './evaluation-form/evaluation-form.component';
 import { EvaluationQuestionsComponent } from './evaluation-questions/evaluation-questions.component';
 import { EvaluationAttemptsComponent } from './evaluation-attempts/evaluation-attempts.component';
+import { NotebookGamesComponent } from './notebook-games/notebook-games.component';
 
 const routes: Routes = [
   {
@@ -26,6 +27,7 @@ const routes: Routes = [
       { path: 'evaluations/:id', component: EvaluationFormComponent },
       { path: 'evaluations/:id/questions', component: EvaluationQuestionsComponent },
       { path: 'evaluations/:id/attempts', component: EvaluationAttemptsComponent },
+      { path: 'notebook-games', component: NotebookGamesComponent },
       { path: 'profile', component: BackofficeProfileComponent }
     ]
   }

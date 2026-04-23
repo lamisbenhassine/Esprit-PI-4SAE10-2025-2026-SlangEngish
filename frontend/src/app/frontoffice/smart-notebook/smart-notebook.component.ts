@@ -10,6 +10,11 @@ import {
   GrammarResult,
   NotebookApiService,
   NotebookDashboard,
+  NotebookGameDetail,
+  NotebookGameHintResponse,
+  NotebookGameProgressRow,
+  NotebookGameSubmitAnswerResponse,
+  NotebookGameSummary,
   NotebookNote,
   PronunciationCoachResult,
   SummaryResult
@@ -65,6 +70,20 @@ export class SmartNotebookComponent implements OnInit, OnDestroy {
   /** Snapshot of coach buffer when coach mic starts. */
   private coachStartText = '';
 
+  // ----- Games -----
+  games: NotebookGameSummary[] = [];
+  gamesLoading = false;
+  selectedGame: NotebookGameDetail | null = null;
+  gameProgress: Record<number, NotebookGameProgressRow> = {};
+  gameHintByEntryId: Record<number, NotebookGameHintResponse> = {};
+  gameAnswerDraft: Record<number, string> = {};
+  /** Crossword grid (row:col -> char). */
+  cwCells: Record<string, string> = {};
+  cwSelectedEntryId: number | null = null;
+  gameWorkingEntryId: number | null = null;
+  gamesNewCount = 0;
+  private readonly gamesSeenKey = 'notebook.games.lastSeenAt';
+
   constructor(
     private api: NotebookApiService,
     private snack: MatSnackBar,
@@ -85,6 +104,7 @@ export class SmartNotebookComponent implements OnInit, OnDestroy {
     this.loadNotes();
     this.loadDashboard();
     this.loadSharedNotes();
+    this.loadGames();
     if (isPlatformBrowser(this.platformId)) {
       this.initSpeech();
     }
@@ -339,6 +359,11 @@ export class SmartNotebookComponent implements OnInit, OnDestroy {
   }
 
   runSummarize(): void {
+    // If a bubble is selected: summarize ONLY that bubble.
+    if (this.bubbleSelectedIndex != null) {
+      this.runSummarizeOnSelectedBubble();
+      return;
+    }
     if (!this.contentDraft.trim()) return;
     this.api.summarize(this.contentDraft).subscribe({
       next: (r: SummaryResult) => (this.summaryResult = r),
@@ -947,6 +972,31 @@ export class SmartNotebookComponent implements OnInit, OnDestroy {
     });
   }
 
+  private runSummarizeOnSelectedBubble(): void {
+    if (this.bubbleSelectedIndex == null) {
+      this.snack.open('Select a bubble first.', 'Close', { duration: 2500 });
+      return;
+    }
+    const src = (this.bubbles[this.bubbleSelectedIndex] ?? '').trim();
+    if (!src) return;
+    this.api.summarize(src).subscribe({
+      next: (r: SummaryResult) => {
+        this.summaryResult = r;
+        const s = (r?.summary ?? '').trim();
+        if (!s) {
+          this.snack.open('No summary returned for this bubble.', 'Close', { duration: 2500 });
+          return;
+        }
+        const next = [...this.bubbles];
+        next[this.bubbleSelectedIndex!] = s;
+        this.bubbles = next;
+        const via = r.source === 'ollama' ? 'Ollama (local)' : r.source === 'extractive' ? 'Quick extract' : 'Summary';
+        this.snack.open(`${via}: bubble summarized`, 'OK', { duration: 2500 });
+      },
+      error: () => this.snack.open('Summary failed', 'Close', { duration: 3000 })
+    });
+  }
+
   private readSelectionOrParagraph(host: HTMLTextAreaElement): string {
     const lo = Math.min(host.selectionStart, host.selectionEnd);
     const hi = Math.max(host.selectionStart, host.selectionEnd);
@@ -983,5 +1033,340 @@ export class SmartNotebookComponent implements OnInit, OnDestroy {
     const start = before === -1 ? 0 : before + 2;
     const end = after === -1 ? t.length : after;
     return { start, end };
+  }
+
+  // ----- Games UI -----
+
+  private safeNowMs(): number {
+    return Date.now();
+  }
+
+  private lastGamesSeenAt(): number {
+    if (!isPlatformBrowser(this.platformId)) return 0;
+    try {
+      const v = localStorage.getItem(this.gamesSeenKey);
+      const n = v ? Number(v) : 0;
+      return Number.isFinite(n) ? n : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  markGamesSeenNow(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      localStorage.setItem(this.gamesSeenKey, String(this.safeNowMs()));
+    } catch {
+      /* ignore */
+    }
+    this.gamesNewCount = 0;
+  }
+
+  loadGames(): void {
+    this.gamesLoading = true;
+    const seen = this.lastGamesSeenAt();
+    this.api.listPublishedGames().subscribe({
+      next: (list) => {
+        this.games = (list ?? []).slice();
+        // Estimate "new" by createdAt after last seen.
+        const seenMs = seen || 0;
+        this.gamesNewCount =
+          isPlatformBrowser(this.platformId) && seenMs > 0
+            ? this.games.filter((g) => new Date(g.createdAt ?? 0).getTime() > seenMs).length
+            : this.games.length > 0 && seenMs === 0
+              ? Math.min(3, this.games.length) // first visit: highlight a few
+              : 0;
+        this.gamesLoading = false;
+      },
+      error: () => {
+        this.gamesLoading = false;
+        this.games = [];
+      }
+    });
+  }
+
+  selectGame(g: NotebookGameSummary): void {
+    this.selectedGame = null;
+    this.gameProgress = {};
+    this.gameHintByEntryId = {};
+    this.gameAnswerDraft = {};
+    this.cwCells = {};
+    this.cwSelectedEntryId = null;
+    this.gameWorkingEntryId = null;
+    this.api.gameDetail(g.id).subscribe({
+      next: (detail) => {
+        this.selectedGame = detail;
+        this.loadGameProgress(detail.id);
+        // Select first placed entry by default.
+        const first = (detail.entries ?? []).find((e) => (e.row ?? null) != null && (e.col ?? null) != null && !!e.dir);
+        if (first?.id != null) {
+          this.cwSelectedEntryId = first.id;
+          setTimeout(() => this.focusFirstEmptyCell(first.id), 0);
+        }
+        this.markGamesSeenNow();
+      },
+      error: () => {
+        this.snack.open('Could not open game. Is gateway + notebook running?', 'Close', { duration: 3500 });
+      }
+    });
+  }
+
+  backToGamesList(): void {
+    this.selectedGame = null;
+    this.gameHintByEntryId = {};
+    this.gameAnswerDraft = {};
+    this.cwCells = {};
+    this.cwSelectedEntryId = null;
+    this.gameWorkingEntryId = null;
+  }
+
+  private loadGameProgress(gameId: number): void {
+    this.api.gameProgress(gameId, this.userId).subscribe({
+      next: (rows) => {
+        const map: Record<number, NotebookGameProgressRow> = {};
+        (rows ?? []).forEach((r) => (map[r.entryId] = r));
+        this.gameProgress = map;
+      },
+      error: () => {
+        this.gameProgress = {};
+      }
+    });
+  }
+
+  entrySolved(entryId: number): boolean {
+    return !!this.gameProgress?.[entryId]?.solved;
+  }
+
+  entryAttempts(entryId: number): number {
+    return this.gameProgress?.[entryId]?.attempts ?? 0;
+  }
+
+  entryHintLevel(entryId: number): number {
+    return this.gameProgress?.[entryId]?.hintLevel ?? 0;
+  }
+
+  submitEntryAnswer(entryId: number): void {
+    if (!this.selectedGame) return;
+    const ans = this.cwEntryAnswer(entryId) || (this.gameAnswerDraft?.[entryId] ?? '').trim();
+    if (!ans) return;
+    this.gameWorkingEntryId = entryId;
+    this.api.gameSubmitAnswer(this.selectedGame.id, entryId, this.userId, ans).subscribe({
+      next: (r: NotebookGameSubmitAnswerResponse) => {
+        const prev = this.gameProgress?.[entryId];
+        this.gameProgress = {
+          ...(this.gameProgress ?? {}),
+          [entryId]: {
+            entryId,
+            solved: r.solved,
+            attempts: r.attempts,
+            hintLevel: r.hintLevel,
+            lastAnswer: ans
+          }
+        };
+        this.gameWorkingEntryId = null;
+        if (r.correct) {
+          this.snack.open('Correct!', 'OK', { duration: 1800 });
+          // Keep boxes as entered.
+        } else {
+          const attempts = r.attempts ?? (prev?.attempts ?? 0);
+          this.snack.open(attempts >= 2 ? 'Not yet — try Hint for help.' : 'Not yet — try again.', 'Close', { duration: 2500 });
+        }
+      },
+      error: () => {
+        this.gameWorkingEntryId = null;
+        this.snack.open('Answer failed. Try again.', 'Close', { duration: 2500 });
+      }
+    });
+  }
+
+  requestHint(entryId: number): void {
+    if (!this.selectedGame) return;
+    this.gameWorkingEntryId = entryId;
+    this.api.gameHint(this.selectedGame.id, entryId, this.userId).subscribe({
+      next: (h) => {
+        this.gameHintByEntryId = { ...(this.gameHintByEntryId ?? {}), [entryId]: h };
+        const prev = this.gameProgress?.[entryId];
+        this.gameProgress = {
+          ...(this.gameProgress ?? {}),
+          [entryId]: {
+            entryId,
+            solved: prev?.solved ?? false,
+            attempts: prev?.attempts ?? 0,
+            hintLevel: h.level ?? (prev?.hintLevel ?? 0),
+            lastAnswer: prev?.lastAnswer ?? null
+          }
+        };
+        this.gameWorkingEntryId = null;
+      },
+      error: () => {
+        this.gameWorkingEntryId = null;
+        this.snack.open('Hint failed. Is notebook running?', 'Close', { duration: 2500 });
+      }
+    });
+  }
+
+  gameSolvedCount(): number {
+    const game = this.selectedGame;
+    if (!game?.entries?.length) return 0;
+    return game.entries.filter((e) => this.entrySolved(e.id)).length;
+  }
+
+  gameTotalCount(): number {
+    return this.selectedGame?.entries?.length ?? 0;
+  }
+
+  // ----- Crossword board helpers -----
+
+  cwRows(): number {
+    return Number(this.selectedGame?.gridRows ?? 0) || 0;
+  }
+
+  cwCols(): number {
+    return Number(this.selectedGame?.gridCols ?? 0) || 0;
+  }
+
+  cwPlayable(r: number, c: number): boolean {
+    const rows = this.selectedGame?.cellMaskRows ?? [];
+    const line = rows?.[r] ?? '';
+    return (line?.[c] ?? '0') === '1';
+  }
+
+  cwKey(r: number, c: number): string {
+    return `${r}:${c}`;
+  }
+
+  cwDomId(r: number, c: number): string {
+    return `cw-${r}-${c}`;
+  }
+
+  cwValue(r: number, c: number): string {
+    return (this.cwCells?.[this.cwKey(r, c)] ?? '').toString();
+  }
+
+  cwNumberAt(r: number, c: number): number | null {
+    const entries = this.selectedGame?.entries ?? [];
+    const hit = entries.find((e) => Number(e.row) === r && Number(e.col) === c);
+    const n = hit?.number ?? null;
+    return n != null ? Number(n) : null;
+  }
+
+  cwSetValue(r: number, c: number, v: string): void {
+    const ch = (v ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 1);
+    const key = this.cwKey(r, c);
+    this.cwCells = { ...(this.cwCells ?? {}), [key]: ch };
+  }
+
+  cwEntriesAcross(): NotebookGameDetail['entries'] {
+    return (this.selectedGame?.entries ?? []).filter((e) => (e.dir ?? '').toString().toUpperCase() === 'ACROSS');
+  }
+
+  cwEntriesDown(): NotebookGameDetail['entries'] {
+    return (this.selectedGame?.entries ?? []).filter((e) => (e.dir ?? '').toString().toUpperCase() === 'DOWN');
+  }
+
+  selectCwEntry(entryId: number): void {
+    this.cwSelectedEntryId = entryId;
+    setTimeout(() => this.focusFirstEmptyCell(entryId), 0);
+  }
+
+  cwEntryCoords(entryId: number): Array<{ r: number; c: number }> {
+    const e = (this.selectedGame?.entries ?? []).find((x) => x.id === entryId);
+    if (!e) return [];
+    const r0 = Number(e.row ?? -1);
+    const c0 = Number(e.col ?? -1);
+    const L = Number(e.answerLength ?? 0);
+    const dir = (e.dir ?? '').toString().toUpperCase();
+    if (r0 < 0 || c0 < 0 || !L || (dir !== 'ACROSS' && dir !== 'DOWN')) return [];
+    const out: Array<{ r: number; c: number }> = [];
+    for (let i = 0; i < L; i++) {
+      out.push({ r: r0 + (dir === 'DOWN' ? i : 0), c: c0 + (dir === 'ACROSS' ? i : 0) });
+    }
+    return out;
+  }
+
+  cwIsActiveCell(r: number, c: number): boolean {
+    const id = this.cwSelectedEntryId;
+    if (!id) return false;
+    const coords = this.cwEntryCoords(id);
+    return coords.some((p) => p.r === r && p.c === c);
+  }
+
+  focusFirstEmptyCell(entryId: number): void {
+    const coords = this.cwEntryCoords(entryId);
+    if (!coords.length) return;
+    const firstEmpty = coords.find((p) => !this.cwValue(p.r, p.c));
+    const target = firstEmpty ?? coords[0];
+    const id = this.cwDomId(target.r, target.c);
+    (document.getElementById(id) as HTMLInputElement | null)?.focus();
+  }
+
+  cwEntryAnswer(entryId: number): string {
+    const coords = this.cwEntryCoords(entryId);
+    if (!coords.length) return '';
+    return coords.map((p) => this.cwValue(p.r, p.c) || '').join('').trim();
+  }
+
+  onCwCellInput(r: number, c: number, ev: Event): void {
+    const el = ev.target as HTMLInputElement;
+    const raw = (el.value ?? '').toString();
+    this.cwSetValue(r, c, raw.slice(-1));
+
+    // Auto-advance along selected entry if this cell belongs to it.
+    const entryId = this.cwSelectedEntryId;
+    if (!entryId) return;
+    const coords = this.cwEntryCoords(entryId);
+    const idx = coords.findIndex((p) => p.r === r && p.c === c);
+    if (idx >= 0 && idx < coords.length - 1) {
+      const next = coords[idx + 1];
+      setTimeout(() => (document.getElementById(this.cwDomId(next.r, next.c)) as HTMLInputElement | null)?.focus(), 0);
+    }
+  }
+
+  onCwCellKeyDown(r: number, c: number, ev: KeyboardEvent): void {
+    const entryId = this.cwSelectedEntryId;
+    if (!entryId) return;
+    const coords = this.cwEntryCoords(entryId);
+    const idx = coords.findIndex((p) => p.r === r && p.c === c);
+    if (idx < 0) return;
+
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      this.submitEntryAnswer(entryId);
+      return;
+    }
+
+    if (ev.key === 'Backspace') {
+      if (!this.cwValue(r, c) && idx > 0) {
+        const prev = coords[idx - 1];
+        setTimeout(() => (document.getElementById(this.cwDomId(prev.r, prev.c)) as HTMLInputElement | null)?.focus(), 0);
+      }
+      return;
+    }
+
+    if (ev.key === 'ArrowLeft' && idx > 0) {
+      ev.preventDefault();
+      const prev = coords[idx - 1];
+      (document.getElementById(this.cwDomId(prev.r, prev.c)) as HTMLInputElement | null)?.focus();
+      return;
+    }
+
+    if (ev.key === 'ArrowRight' && idx < coords.length - 1) {
+      ev.preventDefault();
+      const next = coords[idx + 1];
+      (document.getElementById(this.cwDomId(next.r, next.c)) as HTMLInputElement | null)?.focus();
+    }
+  }
+
+  onCwCellClick(r: number, c: number): void {
+    // If clicking a cell in the current entry, keep selection. Otherwise pick an entry that uses this cell.
+    if (this.cwIsActiveCell(r, c)) return;
+    const entries = this.selectedGame?.entries ?? [];
+    const hit = entries.find((e) => {
+      const coords = this.cwEntryCoords(e.id);
+      return coords.some((p) => p.r === r && p.c === c);
+    });
+    if (hit?.id != null) {
+      this.cwSelectedEntryId = hit.id;
+    }
   }
 }
