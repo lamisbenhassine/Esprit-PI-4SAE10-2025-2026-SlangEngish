@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, map, of, switchMap, throwError, timer } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap, throwError, timer, timeout } from 'rxjs';
 import { retry } from 'rxjs/operators';
 
 interface SummarizeApiResponse {
@@ -22,6 +22,8 @@ interface PolishEnglishApiResponse {
 
 @Injectable({ providedIn: 'root' })
 export class TextAiService {
+  private static readonly TRANSLATE_TIMEOUT_MS = 12000;
+
   constructor(private http: HttpClient) {}
 
   /**
@@ -58,8 +60,9 @@ export class TextAiService {
     }
     return this.retryHttpOn429(
       this.http.post<TranslateApiResponse>('/api/forum/ai/translate', { text: clean, targetLanguage: lang }),
-      1
+      0
     ).pipe(
+        timeout(TextAiService.TRANSLATE_TIMEOUT_MS),
         switchMap(res => {
           const out = (res?.translatedText ?? '').trim();
           if (!out) {
@@ -100,26 +103,35 @@ export class TextAiService {
     description: string,
     targetLanguage: string
   ): Observable<{ trTitle: string; trDescription: string }> {
+    const cleanTitle = (title || '').trim();
+    const cleanDesc = (description || '').trim();
     const lang = (targetLanguage || 'en').trim().toLowerCase().slice(0, 2);
     return this.retryHttpOn429(
       this.http.post<TranslateTopicApiResponse>('/api/forum/ai/translate-topic', {
-        title: (title || '').trim(),
-        description: (description || '').trim(),
+        title: cleanTitle,
+        description: cleanDesc,
         targetLanguage: lang
       }),
       0
     ).pipe(
-        switchMap(res => {
-          const trTitle = (res?.trTitle ?? '').trim();
-          const trDescription = (res?.trDescription ?? '').trim();
-          if (!trTitle && !trDescription) {
-            return throwError(
-              () => new Error('Réponse de traduction vide (vérifiez le microservice forum).')
-            );
-          }
-          return of({ trTitle, trDescription });
+      timeout(TextAiService.TRANSLATE_TIMEOUT_MS),
+      switchMap(res => {
+        const trTitle = (res?.trTitle ?? '').trim();
+        const trDescription = (res?.trDescription ?? '').trim();
+        if (!trTitle && !trDescription) {
+          return throwError(
+            () => new Error('Réponse de traduction vide (vérifiez le microservice forum).')
+          );
+        }
+        return of({ trTitle, trDescription });
+      }),
+      catchError(() =>
+        forkJoin({
+          trTitle: cleanTitle ? this.translate(cleanTitle, lang).pipe(catchError(() => of(cleanTitle))) : of(''),
+          trDescription: cleanDesc ? this.translate(cleanDesc, lang).pipe(catchError(() => of(cleanDesc))) : of('')
         })
-      );
+      )
+    );
   }
 
   /**

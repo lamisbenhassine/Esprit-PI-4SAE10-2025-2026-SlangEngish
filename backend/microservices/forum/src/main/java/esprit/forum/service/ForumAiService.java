@@ -170,7 +170,16 @@ public class ForumAiService {
 
         try {
             String rawJson = callGemini(prompt, 8192, 0.2);
-            return parseTopicTranslationJson(rawJson);
+            try {
+                return parseTopicTranslationJson(rawJson);
+            } catch (Exception parseErr) {
+                String trTitle = StringUtils.hasText(title) ? translateToLanguage(title, lang) : "";
+                String trDesc = StringUtils.hasText(body) ? translateToLanguage(body, lang) : "";
+                if (!StringUtils.hasText(trTitle) && !StringUtils.hasText(trDesc)) {
+                    throw parseErr;
+                }
+                return new AiTranslateTopicResponse(trTitle, trDesc);
+            }
         } catch (RestClientResponseException e) {
             int status = e.getStatusCode() != null ? e.getStatusCode().value() : 0;
             throw new IllegalStateException("AI provider error: HTTP " + status, e);
@@ -185,7 +194,18 @@ public class ForumAiService {
 
     private AiTranslateTopicResponse parseTopicTranslationJson(String modelOutput) throws Exception {
         String s = stripMarkdownJsonFence(modelOutput.trim());
-        JsonNode root = objectMapper.readTree(s);
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(s);
+        } catch (Exception ex) {
+            int i = s.indexOf('{');
+            int j = s.lastIndexOf('}');
+            if (i >= 0 && j > i) {
+                root = objectMapper.readTree(s.substring(i, j + 1));
+            } else {
+                throw ex;
+            }
+        }
         String trTitle = root.path("trTitle").asText("").trim();
         String trDesc = root.path("trDescription").asText("").trim();
         if (!StringUtils.hasText(trTitle) && root.has("tr_title")) {
@@ -276,9 +296,9 @@ public class ForumAiService {
      * Appelle Gemini avec retries sur 429 / 503. Délais limités : un proxy / navigateur trop long → ERR_EMPTY_RESPONSE.
      */
     private String callGemini(String prompt, int maxOutputTokens, double temperature) throws Exception {
-        final int maxAttempts = 4;
-        final long baseDelayMs = 2_000L;
-        final long maxWaitPerAttemptMs = 18_000L;
+        final int maxAttempts = 2;
+        final long baseDelayMs = 1_200L;
+        final long maxWaitPerAttemptMs = 6_000L;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
                 return callGeminiOnce(prompt, maxOutputTokens, temperature);

@@ -1,34 +1,28 @@
-<div class="tpt-root" [class.tpt-root--hero]="variant === 'hero'">
+<div class="tpt-root" [class.tpt-root--hero]="variant === 'hero'" (click)="onContentClick($event)">
   <ng-container [ngSwitch]="variant">
-    <h1 *ngSwitchCase="'hero'" class="tpt-title">{{ displayTitle }}</h1>
-    <h3 *ngSwitchDefault class="tpt-title tpt-title--card">{{ displayTitle }}</h3>
+    <h1 *ngSwitchCase="'hero'" class="tpt-title tpt-clickable" (click)="onContentClick($event)">{{ displayTitle }}</h1>
+    <h3 *ngSwitchDefault class="tpt-title tpt-title--card tpt-clickable" (click)="onContentClick($event)">{{ displayTitle }}</h3>
   </ng-container>
 
   <ng-content></ng-content>
 
-  <p *ngIf="variant === 'hero'" class="desc">{{ displayDescription }}</p>
-  <p *ngIf="variant === 'card'" class="tpt-desc">{{ displayDescription }}</p>
+  <p *ngIf="variant === 'hero'" class="desc tpt-clickable" (click)="onContentClick($event)">{{ displayDescription }}</p>
+  <p *ngIf="variant === 'card'" class="tpt-desc tpt-clickable" (click)="onContentClick($event)">{{ displayDescription }}</p>
 
   <div class="tpt-actions" *ngIf="canTranslate">
     <mat-spinner *ngIf="busy" diameter="18" class="tpt-spin"></mat-spinner>
 
-    <mat-form-field appearance="outline" class="tpt-lang-field" subscriptSizing="dynamic">
-      <mat-label>Langue cible</mat-label>
-      <mat-select [(ngModel)]="pickedLang" [disabled]="busy">
-        <mat-option *ngFor="let l of targetLanguages" [value]="l.code">{{ l.label }}</mat-option>
-      </mat-select>
-    </mat-form-field>
-
-    <button
-      type="button"
-      mat-stroked-button
-      color="primary"
-      class="tpt-translate-btn"
-      [disabled]="busy"
-      (click)="onTranslateClick($event)">
-      <mat-icon class="tpt-ico-inline">translate</mat-icon>
-      Traduire
-    </button>
+    <div class="tpt-lang-list" role="group" aria-label="Langues de traduction">
+      <button
+        type="button"
+        class="tpt-lang-chip"
+        *ngFor="let l of targetLanguages"
+        [class.active]="pickedLang === l.code"
+        [disabled]="busy"
+        (click)="pickLanguage(l.code, $event)">
+        {{ l.label }}
+      </button>
+    </div>
 
     <span class="tpt-lang-badge" *ngIf="showTranslated && activeLangLabel">{{ activeLangLabel }}</span>
     <button *ngIf="showTranslated" type="button" mat-button class="tpt-link" (click)="showOriginal($event)">

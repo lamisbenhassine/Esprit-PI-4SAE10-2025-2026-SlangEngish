@@ -35,6 +35,8 @@ export class TopicPostTranslateBlockComponent {
   /** Langue affichée (code ISO). */
   activeLang: string | null = null;
   private readonly cache = new Map<string, CachedPair>();
+  private readonly inFlightByLang = new Set<string>();
+  private readonly cooldownByLang = new Map<string, number>();
 
   constructor(
     private textAi: TextAiService,
@@ -87,8 +89,23 @@ export class TopicPostTranslateBlockComponent {
     this.showTranslated = false;
   }
 
-  onTranslateClick(ev: Event): void {
+  onContentClick(ev: Event): void {
+    if (this.busy) {
+      return;
+    }
     this.runTranslate(this.pickedLang, ev);
+  }
+
+  pickLanguage(code: string, ev: Event): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (this.pickedLang === code && this.showTranslated && this.activeLang === code) {
+      return;
+    }
+    this.pickedLang = code;
+    if (this.showTranslated) {
+      this.runTranslate(code, ev);
+    }
   }
 
   private translateErrorMessage(err: unknown): string {
@@ -110,7 +127,7 @@ export class TopicPostTranslateBlockComponent {
       if (err.status === 429) {
         return (
           serverMsg ||
-          'Quota ou limite Google (429). Attendez 1–2 minutes, ou consultez votre forfait sur Google AI Studio.'
+          'Limite traduction atteinte (429). Réessayez après 1 minute.'
         );
       }
       if (err.status === 503) {
@@ -127,6 +144,9 @@ export class TopicPostTranslateBlockComponent {
       }
     }
     if (err instanceof Error && err.message) {
+      if (err.message.includes('Timeout')) {
+        return 'La traduction prend trop de temps. Réessayez dans quelques secondes.';
+      }
       return err.message;
     }
     return 'Traduction indisponible. Vérifiez le microservice forum et la clé IA.';
@@ -138,6 +158,17 @@ export class TopicPostTranslateBlockComponent {
     if (!this.canTranslate) {
       return;
     }
+    const now = Date.now();
+    const blockedUntil = this.cooldownByLang.get(langCode) || 0;
+    if (blockedUntil > now) {
+      const waitSec = Math.max(1, Math.ceil((blockedUntil - now) / 1000));
+      this.snackBar.open(
+        `Traduction temporairement limitée. Réessayez dans ${waitSec}s.`,
+        'OK',
+        { duration: 2500 }
+      );
+      return;
+    }
     const title = (this.title || '').trim();
     const desc = (this.description || '').trim();
     const cached = this.cache.get(langCode);
@@ -146,19 +177,42 @@ export class TopicPostTranslateBlockComponent {
       this.showTranslated = true;
       return;
     }
+    if (this.inFlightByLang.has(langCode)) {
+      return;
+    }
+    this.inFlightByLang.add(langCode);
     this.busy = true;
     this.textAi.translateTopicPost(title, desc, langCode).subscribe({
       next: ({ trTitle, trDescription }) => {
+        const unchangedTitle = (trTitle || '').trim() === title;
+        const unchangedDesc = (trDescription || '').trim() === desc;
+        if (unchangedTitle && unchangedDesc) {
+          this.inFlightByLang.delete(langCode);
+          this.busy = false;
+          this.snackBar.open(
+            'Traduction indisponible pour le moment (limite 429). Réessayez dans 1 minute.',
+            'OK',
+            { duration: 4500 }
+          );
+          return;
+        }
         this.cache.set(langCode, {
           trTitle,
           trDesc: trDescription
         });
         this.activeLang = langCode;
         this.showTranslated = true;
+        this.inFlightByLang.delete(langCode);
         this.busy = false;
       },
       error: (err: unknown) => {
+        this.inFlightByLang.delete(langCode);
         this.busy = false;
+        const is429 = err instanceof HttpErrorResponse && err.status === 429;
+        const isTimeout = err instanceof Error && err.message.includes('Timeout');
+        if (is429 || isTimeout) {
+          this.cooldownByLang.set(langCode, Date.now() + 60_000);
+        }
         const msg = this.translateErrorMessage(err);
         this.snackBar.open(msg, 'OK', { duration: 6500 });
       }

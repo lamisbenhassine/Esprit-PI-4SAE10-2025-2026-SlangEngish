@@ -1,0 +1,112 @@
+name: Inscription Microservice CI
+
+on:
+  push:
+    paths:
+      - "backend/microservices/inscription/**"
+      - ".github/workflows/inscription-pipeline.yml"
+  pull_request:
+    paths:
+      - "backend/microservices/inscription/**"
+      - ".github/workflows/inscription-pipeline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Build, Test and Package Inscription
+    runs-on: ubuntu-latest
+    outputs:
+      dockerfile_exists: ${{ steps.dockerfile-check.outputs.exists }}
+    defaults:
+      run:
+        working-directory: backend/microservices/inscription
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Dockerfile availability
+        id: dockerfile-check
+        run: |
+          if [ -f Dockerfile ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build and run tests
+        run: ./mvnw clean verify
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inscription-jar
+          path: backend/microservices/inscription/target/*.jar
+          if-no-files-found: warn
+
+  docker:
+    name: Build and Push Inscription Image
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.event_name != 'pull_request' && needs.ci.outputs.dockerfile_exists == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set image name
+        id: image
+        run: |
+          OWNER_LOWER=$(echo "${{ secrets.DOCKERHUB_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          echo "name=docker.io/${OWNER_LOWER}/inscription" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend/microservices/inscription
+          file: backend/microservices/inscription/Dockerfile
+          push: true
+          tags: ${{ steps.image.outputs.name }}:${{ github.sha }}
+
+  deploy-staging:
+    name: Deploy Inscription to Staging
+    runs-on: ubuntu-latest
+    needs:
+      - ci
+      - docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.outputs.dockerfile_exists == 'true'
+    environment:
+      name: staging
+    steps:
+      - name: Trigger deployment webhook (optional)
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.INSCRIPTION_DEPLOY_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
+            echo "INSCRIPTION_DEPLOY_WEBHOOK_URL not configured, skipping remote deploy trigger."
+            exit 0
+          fi
+          curl -fsSL -X POST "$DEPLOY_WEBHOOK_URL"
+
+      - name: Deployment summary
+        run: echo "Staging deploy step completed for inscription."

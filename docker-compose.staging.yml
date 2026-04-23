@@ -1,0 +1,80 @@
+services:
+  mysql-inscription:
+    image: mysql:8.4
+    container_name: mysql-inscription-staging
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: inscriptiondb
+      MYSQL_USER: app
+      MYSQL_PASSWORD: ${INSCRIPTION_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${INSCRIPTION_DB_ROOT_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_inscription_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mysql-forum:
+    image: mysql:8.4
+    container_name: mysql-forum-staging
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: forumdb
+      MYSQL_USER: app
+      MYSQL_PASSWORD: ${FORUM_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${FORUM_DB_ROOT_PASSWORD}
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_forum_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  inscription:
+    image: docker.io/${DOCKERHUB_USERNAME}/inscription:${INSCRIPTION_IMAGE_TAG}
+    container_name: inscription-staging
+    restart: unless-stopped
+    depends_on:
+      mysql-inscription:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-inscription:3306/inscriptiondb?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: app
+      SPRING_DATASOURCE_PASSWORD: ${INSCRIPTION_DB_PASSWORD}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    ports:
+      - "8030:8030"
+
+  forum:
+    image: docker.io/${DOCKERHUB_USERNAME}/forum:${FORUM_IMAGE_TAG}
+    container_name: forum-staging
+    restart: unless-stopped
+    depends_on:
+      mysql-forum:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-forum:3306/forumdb?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: app
+      SPRING_DATASOURCE_PASSWORD: ${FORUM_DB_PASSWORD}
+      USER_API_BASE_URL: ${USER_API_BASE_URL}
+      FORUM_AI_API_KEY: ${FORUM_AI_API_KEY}
+      FORUM_TUTOR_ASSIST_BASE_URL: ${FORUM_TUTOR_ASSIST_BASE_URL}
+      FORUM_TUTOR_ASSIST_API_KEY: ${FORUM_TUTOR_ASSIST_API_KEY}
+      FORUM_TUTOR_CALLBACK_KEY: ${FORUM_TUTOR_CALLBACK_KEY}
+    ports:
+      - "8040:8040"
+
+volumes:
+  mysql_inscription_data:
+  mysql_forum_data:
