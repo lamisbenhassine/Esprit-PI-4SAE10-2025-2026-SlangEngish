@@ -4,6 +4,8 @@ pipeline {
   options {
     timestamps()
     disableConcurrentBuilds()
+    // Disable Jenkins' implicit "Declarative: Checkout SCM" (it uses small default timeouts).
+    skipDefaultCheckout(true)
     // Global safety timeout for the whole job
     timeout(time: 60, unit: 'MINUTES')
   }
