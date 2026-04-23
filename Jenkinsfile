@@ -106,7 +106,9 @@ pipeline {
             dir(svcDir) {
               // Maven wrapper: mvnw on Unix, mvnw.cmd on Windows
               if (isUnix()) {
-                runCmd "./mvnw -B -U test package"
+                // Some repos don't have mvnw (ex: notebook), and in Linux mvnw may lose exec bit.
+                // So: chmod if present; otherwise fall back to system mvn.
+                runCmd "if [ -f ./mvnw ]; then chmod +x ./mvnw || true; ./mvnw -B -U test package; else mvn -B -U test package; fi"
               } else {
                 runCmd ".\\mvnw.cmd -B -U test package"
               }
