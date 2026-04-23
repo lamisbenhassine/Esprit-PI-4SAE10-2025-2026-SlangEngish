@@ -12,7 +12,9 @@ pipeline {
 
   parameters {
     string(name: 'DOCKER_REGISTRY', defaultValue: 'docker.io', description: 'Registry hostname (ex: docker.io, ghcr.io)')
+    booleanParam(name: 'BUILD_DOCKER', defaultValue: true, description: 'Build Docker images (requires docker CLI on agent)')
     booleanParam(name: 'PUSH_IMAGES', defaultValue: true, description: 'Push Docker images to registry')
+    booleanParam(name: 'RUN_TESTS', defaultValue: false, description: 'Run unit/integration tests (requires DB for some services)')
     booleanParam(name: 'BUILD_ONLY_CHANGED', defaultValue: true, description: 'Build only microservices changed in this commit/PR')
     booleanParam(name: 'PARALLEL_BUILDS', defaultValue: true, description: 'Build services in parallel (faster)')
   }
@@ -98,6 +100,15 @@ pipeline {
             }
           }
 
+          // If docker build is enabled, fail early with a clear message when docker is missing.
+          if (params.BUILD_DOCKER) {
+            if (isUnix()) {
+              runCmd "command -v docker >/dev/null 2>&1 || (echo 'ERROR: docker CLI not found on this Jenkins agent. Install docker (or mount docker.sock) OR run with BUILD_DOCKER=false.' >&2; exit 127)"
+            } else {
+              runCmd "where docker >NUL 2>NUL || (echo ERROR: docker CLI not found. Install Docker Desktop on agent OR set BUILD_DOCKER=false. & exit /b 127)"
+            }
+          }
+
           def buildOne = { svc ->
             def svcDir = svc.dir as String
             def imageName = svc.image as String
@@ -105,16 +116,21 @@ pipeline {
 
             dir(svcDir) {
               // Maven wrapper: mvnw on Unix, mvnw.cmd on Windows
+              def mvnGoal = params.RUN_TESTS ? "test package" : "-DskipTests package"
               if (isUnix()) {
-                // Some repos don't have mvnw (ex: notebook), and in Linux mvnw may lose exec bit.
-                // So: chmod if present; otherwise fall back to system mvn.
-                runCmd "if [ -f ./mvnw ]; then chmod +x ./mvnw || true; ./mvnw -B -U test package; else mvn -B -U test package; fi"
+                // In Linux mvnw may lose exec bit, so chmod if present. Prefer wrapper, else mvn.
+                runCmd "if [ -f ./mvnw ]; then chmod +x ./mvnw || true; ./mvnw -B -U ${mvnGoal}; else mvn -B -U ${mvnGoal}; fi"
               } else {
-                runCmd ".\\mvnw.cmd -B -U test package"
+                // Windows wrappers exist in most services; fallback to mvn if needed.
+                runCmd "if exist .\\mvnw.cmd ( .\\mvnw.cmd -B -U ${mvnGoal} ) else ( mvn -B -U ${mvnGoal} )"
               }
 
-              runCmd "docker build -t ${fullImage}:${env.IMAGE_TAG} ."
-              runCmd "docker tag ${fullImage}:${env.IMAGE_TAG} ${fullImage}:latest"
+              if (params.BUILD_DOCKER) {
+                runCmd "docker build -t ${fullImage}:${env.IMAGE_TAG} ."
+                runCmd "docker tag ${fullImage}:${env.IMAGE_TAG} ${fullImage}:latest"
+              } else {
+                echo "BUILD_DOCKER=false -> skipping docker build for ${svcDir}"
+              }
             }
 
             return [ image: fullImage, tag: env.IMAGE_TAG ]
@@ -143,7 +159,7 @@ pipeline {
     }
 
     stage('Docker Push') {
-      when { expression { return params.PUSH_IMAGES } }
+      when { expression { return params.PUSH_IMAGES && params.BUILD_DOCKER } }
       steps {
         script {
           def services = [
