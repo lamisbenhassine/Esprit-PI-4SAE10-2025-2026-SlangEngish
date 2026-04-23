@@ -4,6 +4,8 @@ pipeline {
   options {
     timestamps()
     disableConcurrentBuilds()
+    // Global safety timeout for the whole job
+    timeout(time: 60, unit: 'MINUTES')
   }
 
   parameters {
@@ -21,7 +23,21 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        checkout scm
+        // Faster + less fragile checkout (useful when Jenkins runs in Docker)
+        // Shallow clone (depth=1) and higher timeout.
+        checkout([
+          $class: 'GitSCM',
+          branches: scm.branches,
+          userRemoteConfigs: scm.userRemoteConfigs,
+          extensions: [[
+            $class: 'CloneOption',
+            shallow: true,
+            depth: 1,
+            noTags: false,
+            honorRefspec: true,
+            timeout: 30
+          ]]
+        ])
       }
     }
 
