@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inscription
+  namespace: slangenglish
+  labels:
+    app: inscription
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inscription
+  template:
+    metadata:
+      labels:
+        app: inscription
+    spec:
+      containers:
+        - name: inscription
+          image: your-dockerhub-user/inscription:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8030
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: inscription-config
+                  key: spring.datasource.url
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: inscription-secrets
+                  key: db-username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: inscription-secrets
+                  key: db-password
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8030
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8030
+            initialDelaySeconds: 45
+            periodSeconds: 20

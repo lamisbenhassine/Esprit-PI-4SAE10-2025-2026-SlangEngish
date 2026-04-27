@@ -1,0 +1,91 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    ansiColor('xterm')
+  }
+
+  parameters {
+    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to deploy')
+  }
+
+  environment {
+    SERVICE_DIR = 'backend/microservices/inscription'
+    IMAGE_NAME = 'your-dockerhub-user/inscription'
+    K8S_NAMESPACE = 'slangenglish'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build Jar') {
+      steps {
+        dir("${env.SERVICE_DIR}") {
+          script {
+            if (isUnix()) {
+              sh 'chmod +x mvnw'
+              sh './mvnw -B clean package -DskipTests'
+            } else {
+              bat 'mvnw.cmd -B clean package -DskipTests'
+            }
+          }
+        }
+      }
+    }
+
+    stage('Build & Push Docker Image') {
+      steps {
+        dir("${env.SERVICE_DIR}") {
+          withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            script {
+              if (isUnix()) {
+                sh '''
+                  echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                  docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                  docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                '''
+              } else {
+                bat '''
+                  echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                  docker build -t %IMAGE_NAME%:%IMAGE_TAG% .
+                  docker push %IMAGE_NAME%:%IMAGE_TAG%
+                '''
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('Deploy To Kubernetes') {
+      steps {
+        dir("${env.SERVICE_DIR}") {
+          script {
+            if (isUnix()) {
+              sh '''
+                kubectl apply -f k8s/configmap.yaml
+                kubectl apply -f k8s/service.yaml
+                kubectl apply -f k8s/deployment.yaml
+                kubectl set image deployment/inscription inscription=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
+                kubectl rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=120s
+              '''
+            } else {
+              bat '''
+                kubectl apply -f k8s/configmap.yaml
+                kubectl apply -f k8s/service.yaml
+                kubectl apply -f k8s/deployment.yaml
+                kubectl set image deployment/inscription inscription=%IMAGE_NAME%:%IMAGE_TAG% -n %K8S_NAMESPACE%
+                kubectl rollout status deployment/inscription -n %K8S_NAMESPACE% --timeout=120s
+              '''
+            }
+          }
+        }
+      }
+    }
+  }
+}

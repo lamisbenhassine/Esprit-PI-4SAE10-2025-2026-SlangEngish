@@ -1,0 +1,76 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    ansiColor('xterm')
+  }
+
+  environment {
+    SERVICE_DIR = 'backend/microservices/inscription'
+    SONAR_PROJECT_KEY = 'inscription'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build + Unit Tests + JaCoCo') {
+      steps {
+        dir("${env.SERVICE_DIR}") {
+          script {
+            if (isUnix()) {
+              sh 'chmod +x mvnw'
+              sh './mvnw -B clean verify'
+            } else {
+              bat 'mvnw.cmd -B clean verify'
+            }
+          }
+        }
+      }
+      post {
+        always {
+          junit allowEmptyResults: true, testResults: 'backend/microservices/inscription/target/surefire-reports/*.xml'
+          archiveArtifacts allowEmptyArchive: true, artifacts: 'backend/microservices/inscription/target/site/jacoco/**'
+        }
+      }
+    }
+
+    stage('SonarQube Analysis') {
+      steps {
+        dir("${env.SERVICE_DIR}") {
+          withSonarQubeEnv('sonarqube') {
+            script {
+              if (isUnix()) {
+                sh """
+                  ./mvnw -B sonar:sonar \
+                    -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                    -Dsonar.projectName=inscription \
+                    -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                """
+              } else {
+                bat """
+                  mvnw.cmd -B sonar:sonar ^
+                    -Dsonar.projectKey=${SONAR_PROJECT_KEY} ^
+                    -Dsonar.projectName=inscription ^
+                    -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                """
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('Quality Gate') {
+      steps {
+        timeout(time: 10, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+  }
+}
