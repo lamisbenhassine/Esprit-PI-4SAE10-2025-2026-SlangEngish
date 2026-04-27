@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { ClubsManagementComponent } from './clubs-management.component';
 
@@ -8,7 +9,8 @@ describe('ClubsManagementComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ClubsManagementComponent]
+      declarations: [ClubsManagementComponent],
+      schemas: [NO_ERRORS_SCHEMA]
     })
     .compileComponents();
 

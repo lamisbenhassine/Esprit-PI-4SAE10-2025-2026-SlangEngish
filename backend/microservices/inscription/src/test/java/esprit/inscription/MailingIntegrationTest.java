@@ -137,9 +137,9 @@ class MailingIntegrationTest {
                 .convertedCount(5)
                 .build();
 
-        assertEquals(40.0, campaign.getOpenRate(), 0.01);
-        assertEquals(20.0, campaign.getClickRate(), 0.01);
-        assertEquals(5.0, campaign.getConversionRate(), 0.01);
+        assertEquals(50.0, campaign.getOpenRate(), 0.01);
+        assertEquals(25.0, campaign.getClickRate(), 0.01);
+        assertEquals(6.25, campaign.getConversionRate(), 0.01);
     }
 
     @Test

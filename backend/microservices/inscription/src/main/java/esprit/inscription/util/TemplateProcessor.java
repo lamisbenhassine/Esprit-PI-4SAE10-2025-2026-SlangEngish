@@ -75,7 +75,7 @@ public class TemplateProcessor {
             String arrayName = matcher.group(1);
             String content = matcher.group(2);
 
-            Object arrayValue = getVariableValue(arrayName, variables);
+            Object arrayValue = getRawVariableValue(arrayName, variables);
             String loopResult = processLoop(content, arrayValue);
             matcher.appendReplacement(result, loopResult);
         }
@@ -84,7 +84,7 @@ public class TemplateProcessor {
         return result.toString();
     }
 
-    private String getVariableValue(String path, Map<String, Object> variables) {
+    private Object getRawVariableValue(String path, Map<String, Object> variables) {
         try {
             String[] parts = path.split("\\.");
             Object current = variables;
@@ -93,19 +93,24 @@ public class TemplateProcessor {
                 if (current instanceof Map) {
                     current = ((Map<?, ?>) current).get(part);
                 } else {
-                    return "";
+                    return null;
                 }
 
                 if (current == null) {
-                    return "";
+                    return null;
                 }
             }
 
-            return current != null ? current.toString() : "";
+            return current;
         } catch (Exception e) {
             log.debug("Error getting variable value for path: {}", path, e);
-            return "";
+            return null;
         }
+    }
+
+    private String getVariableValue(String path, Map<String, Object> variables) {
+        Object rawValue = getRawVariableValue(path, variables);
+        return rawValue != null ? rawValue.toString() : "";
     }
 
     private boolean evaluateCondition(String condition, Map<String, Object> variables) {
@@ -121,7 +126,7 @@ public class TemplateProcessor {
             String operator = parts[1];
             String value = parts.length > 2 ? parts[2] : "";
 
-            Object variableValue = getVariableValue(variableName, variables);
+            Object variableValue = getRawVariableValue(variableName, variables);
             if (variableValue == null) {
                 return false;
             }
