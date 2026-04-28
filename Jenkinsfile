@@ -9,6 +9,7 @@ pipeline {
   parameters {
     booleanParam(name: 'RUN_CD', defaultValue: false, description: 'If true, deploy to Kubernetes after CI succeeds.')
     string(name: 'K8S_NAMESPACE', defaultValue: 'slangenglish', description: 'Kubernetes namespace for deployment.')
+    booleanParam(name: 'RUN_TESTS', defaultValue: false, description: 'If true, run backend unit tests. Disable for services that need DB/config in CI.')
     booleanParam(name: 'PUSH_IMAGES', defaultValue: true, description: 'If true, build and push Docker images (required for CD).')
     string(name: 'IMAGE_REGISTRY', defaultValue: 'ghcr.io', description: 'Docker registry host (e.g. ghcr.io or docker.io).')
     string(name: 'IMAGE_NAMESPACE', defaultValue: 'lamisbenhassine', description: 'Registry namespace/user/org.')
@@ -52,7 +53,7 @@ pipeline {
           steps {
             script {
               docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-                sh 'cd backend/eureka && mvn -B test'
+                sh 'cd backend/eureka && ( [ "${RUN_TESTS}" = "true" ] && mvn -B test || echo "RUN_TESTS=false (skipping tests)" )'
                 sh 'cd backend/eureka && mvn -B -DskipTests package'
               }
             }
@@ -63,7 +64,7 @@ pipeline {
           steps {
             script {
               docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-                sh 'cd backend/gateway && mvn -B test'
+                sh 'cd backend/gateway && ( [ "${RUN_TESTS}" = "true" ] && mvn -B test || echo "RUN_TESTS=false (skipping tests)" )'
                 sh 'cd backend/gateway && mvn -B -DskipTests package'
               }
             }
@@ -74,7 +75,7 @@ pipeline {
           steps {
             script {
               docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-                sh 'cd backend/microservices/evaluation && mvn -B test'
+                sh 'cd backend/microservices/evaluation && ( [ "${RUN_TESTS}" = "true" ] && mvn -B test || echo "RUN_TESTS=false (skipping tests)" )'
                 sh 'cd backend/microservices/evaluation && mvn -B -DskipTests package'
               }
             }
@@ -85,7 +86,7 @@ pipeline {
           steps {
             script {
               docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-                sh 'cd backend/microservices/users && mvn -B test'
+                sh 'cd backend/microservices/users && ( [ "${RUN_TESTS}" = "true" ] && mvn -B test || echo "RUN_TESTS=false (skipping tests)" )'
                 sh 'cd backend/microservices/users && mvn -B -DskipTests package'
               }
             }
@@ -96,7 +97,7 @@ pipeline {
           steps {
             script {
               docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-                sh 'cd backend/microservices/notebook && mvn -B test'
+                sh 'cd backend/microservices/notebook && ( [ "${RUN_TESTS}" = "true" ] && mvn -B test || echo "RUN_TESTS=false (skipping tests)" )'
                 sh 'cd backend/microservices/notebook && mvn -B -DskipTests package'
               }
             }
