@@ -1,0 +1,93 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    ansiColor('xterm')
+    skipDefaultCheckout(true)
+  }
+
+  environment {
+    SONARQUBE_SERVER = 'sonarqube' // Jenkins "Configure System" SonarQube server name
+    SONAR_PROJECT_KEY = 'slangenglish'
+    SONAR_PROJECT_NAME = 'SlangEnglish'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Backend - Build microservices') {
+      steps {
+        script {
+          docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
+            parallel(
+              'eureka: test+package': {
+                sh 'cd backend/eureka && mvn -B test'
+                sh 'cd backend/eureka && mvn -B -DskipTests package'
+              },
+              'gateway: test+package': {
+                sh 'cd backend/gateway && mvn -B test'
+                sh 'cd backend/gateway && mvn -B -DskipTests package'
+              },
+              'evaluation: test+package': {
+                sh 'cd backend/microservices/evaluation && mvn -B test'
+                sh 'cd backend/microservices/evaluation && mvn -B -DskipTests package'
+              },
+              'users: test+package': {
+                sh 'cd backend/microservices/users && mvn -B test'
+                sh 'cd backend/microservices/users && mvn -B -DskipTests package'
+              },
+              'notebook: test+package': {
+                sh 'cd backend/microservices/notebook && mvn -B test'
+                sh 'cd backend/microservices/notebook && mvn -B -DskipTests package'
+              }
+            )
+          }
+        }
+      }
+    }
+
+    stage('Frontend - Build') {
+      steps {
+        script {
+          docker.image('node:20-bookworm').inside('-u root:root') {
+            sh 'cd frontend && npm ci'
+            sh 'cd frontend && npm run build'
+          }
+        }
+      }
+    }
+
+    stage('SonarQube - Scan') {
+      steps {
+        withSonarQubeEnv("${SONARQUBE_SERVER}") {
+          script {
+            docker.image('sonarsource/sonar-scanner-cli:latest').inside('-u root:root') {
+              sh """
+                sonar-scanner \\
+                  -Dsonar.projectKey=${SONAR_PROJECT_KEY} \\
+                  -Dsonar.projectName=${SONAR_PROJECT_NAME} \\
+                  -Dsonar.sources=. \\
+                  -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/target/**,**/.angular/**,**/coverage/** \\
+                  -Dsonar.java.binaries=backend/eureka/target/classes,backend/gateway/target/classes,backend/microservices/evaluation/target/classes,backend/microservices/users/target/classes,backend/microservices/notebook/target/classes
+              """
+            }
+          }
+        }
+      }
+    }
+
+    stage('SonarQube - Quality Gate') {
+      steps {
+        timeout(time: 10, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+  }
+}
+
