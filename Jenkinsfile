@@ -149,44 +149,64 @@ pipeline {
       environment {
         IMAGE_TAG = "${env.GIT_COMMIT}"
       }
-      steps {
-        script {
-          def registry = params.IMAGE_REGISTRY
-          def ns = params.IMAGE_NAMESPACE
+      stages {
+        stage('Compute image tags') {
+          steps {
+            script {
+              def registry = params.IMAGE_REGISTRY
+              def ns = params.IMAGE_NAMESPACE
 
-          env.IMG_EUREKA = "${registry}/${ns}/slangenglish-eureka:${env.IMAGE_TAG}"
-          env.IMG_GATEWAY = "${registry}/${ns}/slangenglish-gateway:${env.IMAGE_TAG}"
-          env.IMG_EVALUATION = "${registry}/${ns}/slangenglish-evaluation:${env.IMAGE_TAG}"
-          env.IMG_USERS = "${registry}/${ns}/slangenglish-users:${env.IMAGE_TAG}"
-          env.IMG_NOTEBOOK = "${registry}/${ns}/slangenglish-notebook:${env.IMAGE_TAG}"
-        }
-
-        withCredentials([usernamePassword(credentialsId: "${params.REGISTRY_CREDENTIALS_ID}", usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
-          sh 'echo "$REG_PASS" | docker login -u "$REG_USER" --password-stdin "${IMAGE_REGISTRY}"'
-        }
-
-        parallel(
-          'docker build+push eureka': {
-            sh 'docker build -t "$IMG_EUREKA" backend/eureka'
-            sh 'docker push "$IMG_EUREKA"'
-          },
-          'docker build+push gateway': {
-            sh 'docker build -t "$IMG_GATEWAY" backend/gateway'
-            sh 'docker push "$IMG_GATEWAY"'
-          },
-          'docker build+push evaluation': {
-            sh 'docker build -t "$IMG_EVALUATION" backend/microservices/evaluation'
-            sh 'docker push "$IMG_EVALUATION"'
-          },
-          'docker build+push users': {
-            sh 'docker build -t "$IMG_USERS" backend/microservices/users'
-            sh 'docker push "$IMG_USERS"'
-          },
-          'docker build+push notebook': {
-            sh 'docker build -t "$IMG_NOTEBOOK" backend/microservices/notebook'
-            sh 'docker push "$IMG_NOTEBOOK"'
+              env.IMG_EUREKA = "${registry}/${ns}/slangenglish-eureka:${env.IMAGE_TAG}"
+              env.IMG_GATEWAY = "${registry}/${ns}/slangenglish-gateway:${env.IMAGE_TAG}"
+              env.IMG_EVALUATION = "${registry}/${ns}/slangenglish-evaluation:${env.IMAGE_TAG}"
+              env.IMG_USERS = "${registry}/${ns}/slangenglish-users:${env.IMAGE_TAG}"
+              env.IMG_NOTEBOOK = "${registry}/${ns}/slangenglish-notebook:${env.IMAGE_TAG}"
+            }
           }
-        )
+        }
+
+        stage('Docker login') {
+          steps {
+            withCredentials([usernamePassword(credentialsId: "${params.REGISTRY_CREDENTIALS_ID}", usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
+              sh 'echo "$REG_PASS" | docker login -u "$REG_USER" --password-stdin "${IMAGE_REGISTRY}"'
+            }
+          }
+        }
+
+        stage('Build & push (parallel)') {
+          parallel {
+            stage('eureka') {
+              steps {
+                sh 'docker build -t "$IMG_EUREKA" backend/eureka'
+                sh 'docker push "$IMG_EUREKA"'
+              }
+            }
+            stage('gateway') {
+              steps {
+                sh 'docker build -t "$IMG_GATEWAY" backend/gateway'
+                sh 'docker push "$IMG_GATEWAY"'
+              }
+            }
+            stage('evaluation') {
+              steps {
+                sh 'docker build -t "$IMG_EVALUATION" backend/microservices/evaluation'
+                sh 'docker push "$IMG_EVALUATION"'
+              }
+            }
+            stage('users') {
+              steps {
+                sh 'docker build -t "$IMG_USERS" backend/microservices/users'
+                sh 'docker push "$IMG_USERS"'
+              }
+            }
+            stage('notebook') {
+              steps {
+                sh 'docker build -t "$IMG_NOTEBOOK" backend/microservices/notebook'
+                sh 'docker push "$IMG_NOTEBOOK"'
+              }
+            }
+          }
+        }
       }
       post {
         always {
