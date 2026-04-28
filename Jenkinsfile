@@ -9,7 +9,9 @@ pipeline {
   parameters {
     booleanParam(name: 'RUN_CD', defaultValue: false, description: 'If true, deploy to Kubernetes after CI succeeds.')
     string(name: 'K8S_NAMESPACE', defaultValue: 'slangenglish', description: 'Kubernetes namespace for deployment.')
-    booleanParam(name: 'RUN_TESTS', defaultValue: false, description: 'If true, run backend unit tests. Disable for services that need DB/config in CI.')
+    booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'If true, run backend unit tests (starts MySQL in CI).')
+    string(name: 'MYSQL_DB', defaultValue: 'slangenglish_ci', description: 'Database name used during CI tests.')
+    string(name: 'MYSQL_ROOT_PASSWORD_CRED_ID', defaultValue: 'mysql-root-pass', description: 'Jenkins Secret Text credential id for MySQL root password used during CI tests.')
     booleanParam(name: 'PUSH_IMAGES', defaultValue: true, description: 'If true, build and push Docker images (required for CD).')
     string(name: 'IMAGE_REGISTRY', defaultValue: 'ghcr.io', description: 'Docker registry host (e.g. ghcr.io or docker.io).')
     string(name: 'IMAGE_NAMESPACE', defaultValue: 'lamisbenhassine', description: 'Registry namespace/user/org.')
@@ -47,6 +49,37 @@ pipeline {
       }
     }
 
+    stage('CI - Start MySQL (tests)') {
+      when {
+        expression { return params.RUN_TESTS }
+      }
+      steps {
+        withCredentials([string(credentialsId: "${params.MYSQL_ROOT_PASSWORD_CRED_ID}", variable: 'MYSQL_ROOT_PASSWORD')]) {
+          sh '''
+            set -e
+            docker rm -f ci-mysql >/dev/null 2>&1 || true
+            docker run -d --name ci-mysql \
+              -e MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+              -e MYSQL_DATABASE="${MYSQL_DB}" \
+              -p 3306:3306 \
+              mysql:8.0
+
+            echo "Waiting for MySQL to be ready..."
+            for i in $(seq 1 60); do
+              if docker exec ci-mysql mysqladmin ping -h 127.0.0.1 -uroot -p"$MYSQL_ROOT_PASSWORD" --silent; then
+                echo "MySQL is ready."
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "MySQL did not become ready in time."
+            docker logs --tail 200 ci-mysql || true
+            exit 1
+          '''
+        }
+      }
+    }
+
     stage('CI - Backend') {
       parallel {
         stage('eureka - test & package') {
@@ -64,7 +97,20 @@ pipeline {
           steps {
             script {
               docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-                sh 'cd backend/gateway && ( [ "${RUN_TESTS}" = "true" ] && mvn -B test || echo "RUN_TESTS=false (skipping tests)" )'
+                withCredentials([string(credentialsId: "${params.MYSQL_ROOT_PASSWORD_CRED_ID}", variable: 'MYSQL_ROOT_PASSWORD')]) {
+                  sh '''
+                    cd backend/gateway
+                    if [ "${RUN_TESTS}" = "true" ]; then
+                      SPRING_DATASOURCE_URL="jdbc:mysql://host.docker.internal:3306/${MYSQL_DB}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true" \
+                      SPRING_DATASOURCE_USERNAME="root" \
+                      SPRING_DATASOURCE_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+                      EUREKA_CLIENT_ENABLED="false" \
+                      mvn -B test
+                    else
+                      echo "RUN_TESTS=false (skipping tests)"
+                    fi
+                  '''
+                }
                 sh 'cd backend/gateway && mvn -B -DskipTests package'
               }
             }
@@ -75,7 +121,20 @@ pipeline {
           steps {
             script {
               docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-                sh 'cd backend/microservices/evaluation && ( [ "${RUN_TESTS}" = "true" ] && mvn -B test || echo "RUN_TESTS=false (skipping tests)" )'
+                withCredentials([string(credentialsId: "${params.MYSQL_ROOT_PASSWORD_CRED_ID}", variable: 'MYSQL_ROOT_PASSWORD')]) {
+                  sh '''
+                    cd backend/microservices/evaluation
+                    if [ "${RUN_TESTS}" = "true" ]; then
+                      SPRING_DATASOURCE_URL="jdbc:mysql://host.docker.internal:3306/${MYSQL_DB}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true" \
+                      SPRING_DATASOURCE_USERNAME="root" \
+                      SPRING_DATASOURCE_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+                      EUREKA_CLIENT_ENABLED="false" \
+                      mvn -B test
+                    else
+                      echo "RUN_TESTS=false (skipping tests)"
+                    fi
+                  '''
+                }
                 sh 'cd backend/microservices/evaluation && mvn -B -DskipTests package'
               }
             }
@@ -86,7 +145,20 @@ pipeline {
           steps {
             script {
               docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-                sh 'cd backend/microservices/users && ( [ "${RUN_TESTS}" = "true" ] && mvn -B test || echo "RUN_TESTS=false (skipping tests)" )'
+                withCredentials([string(credentialsId: "${params.MYSQL_ROOT_PASSWORD_CRED_ID}", variable: 'MYSQL_ROOT_PASSWORD')]) {
+                  sh '''
+                    cd backend/microservices/users
+                    if [ "${RUN_TESTS}" = "true" ]; then
+                      SPRING_DATASOURCE_URL="jdbc:mysql://host.docker.internal:3306/${MYSQL_DB}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true" \
+                      SPRING_DATASOURCE_USERNAME="root" \
+                      SPRING_DATASOURCE_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+                      EUREKA_CLIENT_ENABLED="false" \
+                      mvn -B test
+                    else
+                      echo "RUN_TESTS=false (skipping tests)"
+                    fi
+                  '''
+                }
                 sh 'cd backend/microservices/users && mvn -B -DskipTests package'
               }
             }
@@ -97,7 +169,20 @@ pipeline {
           steps {
             script {
               docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-                sh 'cd backend/microservices/notebook && ( [ "${RUN_TESTS}" = "true" ] && mvn -B test || echo "RUN_TESTS=false (skipping tests)" )'
+                withCredentials([string(credentialsId: "${params.MYSQL_ROOT_PASSWORD_CRED_ID}", variable: 'MYSQL_ROOT_PASSWORD')]) {
+                  sh '''
+                    cd backend/microservices/notebook
+                    if [ "${RUN_TESTS}" = "true" ]; then
+                      SPRING_DATASOURCE_URL="jdbc:mysql://host.docker.internal:3306/${MYSQL_DB}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true" \
+                      SPRING_DATASOURCE_USERNAME="root" \
+                      SPRING_DATASOURCE_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+                      EUREKA_CLIENT_ENABLED="false" \
+                      mvn -B test
+                    else
+                      echo "RUN_TESTS=false (skipping tests)"
+                    fi
+                  '''
+                }
                 sh 'cd backend/microservices/notebook && mvn -B -DskipTests package'
               }
             }
@@ -246,6 +331,12 @@ pipeline {
         sh "kubectl -n ${params.K8S_NAMESPACE} rollout status deploy/users --timeout=180s"
         sh "kubectl -n ${params.K8S_NAMESPACE} rollout status deploy/notebook --timeout=180s"
       }
+    }
+  }
+
+  post {
+    always {
+      sh 'docker rm -f ci-mysql >/dev/null 2>&1 || true'
     }
   }
 }
