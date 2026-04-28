@@ -19,32 +19,60 @@ pipeline {
       }
     }
 
-    stage('Backend - Build microservices') {
-      steps {
-        script {
-          docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
-            parallel(
-              'eureka: test+package': {
+    stage('Backend') {
+      parallel {
+        stage('eureka - test & package') {
+          steps {
+            script {
+              docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
                 sh 'cd backend/eureka && mvn -B test'
                 sh 'cd backend/eureka && mvn -B -DskipTests package'
-              },
-              'gateway: test+package': {
+              }
+            }
+          }
+        }
+
+        stage('gateway - test & package') {
+          steps {
+            script {
+              docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
                 sh 'cd backend/gateway && mvn -B test'
                 sh 'cd backend/gateway && mvn -B -DskipTests package'
-              },
-              'evaluation: test+package': {
+              }
+            }
+          }
+        }
+
+        stage('evaluation - test & package') {
+          steps {
+            script {
+              docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
                 sh 'cd backend/microservices/evaluation && mvn -B test'
                 sh 'cd backend/microservices/evaluation && mvn -B -DskipTests package'
-              },
-              'users: test+package': {
+              }
+            }
+          }
+        }
+
+        stage('users - test & package') {
+          steps {
+            script {
+              docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
                 sh 'cd backend/microservices/users && mvn -B test'
                 sh 'cd backend/microservices/users && mvn -B -DskipTests package'
-              },
-              'notebook: test+package': {
+              }
+            }
+          }
+        }
+
+        stage('notebook - test & package') {
+          steps {
+            script {
+              docker.image('maven:3.9.9-eclipse-temurin-17').inside('-u root:root') {
                 sh 'cd backend/microservices/notebook && mvn -B test'
                 sh 'cd backend/microservices/notebook && mvn -B -DskipTests package'
               }
-            )
+            }
           }
         }
       }
