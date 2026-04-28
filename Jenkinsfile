@@ -28,6 +28,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
+        deleteDir()
         timeout(time: 10, unit: 'MINUTES') {
           checkout([
             $class: 'GitSCM',
