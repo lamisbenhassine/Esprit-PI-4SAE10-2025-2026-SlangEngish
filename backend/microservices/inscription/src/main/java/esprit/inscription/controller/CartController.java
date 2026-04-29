@@ -20,6 +20,7 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 @Slf4j
 public class CartController {
+    private static final String ERROR_PREFIX = "Error: ";
 
     private final CartService cartService;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
@@ -44,19 +45,19 @@ public class CartController {
     }
 
     @PostMapping("/add-offer-test/{userId}/{planId}")
-    public ResponseEntity<?> addOfferTest(@PathVariable Long userId, @PathVariable Long planId) {
+    public ResponseEntity<Object> addOfferTest(@PathVariable Long userId, @PathVariable Long planId) {
         try {
             log.info("TEST: Adding offer {} to cart for user {}", planId, userId);
             Cart cart = cartService.addOfferToCart(userId, planId);
             return ResponseEntity.ok(cart);
         } catch (Exception e) {
             log.error("TEST Error adding offer: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(ERROR_PREFIX + e.getMessage());
         }
     }
 
     @GetMapping("/check-plan/{planId}")
-    public ResponseEntity<?> checkPlan(@PathVariable Long planId) {
+    public ResponseEntity<Object> checkPlan(@PathVariable Long planId) {
         try {
             log.info("Checking plan existence: {}", planId);
             // Vérifier si le plan existe en base de données
@@ -70,12 +71,12 @@ public class CartController {
             }
         } catch (Exception e) {
             log.error("Error checking plan: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(ERROR_PREFIX + e.getMessage());
         }
     }
 
     @PostMapping("/create-test-plan")
-    public ResponseEntity<?> createTestPlan() {
+    public ResponseEntity<Object> createTestPlan() {
         try {
             log.info("Creating test plan");
             var plan = esprit.inscription.entity.SubscriptionPlan.builder()
@@ -92,12 +93,12 @@ public class CartController {
             return ResponseEntity.ok(saved);
         } catch (Exception e) {
             log.error("Error creating test plan: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(ERROR_PREFIX + e.getMessage());
         }
     }
 
     @PostMapping("/test-email")
-    public ResponseEntity<?> testEmail(@RequestParam String toEmail) {
+    public ResponseEntity<Object> testEmail(@RequestParam String toEmail) {
         try {
             log.info("=== TEST EMAIL ===");
             log.info("Sending test email to: {}", toEmail);
@@ -119,7 +120,7 @@ public class CartController {
             
         } catch (Exception e) {
             log.error("Error sending test email: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+            return ResponseEntity.status(500).body(ERROR_PREFIX + e.getMessage());
         }
     }
 
@@ -157,13 +158,13 @@ public class CartController {
                     log.info("   Réduction: {}€", validation.getDiscountAmount());
                     log.info("   Nouveau total: {}€", newTotal);
                     
-                    return ResponseEntity.ok(String.format(
-                        "✅ CODE PROMO VALIDE!\n" +
-                        "Code: %s\n" +
-                        "Montant: %.2f€\n" +
-                        "Réduction: %.2f€\n" +
-                        "Total: %.2f€", 
-                        code, amount, validation.getDiscountAmount(), newTotal));
+                    return ResponseEntity.ok("""
+                        ✅ CODE PROMO VALIDE!
+                        Code: %s
+                        Montant: %.2f€
+                        Réduction: %.2f€
+                        Total: %.2f€
+                        """.formatted(code, amount, validation.getDiscountAmount(), newTotal));
                 } else {
                     log.warn("❌ ÉCHEC: Code invalide - {}", validation.getMessage());
                     return ResponseEntity.ok("❌ CODE INVALIDE: " + validation.getMessage());
@@ -206,7 +207,7 @@ public class CartController {
     }
 
     @PostMapping("/add-offer")
-    public ResponseEntity<?> addOfferToCart(@RequestBody AddOfferRequest request) {
+    public ResponseEntity<Object> addOfferToCart(@RequestBody AddOfferRequest request) {
         log.info("=== ADD OFFER REQUEST ===");
         log.info("User ID: {}", request.getUserId());
         log.info("Plan ID: {}", request.getSubscriptionPlanId());
@@ -222,7 +223,7 @@ public class CartController {
             return ResponseEntity.ok(cart);
         } catch (RuntimeException e) {
             log.error("RUNTIME ERROR adding offer to cart: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(ERROR_PREFIX + e.getMessage());
         } catch (Exception e) {
             log.error("UNEXPECTED ERROR adding offer to cart: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body("Unexpected error: " + e.getMessage());
@@ -249,7 +250,7 @@ public class CartController {
 
     /** Métier avancé : ajout au panier avec réduction frères/sœurs (logique métier côté backend). */
     @PostMapping("/add-with-sibling-discount")
-    public ResponseEntity<?> addWithSiblingDiscount(@RequestBody AddWithSiblingDiscountRequest request) {
+    public ResponseEntity<Object> addWithSiblingDiscount(@RequestBody AddWithSiblingDiscountRequest request) {
         if (request.getUserId() == null || request.getSubscriptionPlanId() == null || request.getSiblingCount() == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "userId, subscriptionPlanId et siblingCount requis"));
         }
@@ -273,7 +274,7 @@ public class CartController {
 
     /** Métier avancé : ajout au panier en tarif famille (N personnes). */
     @PostMapping("/add-with-family-rate")
-    public ResponseEntity<?> addWithFamilyRate(@RequestBody AddWithFamilyRateRequest request) {
+    public ResponseEntity<Object> addWithFamilyRate(@RequestBody AddWithFamilyRateRequest request) {
         if (request.getUserId() == null || request.getSubscriptionPlanId() == null || request.getNumberOfPeople() == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "userId, subscriptionPlanId et numberOfPeople requis"));
         }
@@ -296,7 +297,7 @@ public class CartController {
     }
 
     @PostMapping("/checkout")
-    public ResponseEntity<?> checkoutCart(@RequestBody CheckoutRequest request) {
+    public ResponseEntity<Object> checkoutCart(@RequestBody CheckoutRequest request) {
         log.info("Checking out cart for user {} with payment method: {}", request.getUserId(), request.getPaymentMethod());
         
         try {
@@ -325,7 +326,7 @@ public class CartController {
     }
 
     @DeleteMapping("/item/{itemId}/user/{userId}")
-    public ResponseEntity<?> removeItemFromCart(@PathVariable Long userId,
+    public ResponseEntity<Object> removeItemFromCart(@PathVariable Long userId,
                                                  @PathVariable Long itemId) {
         try {
             Cart cart = cartService.removeItemFromCart(userId, itemId);
@@ -337,7 +338,7 @@ public class CartController {
     }
 
     @DeleteMapping("/user/{userId}/plan/{subscriptionPlanId}")
-    public ResponseEntity<?> removeItemByPlanId(@PathVariable Long userId,
+    public ResponseEntity<Object> removeItemByPlanId(@PathVariable Long userId,
                                                  @PathVariable Long subscriptionPlanId) {
         try {
             Cart cart = cartService.removeItemByPlanId(userId, subscriptionPlanId);
