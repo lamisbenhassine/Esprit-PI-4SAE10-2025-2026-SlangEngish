@@ -1,6 +1,7 @@
 package esprit.inscription.controller;
 
 import esprit.inscription.entity.Cart;
+import esprit.inscription.entity.PromoCode;
 import esprit.inscription.repository.SubscriptionPlanRepository;
 import esprit.inscription.service.CartService;
 import esprit.inscription.service.EmailService;
@@ -14,10 +15,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -94,5 +98,36 @@ class CartControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(cart, response.getBody());
+    }
+
+    @Test
+    void testPromoCode_shouldReturnSuccessMessageWhenPromoIsValid() {
+        PromoCodeService.PromoCodeValidationResult validation =
+                PromoCodeService.PromoCodeValidationResult.valid("123", new BigDecimal("5.00"));
+
+        when(promoCodeService.create(any(PromoCode.class))).thenReturn(mock(PromoCode.class));
+        when(promoCodeService.validate("123", new BigDecimal("50")))
+                .thenReturn(Optional.of(validation));
+
+        ResponseEntity<String> response = cartController.testPromoCode("123", new BigDecimal("50"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().contains("CODE PROMO VALIDE"));
+        assertTrue(response.getBody().contains("Réduction: 5.00€"));
+    }
+
+    @Test
+    void testPromoCode_shouldReturnInvalidMessageWhenPromoIsInvalid() {
+        PromoCodeService.PromoCodeValidationResult invalid =
+                PromoCodeService.PromoCodeValidationResult.invalid("Ce code a expiré.");
+
+        when(promoCodeService.create(any(PromoCode.class))).thenReturn(mock(PromoCode.class));
+        when(promoCodeService.validate("123", new BigDecimal("50")))
+                .thenReturn(Optional.of(invalid));
+
+        ResponseEntity<String> response = cartController.testPromoCode("123", new BigDecimal("50"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("❌ CODE INVALIDE: Ce code a expiré.", response.getBody());
     }
 }
