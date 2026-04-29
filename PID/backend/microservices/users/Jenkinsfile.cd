@@ -72,7 +72,14 @@ pipeline {
                         echo 'Image pull skipped (using local image if available).'
                         """
                     } else {
-                        bat "docker pull %IMAGE_NAME%:${params.IMAGE_TAG} || echo Image pull skipped (using local image if available)."
+                        // CMD's "||" can still leave ERRORLEVEL=1 for the whole step; force success after optional pull.
+                        bat """
+                            docker pull %IMAGE_NAME%:${params.IMAGE_TAG}
+                            IF ERRORLEVEL 1 (
+                                echo Image pull skipped (using local image if available).
+                            )
+                            exit /b 0
+                        """
                     }
                 }
             }
