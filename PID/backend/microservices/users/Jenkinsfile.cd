@@ -17,6 +17,7 @@ pipeline {
         HOST_PORT = '8011'
         SONAR_PROJECT_KEY = 'slangenglish-user-service'
         SONARQUBE_SERVER = 'sonarqube-server'
+        SERVICE_DIR = 'PID/backend/microservices/users'
     }
 
     stages {
@@ -28,30 +29,34 @@ pipeline {
 
         stage('Unit Tests') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'chmod +x mvnw'
-                        sh './mvnw -B clean test'
-                    } else {
-                        bat 'mvnw.cmd -B clean test'
+                dir("${SERVICE_DIR}") {
+                    script {
+                        if (isUnix()) {
+                            sh 'chmod +x mvnw'
+                            sh './mvnw -B clean test'
+                        } else {
+                            bat 'mvnw.cmd -B clean test'
+                        }
                     }
                 }
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: "${SERVICE_DIR}/target/surefire-reports/*.xml"
                 }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                script {
-                    withSonarQubeEnv("${SONARQUBE_SERVER}") {
-                        if (isUnix()) {
-                            sh "./mvnw -B sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY}"
-                        } else {
-                            bat "mvnw.cmd -B sonar:sonar -Dsonar.projectKey=%SONAR_PROJECT_KEY%"
+                dir("${SERVICE_DIR}") {
+                    script {
+                        withSonarQubeEnv("${SONARQUBE_SERVER}") {
+                            if (isUnix()) {
+                                sh "./mvnw -B sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY}"
+                            } else {
+                                bat "mvnw.cmd -B sonar:sonar -Dsonar.projectKey=%SONAR_PROJECT_KEY%"
+                            }
                         }
                     }
                 }

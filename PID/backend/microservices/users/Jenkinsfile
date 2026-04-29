@@ -11,6 +11,7 @@ pipeline {
         CD_JOB_NAME = 'users-cd'
         SONAR_PROJECT_KEY = 'slangenglish-user-service'
         SONARQUBE_SERVER = 'sonarqube-server'
+        SERVICE_DIR = 'PID/backend/microservices/users'
     }
 
     stages {
@@ -22,30 +23,34 @@ pipeline {
 
         stage('Unit Tests') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh 'chmod +x mvnw'
-                        sh './mvnw -B clean test'
-                    } else {
-                        bat 'mvnw.cmd -B clean test'
+                dir("${SERVICE_DIR}") {
+                    script {
+                        if (isUnix()) {
+                            sh 'chmod +x mvnw'
+                            sh './mvnw -B clean test'
+                        } else {
+                            bat 'mvnw.cmd -B clean test'
+                        }
                     }
                 }
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: "${SERVICE_DIR}/target/surefire-reports/*.xml"
                 }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                script {
-                    withSonarQubeEnv("${SONARQUBE_SERVER}") {
-                        if (isUnix()) {
-                            sh "./mvnw -B sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY}"
-                        } else {
-                            bat "mvnw.cmd -B sonar:sonar -Dsonar.projectKey=%SONAR_PROJECT_KEY%"
+                dir("${SERVICE_DIR}") {
+                    script {
+                        withSonarQubeEnv("${SONARQUBE_SERVER}") {
+                            if (isUnix()) {
+                                sh "./mvnw -B sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY}"
+                            } else {
+                                bat "mvnw.cmd -B sonar:sonar -Dsonar.projectKey=%SONAR_PROJECT_KEY%"
+                            }
                         }
                     }
                 }
@@ -54,29 +59,33 @@ pipeline {
 
         stage('Package') {
             steps {
-                script {
-                    if (isUnix()) {
-                        sh './mvnw -B package -DskipTests'
-                    } else {
-                        bat 'mvnw.cmd -B package -DskipTests'
+                dir("${SERVICE_DIR}") {
+                    script {
+                        if (isUnix()) {
+                            sh './mvnw -B package -DskipTests'
+                        } else {
+                            bat 'mvnw.cmd -B package -DskipTests'
+                        }
                     }
                 }
             }
             post {
                 success {
-                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                    archiveArtifacts artifacts: "${SERVICE_DIR}/target/*.jar", fingerprint: true
                 }
             }
         }
 
         stage('Docker Build') {
             steps {
-                script {
-                    def tag = "${env.BUILD_NUMBER}"
-                    if (isUnix()) {
-                        sh "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
-                    } else {
-                        bat "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
+                dir("${SERVICE_DIR}") {
+                    script {
+                        def tag = "${env.BUILD_NUMBER}"
+                        if (isUnix()) {
+                            sh "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
+                        } else {
+                            bat "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
+                        }
                     }
                 }
             }
