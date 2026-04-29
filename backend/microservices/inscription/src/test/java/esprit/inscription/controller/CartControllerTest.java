@@ -130,4 +130,25 @@ class CartControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("❌ CODE INVALIDE: Ce code a expiré.", response.getBody());
     }
+
+    @Test
+    void testPromoCode_shouldHandleEmptyValidationResult() {
+        when(promoCodeService.create(any(PromoCode.class))).thenReturn(mock(PromoCode.class));
+        when(promoCodeService.validate("123", new BigDecimal("50"))).thenReturn(Optional.empty());
+
+        ResponseEntity<String> response = cartController.testPromoCode("123", new BigDecimal("50"));
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("❌ ERREUR: Pas de réponse du service", response.getBody());
+    }
+
+    @Test
+    void testPromoCode_shouldReturnServerErrorWhenServiceThrows() {
+        when(promoCodeService.create(any(PromoCode.class))).thenThrow(new RuntimeException("service down"));
+
+        ResponseEntity<String> response = cartController.testPromoCode("123", new BigDecimal("50"));
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertEquals("❌ ERREUR: service down", response.getBody());
+    }
 }
