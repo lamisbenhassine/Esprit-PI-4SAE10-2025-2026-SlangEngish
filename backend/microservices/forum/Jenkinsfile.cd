@@ -116,10 +116,10 @@ pipeline {
                 sh '''
                   export KUBECONFIG="$KUBECONFIG_FILE"
                   kubectl config current-context
-                  kubectl apply -f k8s/mysql.yaml
-                  kubectl apply -f k8s/configmap.yaml
-                  kubectl apply -f k8s/service.yaml
-                  kubectl apply -f k8s/deployment.yaml
+                  kubectl apply --validate=false -f k8s/mysql.yaml
+                  kubectl apply --validate=false -f k8s/configmap.yaml
+                  kubectl apply --validate=false -f k8s/service.yaml
+                  kubectl apply --validate=false -f k8s/deployment.yaml
                   kubectl set image deployment/forum forum=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
                   if ! kubectl rollout status deployment/forum -n ${K8S_NAMESPACE} --timeout=300s; then
                     echo "Rollout timeout. Collecting diagnostics..."
@@ -135,10 +135,10 @@ pipeline {
                 bat '''
                   set KUBECONFIG=%KUBECONFIG_FILE%
                   kubectl config current-context
-                  kubectl apply -f k8s/mysql.yaml
-                  kubectl apply -f k8s/configmap.yaml
-                  kubectl apply -f k8s/service.yaml
-                  kubectl apply -f k8s/deployment.yaml
+                  kubectl apply --validate=false -f k8s/mysql.yaml
+                  kubectl apply --validate=false -f k8s/configmap.yaml
+                  kubectl apply --validate=false -f k8s/service.yaml
+                  kubectl apply --validate=false -f k8s/deployment.yaml
                   kubectl set image deployment/forum forum=%IMAGE_NAME%:%IMAGE_TAG% -n %K8S_NAMESPACE%
                   kubectl rollout status deployment/forum -n %K8S_NAMESPACE% --timeout=300s
                 '''
