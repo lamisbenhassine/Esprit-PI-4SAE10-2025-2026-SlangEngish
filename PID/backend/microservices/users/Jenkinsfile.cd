@@ -73,11 +73,10 @@ pipeline {
                         """
                     } else {
                         // CMD's "||" can still leave ERRORLEVEL=1 for the whole step; force success after optional pull.
+                        // Inside IF (...), unescaped parentheses in echo break CMD parsing.
                         bat """
                             docker pull %IMAGE_NAME%:${params.IMAGE_TAG}
-                            IF ERRORLEVEL 1 (
-                                echo Image pull skipped (using local image if available).
-                            )
+                            IF ERRORLEVEL 1 echo Image pull skipped - using local image if available
                             exit /b 0
                         """
                     }
