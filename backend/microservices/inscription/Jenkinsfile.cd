@@ -95,24 +95,30 @@ pipeline {
       steps {
         dir("${env.SERVICE_DIR}") {
           script {
-            if (isUnix()) {
-              sh '''
-                kubectl apply -f k8s/mysql.yaml
-                kubectl apply -f k8s/configmap.yaml
-                kubectl apply -f k8s/service.yaml
-                kubectl apply -f k8s/deployment.yaml
-                kubectl set image deployment/inscription inscription=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
-                kubectl rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=120s
-              '''
-            } else {
-              bat '''
-                kubectl apply -f k8s/mysql.yaml
-                kubectl apply -f k8s/configmap.yaml
-                kubectl apply -f k8s/service.yaml
-                kubectl apply -f k8s/deployment.yaml
-                kubectl set image deployment/inscription inscription=%IMAGE_NAME%:%IMAGE_TAG% -n %K8S_NAMESPACE%
-                kubectl rollout status deployment/inscription -n %K8S_NAMESPACE% --timeout=120s
-              '''
+            withCredentials([file(credentialsId: 'kubeconfig-minikube', variable: 'KUBECONFIG_FILE')]) {
+              if (isUnix()) {
+                sh '''
+                  export KUBECONFIG="$KUBECONFIG_FILE"
+                  kubectl config current-context
+                  kubectl apply -f k8s/mysql.yaml
+                  kubectl apply -f k8s/configmap.yaml
+                  kubectl apply -f k8s/service.yaml
+                  kubectl apply -f k8s/deployment.yaml
+                  kubectl set image deployment/inscription inscription=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
+                  kubectl rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=120s
+                '''
+              } else {
+                bat '''
+                  set KUBECONFIG=%KUBECONFIG_FILE%
+                  kubectl config current-context
+                  kubectl apply -f k8s/mysql.yaml
+                  kubectl apply -f k8s/configmap.yaml
+                  kubectl apply -f k8s/service.yaml
+                  kubectl apply -f k8s/deployment.yaml
+                  kubectl set image deployment/inscription inscription=%IMAGE_NAME%:%IMAGE_TAG% -n %K8S_NAMESPACE%
+                  kubectl rollout status deployment/inscription -n %K8S_NAMESPACE% --timeout=120s
+                '''
+              }
             }
           }
         }
