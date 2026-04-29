@@ -76,14 +76,20 @@ pipeline {
                 sh '''
                   echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                   docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                  docker push ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
+                retry(3) {
+                  echo "Pushing Docker image ${IMAGE_NAME}:${IMAGE_TAG} (with retry)"
+                  sh 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
+                }
               } else {
                 bat '''
                   echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
                   docker build -t %IMAGE_NAME%:%IMAGE_TAG% .
-                  docker push %IMAGE_NAME%:%IMAGE_TAG%
                 '''
+                retry(3) {
+                  echo "Pushing Docker image ${env.IMAGE_NAME}:${params.IMAGE_TAG} (with retry)"
+                  bat 'docker push %IMAGE_NAME%:%IMAGE_TAG%'
+                }
               }
             }
           }
