@@ -8,6 +8,7 @@
     "serve:gateway": "ng build --configuration development && node server-gateway.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:coverage": "ng test --no-watch --code-coverage --browsers=ChromeHeadless",
     "serve:ssr:my-project": "node dist/my-project/server/server.mjs"
   },
   "private": true,

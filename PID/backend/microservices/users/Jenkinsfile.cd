@@ -57,6 +57,9 @@ pipeline {
                             } else {
                                 bat "mvnw.cmd -B sonar:sonar -Dsonar.projectKey=%SONAR_PROJECT_KEY%"
                             }
+                            def sonarBase = env.SONAR_HOST_URL ?: 'http://localhost:9000'
+                            echo "SonarQube — project overview: ${sonarBase}/dashboard?id=${SONAR_PROJECT_KEY}"
+                            echo "SonarQube — coverage history: ${sonarBase}/component_measures?id=${SONAR_PROJECT_KEY}&metric=coverage"
                         }
                     }
                 }
@@ -72,8 +75,6 @@ pipeline {
                         echo 'Image pull skipped (using local image if available).'
                         """
                     } else {
-                        // CMD's "||" can still leave ERRORLEVEL=1 for the whole step; force success after optional pull.
-                        // Inside IF (...), unescaped parentheses in echo break CMD parsing.
                         bat """
                             docker pull %IMAGE_NAME%:${params.IMAGE_TAG}
                             IF ERRORLEVEL 1 echo Image pull skipped - using local image if available

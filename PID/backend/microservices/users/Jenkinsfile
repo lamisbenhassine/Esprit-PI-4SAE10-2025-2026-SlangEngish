@@ -51,6 +51,9 @@ pipeline {
                             } else {
                                 bat "mvnw.cmd -B sonar:sonar -Dsonar.projectKey=%SONAR_PROJECT_KEY%"
                             }
+                            def sonarBase = env.SONAR_HOST_URL ?: 'http://localhost:9000'
+                            echo "SonarQube — project overview: ${sonarBase}/dashboard?id=${SONAR_PROJECT_KEY}"
+                            echo "SonarQube — coverage history (compare builds): ${sonarBase}/component_measures?id=${SONAR_PROJECT_KEY}&metric=coverage"
                         }
                     }
                 }
@@ -85,6 +88,36 @@ pipeline {
                             sh "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
                         } else {
                             bat "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            when {
+                expression { return (env.DOCKER_REGISTRY_CREDS_ID ?: '').trim().length() > 0 }
+            }
+            steps {
+                dir("${SERVICE_DIR}") {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: env.DOCKER_REGISTRY_CREDS_ID.trim(), usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
+                            if (isUnix()) {
+                                sh """
+                                    set +x
+                                    echo "\${REG_PASS}" | docker login -u "\${REG_USER}" --password-stdin
+                                    set -x
+                                    docker push ${IMAGE_NAME}:${env.BUILD_NUMBER}
+                                    docker push ${IMAGE_NAME}:latest
+                                """
+                            } else {
+                                powershell """
+                                    \$ErrorActionPreference = 'Stop'
+                                    \$env:REG_PASS | docker login -u \$env:REG_USER --password-stdin
+                                    docker push "\$(\$env:IMAGE_NAME):\$(\$env:BUILD_NUMBER)"
+                                    docker push "\$(\$env:IMAGE_NAME):latest"
+                                """
+                            }
                         }
                     }
                 }
