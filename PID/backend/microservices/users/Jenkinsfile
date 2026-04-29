@@ -1,0 +1,106 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        IMAGE_NAME = 'slangenglish/user-service'
+        CD_JOB_NAME = 'users-cd'
+        SONAR_PROJECT_KEY = 'slangenglish-user-service'
+        SONARQUBE_SERVER = 'sonarqube-server'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh 'chmod +x mvnw'
+                        sh './mvnw -B clean test'
+                    } else {
+                        bat 'mvnw.cmd -B clean test'
+                    }
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    withSonarQubeEnv("${SONARQUBE_SERVER}") {
+                        if (isUnix()) {
+                            sh "./mvnw -B sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY}"
+                        } else {
+                            bat "mvnw.cmd -B sonar:sonar -Dsonar.projectKey=%SONAR_PROJECT_KEY%"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Package') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh './mvnw -B package -DskipTests'
+                    } else {
+                        bat 'mvnw.cmd -B package -DskipTests'
+                    }
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                    def tag = "${env.BUILD_NUMBER}"
+                    if (isUnix()) {
+                        sh "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
+                    } else {
+                        bat "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
+                    }
+                }
+            }
+        }
+
+        stage('Trigger CD Pipeline') {
+            steps {
+                script {
+                    build job: "${CD_JOB_NAME}",
+                          wait: false,
+                          parameters: [
+                              string(name: 'IMAGE_TAG', value: "${env.BUILD_NUMBER}")
+                          ]
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI pipeline finished successfully (unit tests + SonarQube + Docker).'
+        }
+        failure {
+            echo 'CI pipeline failed. Check logs, tests and SonarQube.'
+        }
+    }
+}
