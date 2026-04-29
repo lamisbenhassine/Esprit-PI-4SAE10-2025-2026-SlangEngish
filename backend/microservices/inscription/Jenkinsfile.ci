@@ -108,12 +108,14 @@ pipeline {
         script {
           // Trigger downstream CD pipeline after successful CI stages.
           // IMPORTANT: replace 'inscription-cd' with the exact Jenkins job name.
-          build job: 'inscription-cd',
-                wait: true,
-                propagate: true,
-                parameters: [
-                  string(name: 'IMAGE_TAG', value: "${env.BUILD_NUMBER}")
-                ]
+          def cdBuild = build job: 'inscription-cd',
+                             wait: true,
+                             propagate: false,
+                             parameters: [
+                               string(name: 'IMAGE_TAG', value: "${env.BUILD_NUMBER}")
+                             ]
+
+          echo "CD job inscription-cd finished with status: ${cdBuild?.result}"
         }
       }
     }
