@@ -1,0 +1,121 @@
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    skipDefaultCheckout(true)
+  }
+
+  environment {
+    SERVICE_DIR = 'backend/microservices/forum'
+    SONAR_PROJECT_KEY = 'forum'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        script {
+          def remote = scm.userRemoteConfigs[0]
+          def branchSpec = scm.branches[0].name
+          def branchName = branchSpec.replaceFirst('^\\*/', '')
+
+          // Force a narrow refspec (avoid fetching all branches: +refs/heads/*)
+          def refspec = "+refs/heads/${branchName}:refs/remotes/origin/${branchName}"
+
+          withEnv([
+            'GIT_HTTP_VERSION=HTTP/1.1',
+            'GIT_HTTP_LOW_SPEED_LIMIT=1000',
+            'GIT_HTTP_LOW_SPEED_TIME=600'
+          ]) {
+            checkout([
+              $class: 'GitSCM',
+              branches: [[name: "*/${branchName}"]],
+              extensions: [
+                [$class: 'CloneOption', timeout: 120, shallow: true, depth: 1, noTags: true, honorRefspec: true],
+                [$class: 'SparseCheckoutPaths', sparseCheckoutPaths: [
+                  [$class: 'SparseCheckoutPath', path: 'backend/microservices/forum']
+                ]]
+              ],
+              userRemoteConfigs: [[
+                name: remote.name ?: 'origin',
+                url: remote.url,
+                credentialsId: remote.credentialsId,
+                refspec: refspec
+              ]]
+            ])
+          }
+        }
+      }
+    }
+
+    stage('Build + Unit Tests') {
+      steps {
+        dir("${env.SERVICE_DIR}") {
+          script {
+            if (isUnix()) {
+              sh 'chmod +x mvnw'
+              sh './mvnw -B clean verify'
+            } else {
+              bat 'mvnw.cmd -B clean verify'
+            }
+          }
+        }
+      }
+      post {
+        always {
+          junit allowEmptyResults: true, testResults: 'backend/microservices/forum/target/surefire-reports/*.xml'
+          archiveArtifacts allowEmptyArchive: true, artifacts: 'backend/microservices/forum/target/site/jacoco/**'
+        }
+      }
+    }
+
+    stage('SonarQube Analysis') {
+      steps {
+        dir("${env.SERVICE_DIR}") {
+          withSonarQubeEnv('sonarqube') {
+            script {
+              if (isUnix()) {
+                sh """
+                  ./mvnw -B sonar:sonar \
+                    -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                    -Dsonar.projectName=forum
+                """
+              } else {
+                bat """
+                  mvnw.cmd -B sonar:sonar ^
+                    -Dsonar.projectKey=${SONAR_PROJECT_KEY} ^
+                    -Dsonar.projectName=forum
+                """
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage('Quality Gate') {
+      steps {
+        timeout(time: 10, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: false
+        }
+      }
+    }
+
+    stage('Trigger CD') {
+      steps {
+        script {
+          // Trigger downstream CD pipeline after successful CI stages.
+          // IMPORTANT: replace 'forum-cd' with the exact Jenkins job name.
+          def cdBuild = build job: 'forum-cd',
+                             wait: true,
+                             propagate: false,
+                             parameters: [
+                               string(name: 'IMAGE_TAG', value: "${env.BUILD_NUMBER}")
+                             ]
+
+          echo "CD job forum-cd finished with status: ${cdBuild?.result}"
+        }
+      }
+    }
+  }
+}
