@@ -102,5 +102,20 @@ pipeline {
         }
       }
     }
+
+    stage('Trigger CD') {
+      steps {
+        script {
+          // Trigger downstream CD pipeline after successful CI stages.
+          // IMPORTANT: replace 'inscription-cd' with the exact Jenkins job name.
+          build job: 'inscription-cd',
+                wait: true,
+                propagate: true,
+                parameters: [
+                  string(name: 'IMAGE_TAG', value: "${env.BUILD_NUMBER}")
+                ]
+        }
+      }
+    }
   }
 }
