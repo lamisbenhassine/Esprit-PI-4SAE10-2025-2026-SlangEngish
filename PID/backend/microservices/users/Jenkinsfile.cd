@@ -11,7 +11,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = 'slangenglish/user-service'
+        IMAGE_NAME = 'lamisbenhassine/user-service'
         CONTAINER_NAME = 'user-service'
         APP_PORT = '8011'
         HOST_PORT = '8011'

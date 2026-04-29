@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = 'slangenglish/user-service'
+        IMAGE_NAME = 'lamisbenhassine/user-service'
         CD_JOB_NAME = 'users-cd'
         SONAR_PROJECT_KEY = 'slangenglish-user-service'
         SONARQUBE_SERVER = 'sonarqube-server'
