@@ -111,7 +111,15 @@ pipeline {
                   kubectl apply -f k8s/service.yaml
                   kubectl apply -f k8s/deployment.yaml
                   kubectl set image deployment/inscription inscription=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
-                  kubectl rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=120s
+                  if ! kubectl rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=300s; then
+                    echo "Rollout timeout. Collecting diagnostics..."
+                    kubectl get deployment inscription -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl get pods -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl describe deployment inscription -n ${K8S_NAMESPACE} || true
+                    kubectl describe pods -n ${K8S_NAMESPACE} || true
+                    kubectl get events -n ${K8S_NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -n 50 || true
+                    exit 1
+                  fi
                 '''
               } else {
                 bat '''
@@ -122,7 +130,7 @@ pipeline {
                   kubectl apply -f k8s/service.yaml
                   kubectl apply -f k8s/deployment.yaml
                   kubectl set image deployment/inscription inscription=%IMAGE_NAME%:%IMAGE_TAG% -n %K8S_NAMESPACE%
-                  kubectl rollout status deployment/inscription -n %K8S_NAMESPACE% --timeout=120s
+                  kubectl rollout status deployment/inscription -n %K8S_NAMESPACE% --timeout=300s
                 '''
               }
             }
