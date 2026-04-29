@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: inscription
-          image: your-dockerhub-user/inscription:latest
+          image: isra50/inscription:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8030
