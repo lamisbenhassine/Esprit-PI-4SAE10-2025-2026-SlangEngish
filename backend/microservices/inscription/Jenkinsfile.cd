@@ -97,6 +97,7 @@ pipeline {
           script {
             if (isUnix()) {
               sh '''
+                kubectl apply -f k8s/mysql.yaml
                 kubectl apply -f k8s/configmap.yaml
                 kubectl apply -f k8s/service.yaml
                 kubectl apply -f k8s/deployment.yaml
@@ -105,6 +106,7 @@ pipeline {
               '''
             } else {
               bat '''
+                kubectl apply -f k8s/mysql.yaml
                 kubectl apply -f k8s/configmap.yaml
                 kubectl apply -f k8s/service.yaml
                 kubectl apply -f k8s/deployment.yaml
