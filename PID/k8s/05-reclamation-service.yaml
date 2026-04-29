@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reclamation-service
+  namespace: slangenglish
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reclamation-service
+  template:
+    metadata:
+      labels:
+        app: reclamation-service
+    spec:
+      containers:
+        - name: reclamation-service
+          image: lamisbenhassine/reclamation-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8012
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql:3306/reclamationdb?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: root
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: EUREKA_CLIENT_ENABLED
+              value: "false"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reclamation-service
+  namespace: slangenglish
+spec:
+  type: ClusterIP
+  selector:
+    app: reclamation-service
+  ports:
+    - port: 8012
+      targetPort: 8012
