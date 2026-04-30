@@ -1,18 +1,22 @@
 package tn.esprit.gestioncours.Entities;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -43,5 +47,12 @@ public class Recording {
 
     @Enumerated(EnumType.STRING)
     private RecordingStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private RecordingAnalysisStatus analysisStatus = RecordingAnalysisStatus.PENDING;
+
+    @OneToMany(mappedBy = "recording", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RecordingHighlight> highlights = new ArrayList<>();
 }
 

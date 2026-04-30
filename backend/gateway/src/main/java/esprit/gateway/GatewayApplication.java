@@ -22,6 +22,14 @@ public class GatewayApplication {
     @Bean
     public RouteLocator gatewayRoutes(RouteLocatorBuilder builder){
         return builder.routes()
+                // Notes IA (GestionCours) — doit être avant la route générique /api/**
+                .route("notes-api", r -> r.path("/api/notes/**")
+                        .filters(f -> f.rewritePath("/api/notes/(?<segment>.*)", "/pidev4sae10/chapter-note/api-notes/${segment}"))
+                        .uri(gestioncoursUri))
+                // Chapitres — contenu pédagogique IA (GestionCours), avant la route générique /api/**
+                .route("chapters-learning-api", r -> r.path("/api/chapters/**")
+                        .filters(f -> f.rewritePath("/api/chapters/(?<segment>.*)", "/pidev4sae10/api/chapters/${segment}"))
+                        .uri(gestioncoursUri))
                 // Route /api/** to the evaluation microservice (discovered via Eureka as "evaluation")
                 .route("evaluation", r -> r.path("/api/**")
                         .uri("lb://evaluation"))

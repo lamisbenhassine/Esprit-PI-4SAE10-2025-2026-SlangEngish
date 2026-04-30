@@ -1,16 +1,15 @@
-package tn.esprit.gestioncours;
+package tn.esprit.gestionclasses;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableAsync
-public class GestionCoursApplication {
+public class GestionclassesApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(GestionCoursApplication.class, args);
+        SpringApplication.run(GestionclassesApplication.class, args);
     }
+
 }

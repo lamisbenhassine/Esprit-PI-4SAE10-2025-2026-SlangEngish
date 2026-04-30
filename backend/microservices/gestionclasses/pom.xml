@@ -5,35 +5,20 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <!-- Spring Boot 3.2.x est compatible avec Spring Cloud 2023.0.x -->
         <version>3.2.5</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <groupId>tn.esprit</groupId>
-    <artifactId>GestionCours</artifactId>
+    <artifactId>gestionclasses</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>GestionCours</name>
-    <description>GestionCours</description>
-    <url/>
-    <licenses>
-        <license/>
-    </licenses>
-    <developers>
-        <developer/>
-    </developers>
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
+    <name>gestionclasses</name>
+    <description>Kanban et gestion de classes (étudiants)</description>
+
     <properties>
         <java.version>17</java.version>
-        <!-- Version de Spring Cloud pour résoudre spring-cloud-starter-netflix-eureka-client -->
         <spring-cloud.version>2023.0.3</spring-cloud.version>
     </properties>
 
-    <!-- Gestion centralisée des versions Spring Cloud -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -45,8 +30,8 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
     <dependencies>
-        <!-- Eureka client pour l'enregistrement dans le registre -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
@@ -55,7 +40,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
-        <!-- Web MVC classique -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -70,21 +54,10 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-        <!-- Starter de tests standard Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.pdfbox</groupId>
-            <artifactId>pdfbox</artifactId>
-            <version>3.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>ws.schild</groupId>
-            <artifactId>jave-all-deps</artifactId>
-            <version>3.3.1</version>
         </dependency>
     </dependencies>
 
@@ -119,5 +92,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

@@ -6,6 +6,7 @@ import tn.esprit.gestioncours.DTO.RecordingRequestDto;
 import tn.esprit.gestioncours.DTO.RecordingResponseDto;
 import tn.esprit.gestioncours.Entities.NotificationType;
 import tn.esprit.gestioncours.Entities.Recording;
+import tn.esprit.gestioncours.Entities.RecordingAnalysisStatus;
 import tn.esprit.gestioncours.Entities.RecordingStatus;
 import tn.esprit.gestioncours.Repositories.RecordingRepository;
 
@@ -19,6 +20,7 @@ public class RecordingServiceImpl implements IRecordingService {
 
     private final RecordingRepository recordingRepository;
     private final INotificationService notificationService;
+    private final RecordingAnalysisAsyncService recordingAnalysisAsyncService;
 
     @Override
     public RecordingResponseDto createRecording(RecordingRequestDto request) {
@@ -31,8 +33,12 @@ public class RecordingServiceImpl implements IRecordingService {
         if (recording.getStatus() == null) {
             recording.setStatus(RecordingStatus.AVAILABLE);
         }
+        if (recording.getAnalysisStatus() == null) {
+            recording.setAnalysisStatus(RecordingAnalysisStatus.PENDING);
+        }
 
         Recording saved = recordingRepository.save(recording);
+        triggerAutoAnalysis(saved);
 
         String message = "Nouvel enregistrement disponible : " + saved.getTitle();
         notificationService.createNotificationForUser(1L, message, NotificationType.RECORDING);
@@ -44,8 +50,19 @@ public class RecordingServiceImpl implements IRecordingService {
     public RecordingResponseDto updateRecording(Long id, RecordingRequestDto request) {
         return recordingRepository.findById(id)
                 .map(existing -> {
+                    RecordingStatus previousStatus = existing.getStatus();
+                    String previousRecordingLink = existing.getRecordingLink();
                     applyRequestToEntity(request, existing);
+                    if (existing.getStatus() == RecordingStatus.AVAILABLE
+                            && previousStatus != RecordingStatus.AVAILABLE) {
+                        existing.setAnalysisStatus(RecordingAnalysisStatus.PENDING);
+                    }
+                    if (existing.getRecordingLink() != null
+                            && !existing.getRecordingLink().equals(previousRecordingLink)) {
+                        existing.setAnalysisStatus(RecordingAnalysisStatus.PENDING);
+                    }
                     Recording updated = recordingRepository.save(existing);
+                    triggerAutoAnalysis(updated);
                     return mapToResponseDto(updated);
                 })
                 .orElse(null);
@@ -87,10 +104,29 @@ public class RecordingServiceImpl implements IRecordingService {
                     if (existing.getStatus() == null) {
                         existing.setStatus(RecordingStatus.AVAILABLE);
                     }
+                    existing.setAnalysisStatus(RecordingAnalysisStatus.PENDING);
                     Recording updated = recordingRepository.save(existing);
+                    triggerAutoAnalysis(updated);
                     return mapToResponseDto(updated);
                 })
                 .orElse(null);
+    }
+
+    private void triggerAutoAnalysis(Recording recording) {
+        if (recording == null || recording.getId() == null) {
+            return;
+        }
+        if (recording.getStatus() != RecordingStatus.AVAILABLE) {
+            return;
+        }
+        if (recording.getRecordingLink() == null || recording.getRecordingLink().isBlank()) {
+            return;
+        }
+        if (recording.getAnalysisStatus() == RecordingAnalysisStatus.PROCESSING
+                || recording.getAnalysisStatus() == RecordingAnalysisStatus.COMPLETED) {
+            return;
+        }
+        recordingAnalysisAsyncService.triggerAnalysisAsync(recording.getId());
     }
 
     private void applyRequestToEntity(RecordingRequestDto request, Recording recording) {
@@ -108,7 +144,8 @@ public class RecordingServiceImpl implements IRecordingService {
                 recording.getStreamLink(),
                 recording.getRecordingLink(),
                 recording.getRecordedAt(),
-                recording.getStatus()
+                recording.getStatus(),
+                recording.getAnalysisStatus()
         );
     }
 }

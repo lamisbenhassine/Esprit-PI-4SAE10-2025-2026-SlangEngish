@@ -13,6 +13,7 @@ public interface ProgressionRepository extends JpaRepository<Progression, Long> 
     Optional<Progression> findByUserIdAndChapter_IdChapter(Long userId, Long chapterId);
 
     List<Progression> findByUserIdAndChapter_Course_IdCourse(Long userId, Long courseId);
+    Optional<Progression> findTopByUserIdOrderByIdDesc(Long userId);
 
     @Modifying
     @Transactional

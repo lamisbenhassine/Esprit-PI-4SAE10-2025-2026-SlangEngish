@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import tn.esprit.gestioncours.Entities.RecordingAnalysisStatus;
 import tn.esprit.gestioncours.Entities.RecordingStatus;
 
 import java.time.LocalDateTime;
@@ -25,5 +26,7 @@ public class RecordingResponseDto {
     private LocalDateTime recordedAt;
 
     private RecordingStatus status;
+
+    private RecordingAnalysisStatus analysisStatus;
 }
 
