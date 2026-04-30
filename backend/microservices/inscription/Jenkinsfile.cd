@@ -116,6 +116,7 @@ pipeline {
                   KUBE_TLS_FLAGS="--tls-server-name=minikube --insecure-skip-tls-verify=true"
                   echo "Using Kubernetes API endpoint: ${KUBE_API_SERVER}"
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get --raw='/version' >/dev/null
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get namespace ${K8S_NAMESPACE} >/dev/null 2>&1 || kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} create namespace ${K8S_NAMESPACE}
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/mysql.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/configmap.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/service.yaml
