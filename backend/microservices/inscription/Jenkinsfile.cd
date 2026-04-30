@@ -121,8 +121,9 @@ pipeline {
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/configmap.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/service.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/deployment.yaml
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} set image deployment/inscription inscription=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
-                  if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=300s; then
+                  if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=900s; then
                     echo "Rollout timeout. Collecting diagnostics..."
                     kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get deployment inscription -n ${K8S_NAMESPACE} -o wide || true
                     kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get pods -n ${K8S_NAMESPACE} -o wide || true
