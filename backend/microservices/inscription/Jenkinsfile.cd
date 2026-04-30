@@ -117,6 +117,12 @@ pipeline {
                   echo "Using Kubernetes API endpoint: ${KUBE_API_SERVER}"
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get --raw='/version' >/dev/null
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get namespace ${K8S_NAMESPACE} >/dev/null 2>&1 || kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} create namespace ${K8S_NAMESPACE}
+                  if [ -f k8s/secret.yaml ]; then
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/secret.yaml
+                  elif [ -f k8s/secret.example.yaml ]; then
+                    echo "k8s/secret.yaml not found, applying k8s/secret.example.yaml fallback."
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/secret.example.yaml
+                  fi
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/mysql.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/configmap.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/service.yaml
