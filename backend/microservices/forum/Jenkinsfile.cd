@@ -116,6 +116,15 @@ pipeline {
                 sh '''
                   export KUBECONFIG="$KUBECONFIG_FILE"
                   kubectl config current-context
+                  MINIKUBE_API_PORT="$(docker port minikube 8443/tcp | sed -E 's/.*:([0-9]+)$/\\1/' | head -n 1)"
+                  if [ -z "$MINIKUBE_API_PORT" ]; then
+                    echo "Unable to resolve Minikube API port from docker port output."
+                    docker ps || true
+                    exit 1
+                  fi
+                  kubectl config set-cluster minikube --server="https://host.docker.internal:${MINIKUBE_API_PORT}" --tls-server-name=minikube
+                  kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}{"\\n"}'
+                  kubectl get --raw='/version' >/dev/null
                   kubectl apply --validate=false -f k8s/mysql.yaml
                   kubectl apply --validate=false -f k8s/configmap.yaml
                   kubectl apply --validate=false -f k8s/service.yaml
