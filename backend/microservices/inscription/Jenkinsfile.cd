@@ -121,7 +121,15 @@ pipeline {
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/configmap.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/service.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/deployment.yaml
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s
+                  if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s; then
+                    echo "MySQL rollout failed on first attempt. Restarting deployment and waiting again..."
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get deployment mysql -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get pods -n ${K8S_NAMESPACE} -l app=mysql -o wide || true
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe deployment mysql -n ${K8S_NAMESPACE} || true
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe pods -n ${K8S_NAMESPACE} -l app=mysql || true
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout restart deployment/mysql -n ${K8S_NAMESPACE}
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s
+                  fi
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} set image deployment/inscription inscription=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
                   if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=900s; then
                     echo "Rollout timeout. Collecting diagnostics..."
