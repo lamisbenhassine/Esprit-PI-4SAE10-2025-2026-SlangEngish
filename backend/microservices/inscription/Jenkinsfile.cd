@@ -117,12 +117,10 @@ pipeline {
                   echo "Using Kubernetes API endpoint: ${KUBE_API_SERVER}"
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get --raw='/version' >/dev/null
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get namespace ${K8S_NAMESPACE} >/dev/null 2>&1 || kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} create namespace ${K8S_NAMESPACE}
-                  if [ -f k8s/secret.yaml ]; then
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/secret.yaml
-                  elif [ -f k8s/secret.example.yaml ]; then
-                    echo "k8s/secret.yaml not found, applying k8s/secret.example.yaml fallback."
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/secret.example.yaml
-                  fi
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} create secret generic inscription-secrets -n ${K8S_NAMESPACE} \
+                    --from-literal=db-username=root \
+                    --from-literal=db-password=change-me \
+                    --dry-run=client -o yaml | kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply -f -
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/mysql.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/configmap.yaml
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/service.yaml
@@ -137,6 +135,7 @@ pipeline {
                     kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s
                   fi
                   kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} set image deployment/inscription inscription=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout restart deployment/inscription -n ${K8S_NAMESPACE}
                   if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=900s; then
                     echo "Rollout timeout. Collecting diagnostics..."
                     kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get deployment inscription -n ${K8S_NAMESPACE} -o wide || true
