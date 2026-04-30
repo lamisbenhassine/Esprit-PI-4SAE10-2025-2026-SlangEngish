@@ -123,20 +123,21 @@ pipeline {
                     exit 1
                   fi
                   KUBE_API_SERVER="https://host.docker.internal:${MINIKUBE_API_PORT}"
+                  KUBE_TLS_FLAGS="--tls-server-name=minikube --insecure-skip-tls-verify=true"
                   echo "Using Kubernetes API endpoint: ${KUBE_API_SERVER}"
-                  kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube get --raw='/version' >/dev/null
-                  kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube apply --validate=false -f k8s/mysql.yaml
-                  kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube apply --validate=false -f k8s/configmap.yaml
-                  kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube apply --validate=false -f k8s/service.yaml
-                  kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube apply --validate=false -f k8s/deployment.yaml
-                  kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube set image deployment/forum forum=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
-                  if ! kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube rollout status deployment/forum -n ${K8S_NAMESPACE} --timeout=300s; then
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get --raw='/version' >/dev/null
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/mysql.yaml
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/configmap.yaml
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/service.yaml
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/deployment.yaml
+                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} set image deployment/forum forum=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
+                  if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/forum -n ${K8S_NAMESPACE} --timeout=300s; then
                     echo "Rollout timeout. Collecting diagnostics..."
-                    kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube get deployment forum -n ${K8S_NAMESPACE} -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube get pods -n ${K8S_NAMESPACE} -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube describe deployment forum -n ${K8S_NAMESPACE} || true
-                    kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube describe pods -n ${K8S_NAMESPACE} || true
-                    kubectl --server="${KUBE_API_SERVER}" --tls-server-name=minikube get events -n ${K8S_NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -n 50 || true
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get deployment forum -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get pods -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe deployment forum -n ${K8S_NAMESPACE} || true
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe pods -n ${K8S_NAMESPACE} || true
+                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get events -n ${K8S_NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -n 50 || true
                     exit 1
                   fi
                 '''
