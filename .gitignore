@@ -1,30 +1,141 @@
-# IDE
+# --- IDE & editors ---
 .idea/
 *.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.factorypath
+.apt_generated
+.sts4-cache
+.springBeans
+*.swp
+*.swo
+*~
 
-# Java / Maven (build output)
+# VS Code (keep shared settings if you use them)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# --- OS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Java / Maven / Gradle ---
 **/target/
+**/build/
+!**/src/**/build/
+*.class
 hs_err_pid*
+replay_pid*
+dependency-reduced-pom.xml
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
 
-# Node / Angular (frontend)
+# Gradle
+.gradle/
+**/out/
+
+# --- Node / npm / yarn / pnpm ---
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-store/
+package-lock.json.bak
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# --- Angular ---
 dist/
 tmp/
 out-tsc/
+bazel-out/
 .angular/cache/
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
 
-# Python / notebooks (local experiments)
+# --- Frontend test / bundle ---
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# --- Python ---
 .venv/
 venv/
+ENV/
+env/
 __pycache__/
 *.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.eggs/
+dist/*.egg
+
+# --- Jupyter ---
 .ipynb_checkpoints/
+*.ipynb_checkpoints
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs / env
-*.log
+# --- Env & secrets ---
 .env
-.env.local
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.yml
+secrets.yaml
+
+# --- Logs & temp ---
+*.log
+logs/
+*.tmp
+*.temp
+*.cache
+.cache/
+
+# --- Docker (local) ---
+**/.docker/
+
+# --- Databases & dumps ---
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+
+# --- Archives (often accidental in repos) ---
+*.7z
+*.dmg
+*.gz
+*.iso
+*.rar
+*.tar
+*.zip
+
+# --- Misc ---
+*.orig
+*.rej

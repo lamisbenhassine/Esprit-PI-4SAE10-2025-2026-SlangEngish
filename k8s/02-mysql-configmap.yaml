@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-initdb
+  namespace: pid
+data:
+  init.sql: |
+    CREATE DATABASE IF NOT EXISTS userdbb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE DATABASE IF NOT EXISTS evaluatiob CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE DATABASE IF NOT EXISTS notebookdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

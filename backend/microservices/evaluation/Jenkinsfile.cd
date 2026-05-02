@@ -1,0 +1,126 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to deploy')
+    }
+
+    environment {
+        IMAGE_NAME = 'lfray/pid-evaluation-service'
+        CONTAINER_NAME = 'pid-evaluation-service'
+        APP_PORT = '8020'
+        HOST_PORT = '8020'
+        SONAR_PROJECT_KEY = 'pid-evaluation-service'
+        SONARQUBE_SERVER = 'sonarqube'
+        SERVICE_DIR = 'backend/microservices/evaluation'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Unit Tests') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    script {
+                        if (isUnix()) {
+                            sh 'chmod +x mvnw'
+                            sh './mvnw -B clean test'
+                        } else {
+                            bat 'mvnw.cmd -B clean test'
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: "${SERVICE_DIR}/target/surefire-reports/*.xml"
+                }
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    script {
+                        withSonarQubeEnv("${SONARQUBE_SERVER}") {
+                            if (isUnix()) {
+                                sh "./mvnw -B sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY}"
+                            } else {
+                                bat "mvnw.cmd -B sonar:sonar -Dsonar.projectKey=%SONAR_PROJECT_KEY%"
+                            }
+                            def sonarBase = env.SONAR_HOST_URL ?: 'http://localhost:9000'
+                            echo "SonarQube — project overview: ${sonarBase}/dashboard?id=${SONAR_PROJECT_KEY}"
+                            echo "SonarQube — coverage history: ${sonarBase}/component_measures?id=${SONAR_PROJECT_KEY}&metric=coverage"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Pull Docker Image (Optional)') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh """
+                        docker pull ${IMAGE_NAME}:${params.IMAGE_TAG} || \
+                        echo 'Image pull skipped (using local image if available).'
+                        """
+                    } else {
+                        bat """
+                            docker pull %IMAGE_NAME%:${params.IMAGE_TAG}
+                            IF ERRORLEVEL 1 echo Image pull skipped - using local image if available
+                            exit /b 0
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Stop Old Container') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh "docker rm -f ${CONTAINER_NAME} || true"
+                    } else {
+                        bat "docker rm -f %CONTAINER_NAME% || exit /b 0"
+                    }
+                }
+            }
+        }
+
+        stage('Run New Container') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh """
+                        docker run -d \
+                          --name ${CONTAINER_NAME} \
+                          -p ${HOST_PORT}:${APP_PORT} \
+                          ${IMAGE_NAME}:${params.IMAGE_TAG}
+                        """
+                    } else {
+                        bat "docker run -d --name %CONTAINER_NAME% -p %HOST_PORT%:%APP_PORT% %IMAGE_NAME%:${params.IMAGE_TAG}"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "CD finished: ${IMAGE_NAME}:${params.IMAGE_TAG} deployed after unit tests and SonarQube."
+        }
+        failure {
+            echo 'CD failed. Check Docker logs and SonarQube.'
+        }
+    }
+}
