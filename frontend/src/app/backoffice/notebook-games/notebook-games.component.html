@@ -1,0 +1,104 @@
+<div class="ng-root">
+  <div class="head">
+    <div class="title">
+      <h1>Notebook games</h1>
+      <p>Create crossword-style word games. Students will see them in Smart Notebook → Games.</p>
+    </div>
+    <div class="actions">
+      <button mat-stroked-button type="button" (click)="refresh()" [disabled]="loading">
+        <mat-icon>refresh</mat-icon> Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2><mat-icon>add</mat-icon> Create a new game</h2>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Title</mat-label>
+        <input matInput [(ngModel)]="title" placeholder="e.g. Slang & street words (Week 2)">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Description (optional)</mat-label>
+        <textarea matInput rows="3" [(ngModel)]="description" placeholder="What students should learn from this game"></textarea>
+      </mat-form-field>
+
+      <mat-checkbox [(ngModel)]="published" color="primary">Published (visible to students)</mat-checkbox>
+
+      <div class="entries">
+        <div class="entries-head">
+          <h3>Clues</h3>
+          <button mat-stroked-button type="button" (click)="addEntry()">
+            <mat-icon>playlist_add</mat-icon> Add clue
+          </button>
+        </div>
+
+        <article class="entry" *ngFor="let e of entries; let i = index">
+          <div class="entry-top">
+            <span class="idx">#{{ entryOrder(i) }}</span>
+            <button mat-icon-button color="warn" type="button" (click)="removeEntry(i)" [disabled]="entries.length <= 1" matTooltip="Remove">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Clue</mat-label>
+            <input matInput [(ngModel)]="e.clue" placeholder="e.g. Very good / excellent (slang)">
+          </mat-form-field>
+
+          <div class="row">
+            <mat-form-field appearance="outline" class="half">
+              <mat-label>Answer</mat-label>
+              <input matInput [(ngModel)]="e.answer" placeholder="e.g. dope">
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="half">
+              <mat-label>Teacher hint (optional)</mat-label>
+              <input matInput [(ngModel)]="e.teacherHint" placeholder="e.g. Starts with D">
+            </mat-form-field>
+          </div>
+        </article>
+      </div>
+
+      <div class="create-actions">
+        <button mat-flat-button color="primary" type="button" (click)="create()" [disabled]="creating">
+          <mat-icon>rocket_launch</mat-icon> Create game
+        </button>
+      </div>
+
+      <div class="preview" *ngIf="createdPreview as cp">
+        <h3>Created</h3>
+        <p><strong>{{ cp.title }}</strong> ({{ cp.entries.length || 0 }} clues)</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><mat-icon>list</mat-icon> Your games</h2>
+
+      <div class="loading" *ngIf="loading">
+        <mat-icon class="spin">refresh</mat-icon> Loading…
+      </div>
+
+      <div class="empty" *ngIf="!loading && !games?.length">
+        <mat-icon>sports_esports</mat-icon>
+        <p>No games yet. Create your first one on the left.</p>
+      </div>
+
+      <div class="list" *ngIf="!loading && games?.length">
+        <article class="pill" *ngFor="let g of games">
+          <div class="pill-main">
+            <div class="pill-title">{{ g.title }}</div>
+            <div class="pill-meta">
+              <span>{{ g.entryCount || 0 }} clues</span>
+              <span *ngIf="g.createdAt">• {{ g.createdAt | date:'short' }}</span>
+              <span *ngIf="!g.published">• Draft</span>
+            </div>
+          </div>
+          <span class="badge" [class.off]="!g.published">{{ g.published ? 'Published' : 'Hidden' }}</span>
+        </article>
+      </div>
+    </section>
+  </div>
+</div>
+

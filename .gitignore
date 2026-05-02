@@ -1,0 +1,30 @@
+# IDE
+.idea/
+*.iml
+
+# Java / Maven (build output)
+**/target/
+hs_err_pid*
+
+# Node / Angular (frontend)
+node_modules/
+dist/
+tmp/
+out-tsc/
+.angular/cache/
+
+# Python / notebooks (local experiments)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / env
+*.log
+.env
+.env.local
