@@ -88,9 +88,9 @@ pipeline {
                     script {
                         def tag = "${env.BUILD_NUMBER}"
                         if (isUnix()) {
-                            sh "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
+                            sh "docker build -f Dockerfile.ci -t ${env.IMAGE_NAME}:${tag} -t ${env.IMAGE_NAME}:latest ."
                         } else {
-                            bat "docker build -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
+                            bat "docker build -f Dockerfile.ci -t ${IMAGE_NAME}:${tag} -t ${IMAGE_NAME}:latest ."
                         }
                     }
                 }
@@ -109,9 +109,17 @@ pipeline {
                                 sh """
                                     set +x
                                     echo "\${REG_PASS}" | docker login -u "\${REG_USER}" --password-stdin
-                                    set -x
-                                    docker push ${IMAGE_NAME}:${env.BUILD_NUMBER}
-                                    docker push ${IMAGE_NAME}:latest
+                                    set +e
+                                    for attempt in 1 2 3; do
+                                      set -x
+                                      docker push ${env.IMAGE_NAME}:${env.BUILD_NUMBER} && docker push ${env.IMAGE_NAME}:latest
+                                      rc=\$?
+                                      set +x
+                                      if [ \$rc -eq 0 ]; then exit 0; fi
+                                      echo "Docker push failed (attempt \$attempt/3). Retrying in 120s (slow networks / Docker Hub)."
+                                      sleep 120
+                                    done
+                                    exit 1
                                 """
                             } else {
                                 powershell """

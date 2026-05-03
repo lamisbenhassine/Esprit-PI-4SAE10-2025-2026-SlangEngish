@@ -107,9 +107,17 @@ pipeline {
                                 sh """
                                     set +x
                                     echo "\${REG_PASS}" | docker login -u "\${REG_USER}" --password-stdin
-                                    set -x
-                                    docker push ${IMAGE_NAME}:${env.BUILD_NUMBER}
-                                    docker push ${IMAGE_NAME}:latest
+                                    set +e
+                                    for attempt in 1 2 3; do
+                                      set -x
+                                      docker push ${env.IMAGE_NAME}:${env.BUILD_NUMBER} && docker push ${env.IMAGE_NAME}:latest
+                                      rc=\$?
+                                      set +x
+                                      if [ \$rc -eq 0 ]; then exit 0; fi
+                                      echo "Docker push failed (attempt \$attempt/3). Retrying in 60s (Docker Hub 400/timeouts are often transient)."
+                                      sleep 60
+                                    done
+                                    exit 1
                                 """
                             } else {
                                 powershell """
