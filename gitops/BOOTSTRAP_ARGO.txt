@@ -1,0 +1,35 @@
+GitOps Argo CD — à faire APRÈS un cluster opérationnel (kubeadm : étapes détaillées dans gitops/KUBEADM_DEPLOY_STEPS.txt)
+
+1) Installer Argo CD dans le cluster
+   kubectl create namespace argocd
+   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+2) Attendre les pods argocd (optionnel)
+   kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=300s
+
+3) UI Argo (port-forward)
+   kubectl port-forward svc/argocd-server -n argocd 8080:443
+   Mot de passe admin initial :
+   kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+4) Éditer gitops/argocd/application-inscription.yaml
+   - repoURL : URL HTTPS de ton dépôt Git
+   - targetRevision : branche (ex. main)
+
+5) Enregistrer l’Application
+   kubectl apply -n argocd -f gitops/argocd/application-inscription.yaml
+
+6) Secret DB (hors Git, une fois par cluster)
+   kubectl create namespace slangenglish --dry-run=client -o yaml | kubectl apply -f -
+   kubectl create secret generic inscription-secrets -n slangenglish \
+     --from-literal=db-username=root --from-literal=db-password=change-me \
+     --dry-run=client -o yaml | kubectl apply -f -
+
+7) Jenkins CD en mode gitops
+   - Credential « Username with password » id : github-creds (PAT avec droit push sur le dépôt)
+   - Job inscription-cd : paramètre DEPLOY_MODE = gitops
+   Le pipeline met à jour k8s/kustomization.yaml (newTag) et pousse sur Git ; Argo synchronise.
+
+8) Jenkins CD / kubectl vers un cluster kubeadm
+   - Étapes cluster + réseau + credential : voir gitops/KUBEADM_DEPLOY_STEPS.txt (phases A→G)
+   - Credential Jenkins « Secret file » ID : kubeconfig-kubeadm (kubeconfig testé avec kubectl get nodes depuis l’agent Jenkins)

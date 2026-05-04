@@ -1,0 +1,24 @@
+# One-time bootstrap on the cluster (after Argo CD is installed):
+#   kubectl apply -n argocd -f gitops/argocd/application-inscription.yaml
+#
+# Replace repo URL + targetRevision with your Git remote and default branch.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: inscription
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/VOTRE_ORG/VOTRE_REPO.git
+    targetRevision: main
+    path: backend/microservices/inscription/k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: slangenglish
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

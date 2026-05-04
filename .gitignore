@@ -1,0 +1,4 @@
+# Kubeconfig avec certificats — ne jamais commiter
+gitops/kubeconfig-kubeadm.yaml
+gitops/**/admin.conf
+**/kubeconfig-kubeadm.yaml

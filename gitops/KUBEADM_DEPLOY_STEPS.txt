@@ -1,0 +1,160 @@
+Déploiement projet — cluster kubeadm (sans Minikube), puis retour Argo plus tard
+================================================================================
+
+Ordre recommandé : cluster prêt → kubeconfig Jenkins → pipeline CD (kubectl) → ensuite GitOps (voir BOOTSTRAP_ARGO.txt).
+
+--- Phase A — Machines (équipe) -------------------------------------------------
+
+A1. 1 VM control plane (master) + au moins 1 worker (selon notes prof).
+A2. IPs fixes (ou réservation DHCP), ping entre toutes les VMs OK.
+A3. Même distribution conseillée : Ubuntu Server LTS sur tous les nœuds.
+
+--- Phase B — Préparation sur CHAQUE nœud (master + workers) ------------------
+
+B1. Désactiver swap (souvent requis par kubeadm).
+B2. Installer container runtime (ex. containerd) + kubeadm, kubelet, kubectl
+    (mêmes versions MAJOR.MINOR sur tous les nœuds).
+B3. Activer kubelet : systemctl enable --now kubelet
+
+--- Phase C — Initialisation (sur le master uniquement) -------------------------
+
+C1. kubeadm init avec au minimum :
+    --apiserver-advertise-address=<IP_DU_MASTER>
+    --pod-network-cidr=<CIDR compatible avec ton CNI>  (ex. doc Flannel/Calico)
+C2. Exécuter les commandes affichées pour kubectl (mkdir ~/.kube, copier admin.conf).
+C3. Noter la commande "kubeadm join ..." pour les workers.
+
+--- Phase D — Réseau pods (obligatoire) -----------------------------------------
+
+D1. Appliquer UN réseau CNI (Flannel OU Calico — suivre un seul tutoriel officiel).
+D2. Attendre : kubectl get pods -n kube-system   (tous Running / Ready selon le CNI)
+
+--- Phase E — Workers -----------------------------------------------------------
+
+E1. Sur chaque worker : exécuter kubeadm join ... (token + hash comme indiqué).
+E2. Sur le master : kubectl get nodes   → tous en état Ready.
+
+--- Phase F — Accès depuis Jenkins ----------------------------------------------
+
+F1. Depuis le master (ou une machine admin), fichier kubeconfig valide pointant vers :
+    server: https://<IP_MASTER>:6443
+F2. Depuis la MÊME machine que l’agent Jenkins (ou depuis Jenkins en test SSH) :
+    kubectl --kubeconfig <fichier> get nodes
+    Si échec : ouvrir firewall / route vers TCP 6443 sur le master.
+F3. Jenkins → Credentials → Secret file, ID exact : kubeconfig-kubeadm
+    (coller le contenu du kubeconfig testé à l’étape F2).
+
+--- Phase G — Pipeline CD (sans Argo pour l’instant) ---------------------------
+
+G1. Job inscription-cd : DEPLOY_MODE = kubectl, IMAGE_TAG = tag poussé sur le registry.
+G2. Vérifier les logs : apply -k, rollout mysql puis inscription.
+G3. Forum-cd : même credential kubeconfig-kubeadm si vous déployez forum sur le même cluster.
+
+--- Phase H — Argo CD (après stabilisation) ------------------------------------
+
+H1. Reprendre gitops/BOOTSTRAP_ARGO.txt (installer Argo, Application, puis DEPLOY_MODE=gitops).
+
+Référence officielle kubeadm :
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/
+
+
+================================================================================
+COMMANDES À COPIER (Ubuntu Server, chaque nœud = même version Kubernetes)
+Remplace MASTER_IP par l’IP réelle du control plane (ex. 192.168.56.10).
+Choisis UNE version (ex. v1.30) et garde-la identique sur master + workers.
+================================================================================
+
+--- Sur CHAQUE nœud (root ou sudo) : swap + modules + sysctl --------------------
+
+sudo swapoff -a
+sudo sed -i.bak '/[[:space:]]swap[[:space:]]/ s/^/#/' /etc/fstab
+
+cat <<'EOF' | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+cat <<'EOF' | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+sudo sysctl --system
+
+--- Sur CHAQUE nœud : containerd ------------------------------------------------
+
+sudo apt-get update
+sudo apt-get install -y containerd
+sudo mkdir -p /etc/containerd
+containerd config default | sudo tee /etc/containerd/config.toml
+sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+sudo systemctl restart containerd
+sudo systemctl enable containerd
+
+--- Sur CHAQUE nœud : kubelet, kubeadm, kubectl (exemple v1.30) ------------------
+
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+sudo systemctl enable --now kubelet
+
+--- UNIQUEMENT sur le MASTER : kubeadm init + kubeconfig utilisateur -----------
+
+sudo kubeadm init --apiserver-advertise-address=MASTER_IP --pod-network-cidr=10.244.0.0/16
+
+mkdir -p "$HOME/.kube"
+sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
+
+kubectl get nodes
+# (NotReady est normal tant que le CNI n’est pas installé)
+
+--- UNIQUEMENT sur le MASTER : CNI Flannel (cohérent avec 10.244.0.0/16) ---------
+
+kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+
+kubectl get pods -n kube-system -w
+# Ctrl+C quand les pods flannel sont Running
+
+kubectl get nodes
+# Tous Ready sur le master
+
+--- Sur le MASTER : préparer le join pour les workers ----------------------------
+
+# Afficher la commande de join (token 24h par défaut) :
+kubeadm token create --print-join-command
+
+# Copier la sortie complète "kubeadm join ..." et l’exécuter sur CHAQUE worker (en sudo).
+
+--- Sur CHAQUE WORKER : join ----------------------------------------------------
+
+# (coller la commande kubeadm join ... fournie par le master)
+
+--- Sur le MASTER : vérification finale -----------------------------------------
+
+kubectl get nodes -o wide
+
+--- Fichier pour Jenkins (kubeconfig-kubeadm) ------------------------------------
+
+# Sur le master, copie admin.conf vers un fichier à importer dans Jenkins :
+sudo cat /etc/kubernetes/admin.conf
+
+# Sur la machine Jenkins (ou l’agent Linux), test AVANT d’importer le credential :
+# (enregistre le contenu dans /tmp/kubeconfig-kubeadm.yaml)
+kubectl --kubeconfig=/tmp/kubeconfig-kubeadm.yaml get nodes
+
+# Dans Jenkins : Secret file, ID exact = kubeconfig-kubeadm
+
+--- Pipeline (sans Minikube, sans Argo pour l’instant) -------------------------
+
+# Job inscription-cd :
+#   DEPLOY_MODE = kubectl
+#   IMAGE_TAG   = le tag Docker réellement poussé (ex. numéro de build CI)
+
+# Vérifier que le credential Jenkins s’appelle bien : kubeconfig-kubeadm

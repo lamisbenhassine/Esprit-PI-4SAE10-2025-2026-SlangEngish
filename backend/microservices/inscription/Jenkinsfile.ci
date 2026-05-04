@@ -9,6 +9,7 @@ pipeline {
   environment {
     SERVICE_DIR = 'backend/microservices/inscription'
     SONAR_PROJECT_KEY = 'inscription'
+    IMAGE_NAME = 'isra50/inscription'
   }
 
   stages {
@@ -99,6 +100,42 @@ pipeline {
       steps {
         timeout(time: 10, unit: 'MINUTES') {
           waitForQualityGate abortPipeline: false
+        }
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        dir("${env.SERVICE_DIR}") {
+          script {
+            if (isUnix()) {
+              sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
+            } else {
+              bat "docker build -t %IMAGE_NAME%:%BUILD_NUMBER% ."
+            }
+          }
+        }
+      }
+    }
+
+    stage('Push Docker Image') {
+      steps {
+        dir("${env.SERVICE_DIR}") {
+          withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            script {
+              if (isUnix()) {
+                sh '''
+                  echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                  docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                '''
+              } else {
+                bat '''
+                  echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                  docker push %IMAGE_NAME%:%BUILD_NUMBER%
+                '''
+              }
+            }
+          }
         }
       }
     }

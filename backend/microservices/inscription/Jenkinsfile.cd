@@ -6,14 +6,17 @@ pipeline {
     skipDefaultCheckout(true)
   }
 
+  // Jenkins credential (Secret file): kubeconfig-kubeadm — kubeconfig du cluster kubeadm (API https://control-plane:6443)
   parameters {
-    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag to deploy')
+    choice(name: 'DEPLOY_MODE', choices: ['kubectl', 'gitops'], description: 'kubectl = apply depuis Jenkins ; gitops = pousser le tag dans Git pour Argo CD')
+    string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Tag Docker (ex. numéro de build CI)')
   }
 
   environment {
     SERVICE_DIR = 'backend/microservices/inscription'
     IMAGE_NAME = 'isra50/inscription'
     K8S_NAMESPACE = 'slangenglish'
+    IMGTAG = "${params.IMAGE_TAG}"
   }
 
   stages {
@@ -23,6 +26,8 @@ pipeline {
           def remote = scm.userRemoteConfigs[0]
           def branchSpec = scm.branches[0].name
           def branchName = branchSpec.replaceFirst('^\\*/', '')
+
+          env.GIT_BRANCH_TO_PUSH = branchName
 
           def refspec = "+refs/heads/${branchName}:refs/remotes/origin/${branchName}"
 
@@ -37,7 +42,8 @@ pipeline {
               extensions: [
                 [$class: 'CloneOption', timeout: 120, shallow: true, depth: 1, noTags: true, honorRefspec: true],
                 [$class: 'SparseCheckoutPaths', sparseCheckoutPaths: [
-                  [$class: 'SparseCheckoutPath', path: 'backend/microservices/inscription']
+                  [$class: 'SparseCheckoutPath', path: 'backend/microservices/inscription'],
+                  [$class: 'SparseCheckoutPath', path: 'gitops']
                 ]]
               ],
               userRemoteConfigs: [[
@@ -52,97 +58,44 @@ pipeline {
       }
     }
 
-    stage('Build Jar') {
+    stage('Deploy To Kubernetes (kubectl)') {
+      when {
+        expression { params.DEPLOY_MODE == 'kubectl' }
+      }
       steps {
         dir("${env.SERVICE_DIR}") {
           script {
-            if (isUnix()) {
-              sh 'chmod +x mvnw'
-              sh './mvnw -B clean package -DskipTests'
-            } else {
-              bat 'mvnw.cmd -B clean package -DskipTests'
-            }
-          }
-        }
-      }
-    }
-
-    stage('Build & Push Docker Image') {
-      steps {
-        dir("${env.SERVICE_DIR}") {
-          withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            script {
-              if (isUnix()) {
-                sh '''
-                  echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                  docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                '''
-                retry(3) {
-                  echo "Pushing Docker image ${IMAGE_NAME}:${IMAGE_TAG} (with retry)"
-                  sh 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
-                }
-              } else {
-                bat '''
-                  echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-                  docker build -t %IMAGE_NAME%:%IMAGE_TAG% .
-                '''
-                retry(3) {
-                  echo "Pushing Docker image ${env.IMAGE_NAME}:${params.IMAGE_TAG} (with retry)"
-                  bat 'docker push %IMAGE_NAME%:%IMAGE_TAG%'
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    stage('Deploy To Kubernetes') {
-      steps {
-        dir("${env.SERVICE_DIR}") {
-          script {
-            withCredentials([file(credentialsId: 'kubeconfig-minikube', variable: 'KUBECONFIG_FILE')]) {
+            withCredentials([file(credentialsId: 'kubeconfig-kubeadm', variable: 'KUBECONFIG_FILE')]) {
               if (isUnix()) {
                 sh '''
                   export KUBECONFIG="$KUBECONFIG_FILE"
                   kubectl config current-context
-                  MINIKUBE_API_PORT="$(docker port minikube 8443/tcp | sed -E 's/.*:([0-9]+)$/\\1/' | head -n 1)"
-                  if [ -z "$MINIKUBE_API_PORT" ]; then
-                    echo "Unable to resolve Minikube API port from docker port output."
-                    docker ps || true
-                    exit 1
-                  fi
-                  KUBE_API_SERVER="https://host.docker.internal:${MINIKUBE_API_PORT}"
-                  KUBE_TLS_FLAGS="--tls-server-name=minikube --insecure-skip-tls-verify=true"
-                  echo "Using Kubernetes API endpoint: ${KUBE_API_SERVER}"
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get --raw='/version' >/dev/null
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get namespace ${K8S_NAMESPACE} >/dev/null 2>&1 || kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} create namespace ${K8S_NAMESPACE}
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} create secret generic inscription-secrets -n ${K8S_NAMESPACE} \
+                  echo "API server:"
+                  kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}{"\n"}' || true
+                  kubectl get --raw='/version' >/dev/null
+                  kubectl get namespace ${K8S_NAMESPACE} >/dev/null 2>&1 || kubectl create namespace ${K8S_NAMESPACE}
+                  kubectl create secret generic inscription-secrets -n ${K8S_NAMESPACE} \
                     --from-literal=db-username=root \
                     --from-literal=db-password=change-me \
-                    --dry-run=client -o yaml | kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply -f -
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/mysql.yaml
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/configmap.yaml
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/service.yaml
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/deployment.yaml
-                  if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s; then
+                    --dry-run=client -o yaml | kubectl apply -f -
+                  sed -i 's/newTag: \\".*\\"/newTag: \\"'"${IMGTAG}"'\\"/' k8s/kustomization.yaml
+                  kubectl apply --validate=false -k k8s/
+                  if ! kubectl rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s; then
                     echo "MySQL rollout failed on first attempt. Restarting deployment and waiting again..."
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get deployment mysql -n ${K8S_NAMESPACE} -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get pods -n ${K8S_NAMESPACE} -l app=mysql -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe deployment mysql -n ${K8S_NAMESPACE} || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe pods -n ${K8S_NAMESPACE} -l app=mysql || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout restart deployment/mysql -n ${K8S_NAMESPACE}
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s
+                    kubectl get deployment mysql -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl get pods -n ${K8S_NAMESPACE} -l app=mysql -o wide || true
+                    kubectl describe deployment mysql -n ${K8S_NAMESPACE} || true
+                    kubectl describe pods -n ${K8S_NAMESPACE} -l app=mysql || true
+                    kubectl rollout restart deployment/mysql -n ${K8S_NAMESPACE}
+                    kubectl rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s
                   fi
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} set image deployment/inscription inscription=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout restart deployment/inscription -n ${K8S_NAMESPACE}
-                  if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=900s; then
+                  if ! kubectl rollout status deployment/inscription -n ${K8S_NAMESPACE} --timeout=900s; then
                     echo "Rollout timeout. Collecting diagnostics..."
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get deployment inscription -n ${K8S_NAMESPACE} -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get pods -n ${K8S_NAMESPACE} -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe deployment inscription -n ${K8S_NAMESPACE} || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe pods -n ${K8S_NAMESPACE} || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get events -n ${K8S_NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -n 50 || true
+                    kubectl get deployment inscription -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl get pods -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl describe deployment inscription -n ${K8S_NAMESPACE} || true
+                    kubectl describe pods -n ${K8S_NAMESPACE} || true
+                    kubectl get events -n ${K8S_NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -n 50 || true
                     exit 1
                   fi
                 '''
@@ -150,15 +103,57 @@ pipeline {
                 bat '''
                   set KUBECONFIG=%KUBECONFIG_FILE%
                   kubectl config current-context
-                  kubectl apply --validate=false -f k8s/mysql.yaml
-                  kubectl apply --validate=false -f k8s/configmap.yaml
-                  kubectl apply --validate=false -f k8s/service.yaml
-                  kubectl apply --validate=false -f k8s/deployment.yaml
-                  kubectl set image deployment/inscription inscription=%IMAGE_NAME%:%IMAGE_TAG% -n %K8S_NAMESPACE%
+                  kubectl apply --validate=false -k k8s/
                   kubectl rollout status deployment/inscription -n %K8S_NAMESPACE% --timeout=300s
                 '''
               }
             }
+          }
+        }
+      }
+    }
+
+    stage('GitOps: push image tag (Argo CD)') {
+      when {
+        expression { params.DEPLOY_MODE == 'gitops' }
+      }
+      steps {
+        script {
+          if (!isUnix()) {
+            error 'GitOps push stage requires a Unix shell (Linux agent or WSL).'
+          }
+          withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+            sh '''
+              set -e
+              cd "${WORKSPACE}"
+              BRANCH="${GIT_BRANCH_TO_PUSH:-main}"
+              TARGET="backend/microservices/inscription/k8s/kustomization.yaml"
+              sed -i 's/newTag: \\".*\\"/newTag: \\"'"${IMGTAG}"'\\"/' "$TARGET"
+              git config user.name "Jenkins"
+              git config user.email "jenkins@localhost"
+              git add "$TARGET"
+              if git diff --staged --quiet; then
+                echo "No change in kustomization (tag already ${IMGTAG})."
+                exit 0
+              fi
+              git commit -m "chore(cd): inscription image tag ${IMGTAG}"
+              REMOTE_URL="$(git remote get-url origin)"
+              case "$REMOTE_URL" in
+                git@*)
+                  echo "Remote is SSH. Configure an HTTPS origin or add credentials compatible with SSH Agent."
+                  exit 1
+                  ;;
+                https://*)
+                  HOSTPATH="${REMOTE_URL#https://}"
+                  PUSH_URL="https://${GIT_USER}:${GIT_PASS}@${HOSTPATH}"
+                  git push "$PUSH_URL" "HEAD:refs/heads/${BRANCH}"
+                  ;;
+                *)
+                  echo "Unsupported remote URL: ${REMOTE_URL}"
+                  exit 1
+                  ;;
+              esac
+            '''
           }
         }
       }

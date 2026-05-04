@@ -1,5 +1,6 @@
 pipeline {
   agent any
+  // Deploy: Jenkins credential Secret file id = kubeconfig-kubeadm (cluster kubeadm)
 
   options {
     timestamps()
@@ -111,43 +112,35 @@ pipeline {
               return
             }
 
-            withCredentials([file(credentialsId: 'kubeconfig-minikube', variable: 'KUBECONFIG_FILE')]) {
+            withCredentials([file(credentialsId: 'kubeconfig-kubeadm', variable: 'KUBECONFIG_FILE')]) {
               if (isUnix()) {
                 sh '''
                   export KUBECONFIG="$KUBECONFIG_FILE"
                   kubectl config current-context
-                  MINIKUBE_API_PORT="$(docker port minikube 8443/tcp | sed -E 's/.*:([0-9]+)$/\\1/' | head -n 1)"
-                  if [ -z "$MINIKUBE_API_PORT" ]; then
-                    echo "Unable to resolve Minikube API port from docker port output."
-                    docker ps || true
-                    exit 1
-                  fi
-                  KUBE_API_SERVER="https://host.docker.internal:${MINIKUBE_API_PORT}"
-                  KUBE_TLS_FLAGS="--tls-server-name=minikube --insecure-skip-tls-verify=true"
-                  echo "Using Kubernetes API endpoint: ${KUBE_API_SERVER}"
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get --raw='/version' >/dev/null
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get namespace ${K8S_NAMESPACE} >/dev/null 2>&1 || kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} create namespace ${K8S_NAMESPACE}
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/mysql.yaml
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/configmap.yaml
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/service.yaml
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} apply --validate=false -f k8s/deployment.yaml
-                  if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s; then
+                  kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}{"\n"}' || true
+                  kubectl get --raw='/version' >/dev/null
+                  kubectl get namespace ${K8S_NAMESPACE} >/dev/null 2>&1 || kubectl create namespace ${K8S_NAMESPACE}
+                  kubectl apply --validate=false -f k8s/mysql.yaml
+                  kubectl apply --validate=false -f k8s/configmap.yaml
+                  kubectl apply --validate=false -f k8s/service.yaml
+                  kubectl apply --validate=false -f k8s/deployment.yaml
+                  if ! kubectl rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s; then
                     echo "MySQL rollout failed on first attempt. Restarting deployment and waiting again..."
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get deployment mysql -n ${K8S_NAMESPACE} -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get pods -n ${K8S_NAMESPACE} -l app=mysql -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe deployment mysql -n ${K8S_NAMESPACE} || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe pods -n ${K8S_NAMESPACE} -l app=mysql || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout restart deployment/mysql -n ${K8S_NAMESPACE}
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s
+                    kubectl get deployment mysql -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl get pods -n ${K8S_NAMESPACE} -l app=mysql -o wide || true
+                    kubectl describe deployment mysql -n ${K8S_NAMESPACE} || true
+                    kubectl describe pods -n ${K8S_NAMESPACE} -l app=mysql || true
+                    kubectl rollout restart deployment/mysql -n ${K8S_NAMESPACE}
+                    kubectl rollout status deployment/mysql -n ${K8S_NAMESPACE} --timeout=900s
                   fi
-                  kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} set image deployment/forum forum=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
-                  if ! kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} rollout status deployment/forum -n ${K8S_NAMESPACE} --timeout=900s; then
+                  kubectl set image deployment/forum forum=${IMAGE_NAME}:${IMAGE_TAG} -n ${K8S_NAMESPACE}
+                  if ! kubectl rollout status deployment/forum -n ${K8S_NAMESPACE} --timeout=900s; then
                     echo "Rollout timeout. Collecting diagnostics..."
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get deployment forum -n ${K8S_NAMESPACE} -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get pods -n ${K8S_NAMESPACE} -o wide || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe deployment forum -n ${K8S_NAMESPACE} || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} describe pods -n ${K8S_NAMESPACE} || true
-                    kubectl --server="${KUBE_API_SERVER}" ${KUBE_TLS_FLAGS} get events -n ${K8S_NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -n 50 || true
+                    kubectl get deployment forum -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl get pods -n ${K8S_NAMESPACE} -o wide || true
+                    kubectl describe deployment forum -n ${K8S_NAMESPACE} || true
+                    kubectl describe pods -n ${K8S_NAMESPACE} || true
+                    kubectl get events -n ${K8S_NAMESPACE} --sort-by=.metadata.creationTimestamp | tail -n 50 || true
                     exit 1
                   fi
                 '''
