@@ -40,7 +40,12 @@ pipeline {
         stage('Tests + Coverage') {
             steps {
                 dir("${SERVICE_PATH}") {
-                    sh 'mvn clean verify'
+                    sh '''
+                        mvn clean verify \
+                        -Dspring.cloud.discovery.enabled=false \
+                        -Dspring.cloud.config.enabled=false \
+                        -Dspring.profiles.active=test
+                    '''
                 }
             }
         }
