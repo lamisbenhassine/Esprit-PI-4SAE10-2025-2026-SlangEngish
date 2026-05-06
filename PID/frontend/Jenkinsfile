@@ -27,7 +27,7 @@ pipeline {
                 dir("${SERVICE_DIR}") {
                     script {
                         if (isUnix()) {
-                            docker.image('cypress/browsers:node20.14.0-chrome125-ff126').inside {
+                            docker.image('node:20-alpine').inside {
                                 sh 'npm ci'
                             }
                         } else {
@@ -43,8 +43,15 @@ pipeline {
                 dir("${SERVICE_DIR}") {
                     script {
                         if (isUnix()) {
-                            docker.image('cypress/browsers:node20.14.0-chrome125-ff126').inside {
-                                sh 'npm test'
+                            // Use Debian image so we can apt-get Chromium for Karma ChromeHeadless.
+                            docker.image('node:20-bullseye').inside {
+                                sh """
+                                  set -e
+                                  apt-get update
+                                  apt-get install -y --no-install-recommends chromium
+                                  rm -rf /var/lib/apt/lists/*
+                                  CHROME_BIN=/usr/bin/chromium npm test
+                                """
                             }
                         } else {
                             bat 'npm test'
@@ -64,7 +71,7 @@ pipeline {
                 dir("${SERVICE_DIR}") {
                     script {
                         if (isUnix()) {
-                            docker.image('cypress/browsers:node20.14.0-chrome125-ff126').inside {
+                            docker.image('node:20-alpine').inside {
                                 sh 'npm run build -- --configuration production'
                             }
                         } else {
