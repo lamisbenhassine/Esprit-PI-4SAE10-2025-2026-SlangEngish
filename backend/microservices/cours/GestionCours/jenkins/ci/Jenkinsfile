@@ -1,83 +1,120 @@
 pipeline {
     agent any
-
     tools {
-        maven 'Maven3'
-        jdk 'JDK17'
+        maven 'Maven'
     }
-
     environment {
-        SONAR_PROJECT_KEY = 'microservice-cours'
-        DOCKER_IMAGE = 'ferveex/microservice-cours'
-        DOCKER_TAG = "${BUILD_NUMBER}"
+        DOCKERHUB_USER = "amounboukhris"
+        IMAGE_NAME = "amounboukhris/pedianephro-forum"
+        TAG = "${BUILD_NUMBER}"
+        SERVICE_PATH = "BackEnd/Microservices/forum"
     }
 
     stages {
+
+        /* ===================== CHECKOUT ===================== */
+
         stage('Checkout') {
             steps {
-                git branch: 'gestion_cours',
-                    credentialsId: 'github-token',
-                    url: 'https://github.com/lamisbenhassine/Esprit-PI-4SAE10-2025-2026-SlangEngish.git'
+                checkout([$class: 'GitSCM',
+                    branches: [[name: 'gestion_forum']],
+                    extensions: [
+                        [$class: 'CloneOption',
+                            shallow: true,
+                            depth: 1,
+                            noTags: true,
+                            timeout: 60
+                        ]
+                    ],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/Manel-Elj/Esprit-PIDEV-4SAE10-2026-PediaNephro.git',
+                        credentialsId: 'git-token',
+                        refspec: '+refs/heads/gestion_forum:refs/remotes/origin/gestion_forum'
+                    ]]
+                ])
             }
         }
 
-        stage('Unit Tests') {
+        /* ===================== BUILD ===================== */
+
+        stage('Clean Install') {
             steps {
-                dir('backend/microservices/cours/GestionCours') {
-                    sh 'mvn test'
+                dir("${SERVICE_PATH}") {
+                    sh 'mvn clean install -DskipTests'
                 }
             }
         }
 
-        stage('Build') {
+        /* ===================== TESTS ===================== */
+
+        stage('Tests + Coverage') {
             steps {
-                dir('backend/microservices/cours/GestionCours') {
-                    sh 'mvn clean package -DskipTests'
+                dir("${SERVICE_PATH}") {
+                    sh 'mvn clean verify'
                 }
             }
         }
+
+        /* ===================== SONARQUBE ===================== */
 
         stage('SonarQube Analysis') {
             steps {
-                dir('backend/microservices/cours/GestionCours') {
-                    withSonarQubeEnv('SonarQube') {
-                        sh 'mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY}'
+                withSonarQubeEnv('SonarQube') {
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        dir("${SERVICE_PATH}") {
+                            sh """
+                                mvn sonar:sonar \
+                                -Dsonar.login=$SONAR_TOKEN \
+                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                            """
+                        }
                     }
                 }
             }
         }
 
+        /* ===================== DOCKER BUILD ===================== */
+
         stage('Build Docker Image') {
             steps {
-                dir('backend/microservices/cours/GestionCours') {
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                    sh "docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest"
+                dir("${SERVICE_PATH}") {
+                    sh "docker build -t ${IMAGE_NAME}:${TAG} ."
                 }
             }
         }
 
-        stage('Push to Docker Hub') {
+        /* ===================== DOCKER LOGIN + PUSH ===================== */
+
+        stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-token',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS'
                 )]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                    sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
-                    sh "docker push ${DOCKER_IMAGE}:latest"
+                    sh '''
+                        echo "$PASS" | docker login -u "$USER" --password-stdin
+                        docker push ${IMAGE_NAME}:${TAG}
+                    '''
                 }
+            }
+        }
+
+        /* ===================== TRIGGER CD ===================== */
+
+        stage('Trigger CD Pipeline') {
+            steps {
+                build job: 'cd-pipeline',
+                parameters: [
+                    string(name: 'IMAGE_TAG', value: "${BUILD_NUMBER}")
+                ]
             }
         }
     }
 
     post {
-        success {
-            echo ' CI Cours réussi — image poussée sur Docker Hub !'
-            echo ' CI Cours réussi — image poussée sur Docker Hub !'
-        }
-        failure {
-            echo ' CI Cours échoué !'
+        always {
+            sh 'docker logout'
         }
     }
 }
