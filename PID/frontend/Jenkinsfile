@@ -11,7 +11,7 @@ pipeline {
         IMAGE_NAME = 'lfray/pid-frontend'
         CD_JOB_NAME = 'pid-frontend-cd'
         DOCKER_REGISTRY_CREDS_ID = 'registry-creds'
-        SERVICE_DIR = 'SlangEngish/PID/frontend'
+        SERVICE_DIR = 'PID/frontend'
     }
 
     stages {

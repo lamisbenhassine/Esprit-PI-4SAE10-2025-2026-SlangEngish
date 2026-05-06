@@ -15,7 +15,7 @@ pipeline {
         CONTAINER_NAME = 'pid-frontend'
         APP_PORT = '80'
         HOST_PORT = '4200'
-        SERVICE_DIR = 'SlangEngish/PID/frontend'
+        SERVICE_DIR = 'PID/frontend'
     }
 
     stages {
