@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pid-frontend
+  namespace: pid
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pid-frontend
+  template:
+    metadata:
+      labels:
+        app: pid-frontend
+    spec:
+      containers:
+        - name: pid-frontend
+          image: lfray/pid-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pid-frontend
+  namespace: pid
+spec:
+  type: ClusterIP
+  selector:
+    app: pid-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+
