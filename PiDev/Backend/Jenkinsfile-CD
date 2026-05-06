@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
-        DOCKER_USERNAME       = 'your-dockerhub-username'   // CHANGE THIS
-        DEPLOY_DIR            = '/home/pidev/deployment'
+        DOCKERHUB_CREDENTIALS = credentials('dii07')
+        DOCKER_USERNAME       = 'dii07'
+        DEPLOY_DIR            = '/home/dii/pidev/deployment'
     }
 
     stages {
