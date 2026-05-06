@@ -28,8 +28,8 @@ pipeline {
             steps {
                 sh """
                     cd ${DEPLOY_DIR}
-                    docker-compose down --remove-orphans
-                    docker-compose up -d
+                    docker compose down --remove-orphans
+                    docker compose up -d
                 """
             }
         }
@@ -40,7 +40,7 @@ pipeline {
             steps {
                 sh """
                     cd ${DEPLOY_DIR}/monitoring
-                    docker-compose -f docker-compose.monitoring.yml up -d
+                    docker compose -f docker compose.monitoring.yml up -d
                 """
             }
         }
