@@ -27,7 +27,9 @@ pipeline {
                 dir("${SERVICE_DIR}") {
                     script {
                         if (isUnix()) {
-                            sh 'npm ci'
+                            docker.image('node:20-alpine').inside {
+                                sh 'npm ci'
+                            }
                         } else {
                             bat 'npm ci'
                         }
@@ -41,7 +43,9 @@ pipeline {
                 dir("${SERVICE_DIR}") {
                     script {
                         if (isUnix()) {
-                            sh 'npm run build -- --configuration production'
+                            docker.image('node:20-alpine').inside {
+                                sh 'npm run build -- --configuration production'
+                            }
                         } else {
                             bat 'npm run build -- --configuration production'
                         }
