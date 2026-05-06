@@ -70,4 +70,5 @@ volumes:
 
 networks:
   pidev-network:
+    name: pidev-network
     driver: bridge
