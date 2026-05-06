@@ -1,4 +1,7 @@
 package com.school.schoolservice.salary.service;
 
-public class SalaryPredictionService {
+import com.school.schoolservice.salary.dto.SalaryPredictionDto;
+
+public interface SalaryPredictionService {
+    SalaryPredictionDto predictSalary(String jobTitle);
 }

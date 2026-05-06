@@ -35,7 +35,8 @@
             <mat-icon>location_on</mat-icon>{{ jobOffer.location }}
           </span>
           <span class="meta-pill" *ngIf="jobOffer.salary">
-            <mat-icon>payments</mat-icon>{{ jobOffer.salary }} TND/year
+            <mat-icon>payments</mat-icon>
+            {{ jobOffer.salary }} TND/year
           </span>
         </div>
       </div>
@@ -65,6 +66,157 @@
         </mat-card-content>
       </mat-card>
 
+      <!-- ✅ AI SALARY PREDICTION -->
+      <mat-card class="content-card salary-card">
+        <div class="card-header-custom">
+          <div class="card-icon salary-icon">
+            <mat-icon>auto_awesome</mat-icon>
+          </div>
+          <div>
+            <h2>AI Salary Prediction</h2>
+            <p>Estimated salary based on market data</p>
+          </div>
+        </div>
+        <mat-divider></mat-divider>
+
+        <div *ngIf="loadingSalary" class="salary-loading">
+          <mat-progress-spinner mode="indeterminate" diameter="32">
+          </mat-progress-spinner>
+          <span>Analyzing market data...</span>
+        </div>
+
+        <mat-card-content *ngIf="!loadingSalary && salaryPrediction">
+
+          <div class="salary-main"
+               [ngStyle]="{'background': getSalaryBg(salaryPrediction.salaryMonthlyTND)}">
+            <div class="salary-label">Estimated Monthly Salary</div>
+            <div class="salary-amount"
+                 [ngStyle]="{'color': getSalaryColor(salaryPrediction.salaryMonthlyTND)}">
+              {{ salaryPrediction.salaryMonthlyTND | number }} TND
+            </div>
+            <div class="salary-level"
+                 [ngStyle]="{'background': getSalaryColor(salaryPrediction.salaryMonthlyTND)}">
+              {{ getSalaryLevel(salaryPrediction.salaryMonthlyTND) }}
+            </div>
+          </div>
+
+          <div class="salary-range">
+            <div class="range-labels">
+              <span class="range-low">
+                {{ salaryPrediction.salaryRangeLow | number }} TND
+              </span>
+              <span class="range-mid">Salary Range</span>
+              <span class="range-high">
+                {{ salaryPrediction.salaryRangeHigh | number }} TND
+              </span>
+            </div>
+            <div class="range-bar-track">
+              <div class="range-bar-fill"
+                   [ngStyle]="{'background': getSalaryColor(salaryPrediction.salaryMonthlyTND)}">
+              </div>
+              <div class="range-bar-dot"></div>
+            </div>
+            <div class="range-hint">
+              <span>Min</span>
+              <span>Estimated</span>
+              <span>Max</span>
+            </div>
+          </div>
+
+          <div class="salary-stats">
+            <div class="salary-stat">
+              <div class="stat-icon annual">
+                <mat-icon>calendar_today</mat-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-val">
+                  {{ salaryPrediction.salaryAnnualTND | number }}
+                </span>
+                <span class="stat-lbl">TND / year</span>
+              </div>
+            </div>
+            <div class="salary-stat">
+              <div class="stat-icon confidence">
+                <mat-icon>verified</mat-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-val"
+                      [ngStyle]="{'color': getConfidenceColor(salaryPrediction.confidence)}">
+                  {{ salaryPrediction.confidence }}%
+                </span>
+                <span class="stat-lbl">Confidence</span>
+              </div>
+            </div>
+            <div class="salary-stat">
+              <div class="stat-icon model">
+                <mat-icon>psychology</mat-icon>
+              </div>
+              <div class="stat-info">
+                <span class="stat-val">AI</span>
+                <span class="stat-lbl">Powered</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="salary-toggle" (click)="toggleSalaryDetails()">
+            <span>{{ showSalaryDetails ? 'Hide details' : 'Show details' }}</span>
+            <mat-icon>{{ showSalaryDetails ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+
+          <div class="salary-details" *ngIf="showSalaryDetails">
+            <div class="detail-row-salary">
+              <span class="detail-key">
+                <mat-icon>work</mat-icon> Job Title
+              </span>
+              <span class="detail-val-salary">
+                {{ salaryPrediction.jobTitle }}
+              </span>
+            </div>
+            <div class="detail-row-salary">
+              <span class="detail-key">
+                <mat-icon>payments</mat-icon> Monthly
+              </span>
+              <span class="detail-val-salary">
+                {{ salaryPrediction.salaryMonthlyTND | number }} TND
+              </span>
+            </div>
+            <div class="detail-row-salary">
+              <span class="detail-key">
+                <mat-icon>calendar_today</mat-icon> Annual
+              </span>
+              <span class="detail-val-salary">
+                {{ salaryPrediction.salaryAnnualTND | number }} TND
+              </span>
+            </div>
+            <div class="detail-row-salary">
+              <span class="detail-key">
+                <mat-icon>trending_up</mat-icon> Range
+              </span>
+              <span class="detail-val-salary">
+                {{ salaryPrediction.salaryRangeLow | number }}
+                — {{ salaryPrediction.salaryRangeHigh | number }} TND
+              </span>
+            </div>
+            <div class="detail-row-salary">
+              <span class="detail-key">
+                <mat-icon>info</mat-icon> Status
+              </span>
+              <span class="detail-val-salary status-badge-salary"
+                    [class.status-success]="salaryPrediction.status === 'success'"
+                    [class.status-fallback]="salaryPrediction.status === 'fallback'">
+                {{ salaryPrediction.status === 'success' ? '✅ AI Prediction' : '⚠️ Estimated' }}
+              </span>
+            </div>
+            <div class="salary-disclaimer">
+              <mat-icon>info_outline</mat-icon>
+              <span>Prediction based on 118,000+ salary records.
+                Actual salary may vary based on experience and negotiation.</span>
+            </div>
+          </div>
+
+        </mat-card-content>
+      </mat-card>
+
       <!-- ✅ Application Success -->
       <div *ngIf="applicationSuccess" class="success-banner">
         <div class="success-icon-wrap">
@@ -76,14 +228,14 @@
         </div>
       </div>
 
-      <!-- ✅ Loading Quiz -->
+      <!-- Loading Quiz -->
       <div *ngIf="loadingQuiz" class="loading-screen">
         <mat-progress-spinner mode="indeterminate" diameter="40">
         </mat-progress-spinner>
         <p>Loading your quiz...</p>
       </div>
 
-      <!-- ✅ Submitting Quiz -->
+      <!-- Submitting Quiz -->
       <div *ngIf="submittingQuiz" class="loading-screen">
         <mat-progress-spinner mode="indeterminate" diameter="40">
         </mat-progress-spinner>
@@ -92,9 +244,7 @@
 
       <!-- ─── FORMULAIRE ──────────────────────── -->
       <mat-card class="content-card apply-card"
-                *ngIf="!applicationSuccess && !showQuizChoice
-                       && !showQuiz && !showQuizResult
-                       && !loadingQuiz && !submittingQuiz">
+                *ngIf="!applicationSuccess && !showQuizChoice && !showQuiz && !showQuizResult && !loadingQuiz && !submittingQuiz">
         <div class="card-header-custom">
           <div class="card-icon apply-icon">
             <mat-icon>send</mat-icon>
@@ -139,9 +289,7 @@
             <div class="upload-zone" (click)="cvInput.click()"
                  [class.uploaded]="cvFile">
               <div class="upload-icon-wrap" [class.done]="cvFile">
-                <mat-icon>
-                  {{ cvFile ? 'check_circle' : 'upload_file' }}
-                </mat-icon>
+                <mat-icon>{{ cvFile ? 'check_circle' : 'upload_file' }}</mat-icon>
               </div>
               <div class="upload-text">
                 <span class="upload-title">
@@ -150,9 +298,7 @@
                 <span class="upload-hint">PDF only — max 5MB</span>
               </div>
               <span class="upload-badge" *ngIf="!cvFile">CV *</span>
-              <span class="upload-badge done" *ngIf="cvFile">
-                ✓ Ready
-              </span>
+              <span class="upload-badge done" *ngIf="cvFile">✓ Ready</span>
               <input #cvInput type="file" accept=".pdf"
                      (change)="onCvSelected($event)" hidden>
             </div>
@@ -161,23 +307,16 @@
             <div class="upload-zone" (click)="coverInput.click()"
                  [class.uploaded]="coverLetterFile">
               <div class="upload-icon-wrap" [class.done]="coverLetterFile">
-                <mat-icon>
-                  {{ coverLetterFile ? 'check_circle' : 'description' }}
-                </mat-icon>
+                <mat-icon>{{ coverLetterFile ? 'check_circle' : 'description' }}</mat-icon>
               </div>
               <div class="upload-text">
                 <span class="upload-title">
-                  {{ coverLetterFile ? coverLetterFile.name
-                                     : 'Upload Cover Letter' }}
+                  {{ coverLetterFile ? coverLetterFile.name : 'Upload Cover Letter' }}
                 </span>
                 <span class="upload-hint">PDF only — max 5MB</span>
               </div>
-              <span class="upload-badge" *ngIf="!coverLetterFile">
-                Letter *
-              </span>
-              <span class="upload-badge done" *ngIf="coverLetterFile">
-                ✓ Ready
-              </span>
+              <span class="upload-badge" *ngIf="!coverLetterFile">Letter *</span>
+              <span class="upload-badge done" *ngIf="coverLetterFile">✓ Ready</span>
               <input #coverInput type="file" accept=".pdf"
                      (change)="onCoverLetterSelected($event)" hidden>
             </div>
@@ -195,48 +334,35 @@
       </mat-card>
 
       <!-- ─── POPUP CHOIX QUIZ ─────────────────── -->
-      <mat-card class="content-card quiz-choice-card"
-                *ngIf="showQuizChoice">
+      <mat-card class="content-card quiz-choice-card" *ngIf="showQuizChoice">
         <div class="quiz-choice-header">
           <div class="quiz-choice-icon">🎉</div>
           <h2>Application Submitted!</h2>
-          <p>Would you like to take a compatibility test to boost
-             your chances?</p>
+          <p>Would you like to take a compatibility test to boost your chances?</p>
         </div>
-
         <mat-divider></mat-divider>
-
         <div class="quiz-choice-body">
-
-          <!-- Option OUI -->
           <div class="quiz-option yes-option" (click)="startQuiz()">
             <div class="option-icon">🎯</div>
             <div class="option-info">
               <h4>Yes, take the test!</h4>
-              <p>5 questions • Score >= 60% → Interview scheduled
-                 automatically</p>
+              <p>5 questions • Score >= 60% → Interview scheduled automatically</p>
             </div>
             <mat-icon>chevron_right</mat-icon>
           </div>
-
-          <!-- Option NON -->
           <div class="quiz-option no-option" (click)="skipQuiz()">
             <div class="option-icon">⏭️</div>
             <div class="option-info">
               <h4>No, just submit</h4>
-              <p>Your application will be reviewed manually
-                 (Status: Pending)</p>
+              <p>Your application will be reviewed manually (Status: Pending)</p>
             </div>
             <mat-icon>chevron_right</mat-icon>
           </div>
-
         </div>
       </mat-card>
 
       <!-- ─── QUIZ QCM ──────────────────────────── -->
       <mat-card class="content-card quiz-card" *ngIf="showQuiz">
-
-        <!-- Header -->
         <div class="quiz-header">
           <div class="quiz-progress-info">
             <span class="quiz-title">🎯 Compatibility Test</span>
@@ -246,73 +372,57 @@
           </div>
           <div class="quiz-progress-bar-track">
             <div class="quiz-progress-bar-fill"
-                 [style.width]="((currentQuestion + 1)
-                   / quizQuestions.length * 100) + '%'">
+                 [style.width]="((currentQuestion + 1) / quizQuestions.length * 100) + '%'">
             </div>
           </div>
           <div class="quiz-answered">
             {{ answeredCount }} / {{ quizQuestions.length }} answered
           </div>
         </div>
-
         <mat-divider></mat-divider>
-
-        <!-- Question -->
         <div class="quiz-body" *ngIf="quizQuestions[currentQuestion]">
           <p class="quiz-question">
             {{ quizQuestions[currentQuestion].question }}
           </p>
-
-          <!-- Choix -->
           <div class="quiz-choices">
             <div *ngFor="let choice of quizQuestions[currentQuestion].choices"
                  class="quiz-choice"
-                 [class.selected]="getSelectedAnswer(currentQuestion)
-                   === choice.charAt(0)"
+                 [class.selected]="getSelectedAnswer(currentQuestion) === choice.charAt(0)"
                  (click)="selectAnswer(choice.charAt(0))">
               <div class="choice-letter">{{ choice.charAt(0) }}</div>
               <span class="choice-text">{{ choice.substring(3) }}</span>
               <mat-icon class="choice-check"
-                *ngIf="getSelectedAnswer(currentQuestion)
-                  === choice.charAt(0)">
+                *ngIf="getSelectedAnswer(currentQuestion) === choice.charAt(0)">
                 check_circle
               </mat-icon>
             </div>
           </div>
         </div>
-
-        <!-- Navigation -->
         <div class="quiz-nav">
           <button mat-stroked-button
                   (click)="prevQuestion()"
                   [disabled]="currentQuestion === 0">
             <mat-icon>arrow_back</mat-icon> Previous
           </button>
-
           <button mat-stroked-button
                   *ngIf="currentQuestion < quizQuestions.length - 1"
                   (click)="nextQuestion()"
                   [disabled]="!isAnswered(currentQuestion)">
             Next <mat-icon>arrow_forward</mat-icon>
           </button>
-
           <button mat-raised-button
                   class="submit-quiz-btn"
                   *ngIf="currentQuestion === quizQuestions.length - 1"
                   (click)="submitQuiz()"
                   [disabled]="!allAnswered">
-            <mat-icon>send</mat-icon>
-            Submit Quiz
+            <mat-icon>send</mat-icon> Submit Quiz
           </button>
         </div>
-
       </mat-card>
 
       <!-- ─── RÉSULTATS QUIZ ────────────────────── -->
       <mat-card class="content-card quiz-result-card"
                 *ngIf="showQuizResult && quizResult">
-
-        <!-- Header résultat -->
         <div class="result-header"
              [ngStyle]="{'background': getScoreBg(quizResult.globalScore)}">
           <div class="result-emoji">
@@ -328,56 +438,43 @@
           </div>
           <p class="result-message">{{ quizResult.message }}</p>
         </div>
-
         <mat-divider></mat-divider>
-
-        <!-- Scores détaillés -->
         <div class="result-scores">
           <div class="score-item">
-            <div class="score-circle cv-circle"
-                 [ngStyle]="{'background': getScoreBg(quizResult.cvScore),
-                             'color': getScoreColor(quizResult.cvScore)}">
+            <div class="score-circle"
+                 [ngStyle]="{'background': getScoreBg(quizResult.cvScore), 'color': getScoreColor(quizResult.cvScore)}">
               {{ quizResult.cvScore }}%
             </div>
             <span>CV Score</span>
           </div>
           <div class="score-divider">+</div>
           <div class="score-item">
-            <div class="score-circle quiz-circle"
-                 [ngStyle]="{'background': getScoreBg(quizResult.quizScore),
-                             'color': getScoreColor(quizResult.quizScore)}">
+            <div class="score-circle"
+                 [ngStyle]="{'background': getScoreBg(quizResult.quizScore), 'color': getScoreColor(quizResult.quizScore)}">
               {{ quizResult.quizScore }}%
             </div>
             <span>Quiz Score</span>
           </div>
           <div class="score-divider">=</div>
           <div class="score-item">
-            <div class="score-circle global-circle"
-                 [ngStyle]="{'background': getScoreBg(quizResult.globalScore),
-                             'color': getScoreColor(quizResult.globalScore)}">
+            <div class="score-circle"
+                 [ngStyle]="{'background': getScoreBg(quizResult.globalScore), 'color': getScoreColor(quizResult.globalScore)}">
               {{ quizResult.globalScore }}%
             </div>
             <span>Global</span>
           </div>
         </div>
-
         <mat-divider></mat-divider>
-
-        <!-- QCM résultats -->
         <div class="quiz-results-detail">
           <h4>
             <mat-icon>quiz</mat-icon>
-            {{ quizResult.correctAnswers }}/{{ quizResult.totalQuestions }}
-            correct answers
+            {{ quizResult.correctAnswers }}/{{ quizResult.totalQuestions }} correct answers
           </h4>
           <div *ngFor="let qr of quizResult?.questionResults"
-
                class="qr-item"
                [class.correct]="qr.correct"
                [class.incorrect]="!qr.correct">
-            <mat-icon>
-              {{ qr.correct ? 'check_circle' : 'cancel' }}
-            </mat-icon>
+            <mat-icon>{{ qr.correct ? 'check_circle' : 'cancel' }}</mat-icon>
             <span>Q{{ qr.number }}: Your answer:
               <strong>{{ qr.selectedAnswer }}</strong>
               <span *ngIf="!qr.correct">
@@ -386,10 +483,7 @@
             </span>
           </div>
         </div>
-
         <mat-divider></mat-divider>
-
-        <!-- Entretien planifié -->
         <div class="interview-scheduled"
              *ngIf="quizResult.qualified && quizResult.scheduledInterview">
           <mat-icon>calendar_today</mat-icon>
@@ -398,25 +492,19 @@
             <p>{{ quizResult.scheduledInterview | date:'dd MMM yyyy, HH:mm' }}</p>
           </div>
         </div>
-
-        <!-- Tips -->
-        <div class="quiz-tips" *ngIf="quizResult && quizResult.tips && quizResult.tips.length > 0">
+        <div class="quiz-tips"
+             *ngIf="quizResult && quizResult.tips && quizResult.tips.length > 0">
           <h4><mat-icon>lightbulb</mat-icon> Tips for you</h4>
           <div *ngFor="let tip of quizResult.tips" class="tip-item">
             {{ tip }}
           </div>
         </div>
-
-        <!-- Bouton fermer -->
         <div class="result-actions">
-          <button mat-raised-button
-                  class="close-result-btn"
+          <button mat-raised-button class="close-result-btn"
                   (click)="closeQuizResult()">
-            <mat-icon>check</mat-icon>
-            Got it!
+            <mat-icon>check</mat-icon> Got it!
           </button>
         </div>
-
       </mat-card>
 
       <!-- Similar Offers -->
@@ -437,24 +525,20 @@
                class="sim-item"
                (click)="goToSimilarOffer(offer.offerId)">
             <div class="sim-rank"
-                 [ngStyle]="{'background': getSimilarityBg(offer.similarityPercent),
-                             'color': getSimilarityColor(offer.similarityPercent)}">
+                 [ngStyle]="{'background': getSimilarityBg(offer.similarityPercent), 'color': getSimilarityColor(offer.similarityPercent)}">
               {{ i + 1 }}
             </div>
             <div class="sim-info">
               <h4>{{ offer.offerTitle }}</h4>
               <div class="sim-meta">
-                <span>
-                  <mat-icon>business</mat-icon>{{ offer.offerCompany }}
-                </span>
+                <span><mat-icon>business</mat-icon>{{ offer.offerCompany }}</span>
                 <span *ngIf="offer.offerLocation">
                   <mat-icon>location_on</mat-icon>{{ offer.offerLocation }}
                 </span>
               </div>
               <div class="sim-bottom">
                 <span class="sim-contract"
-                      [ngStyle]="{'background': getContractBg(offer.offerContractType),
-                                  'color': getContractColor(offer.offerContractType)}">
+                      [ngStyle]="{'background': getContractBg(offer.offerContractType), 'color': getContractColor(offer.offerContractType)}">
                   {{ offer.offerContractType }}
                 </span>
                 <div class="sim-bar-wrap">
@@ -548,14 +632,16 @@
             </div>
           </div>
 
-          <div class="insight-item" *ngIf="jobOffer.deadline">
-            <div class="insight-icon deadline">
-              <mat-icon>event</mat-icon>
+          <!-- ✅ AI Prediction dans sidebar -->
+          <div class="insight-item"
+               *ngIf="salaryPrediction && salaryPrediction.status === 'success'">
+            <div class="insight-icon ai-salary">
+              <mat-icon>psychology</mat-icon>
             </div>
             <div class="insight-info">
-              <span class="insight-label">Deadline</span>
-              <span class="insight-value deadline-val">
-                {{ jobOffer.deadline | date:'dd MMM yyyy' }}
+              <span class="insight-label">AI Prediction</span>
+              <span class="insight-value ai-value">
+                ~{{ salaryPrediction.salaryMonthlyTND | number }} TND/month
               </span>
             </div>
           </div>

@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKER_USERNAME       = 'your-dockerhub-username'   // CHANGE THIS
+        DEPLOY_DIR            = '/home/pidev/deployment'
+    }
+
+    stages {
+
+        // ─────────────────────────────────────────────────
+        stage('Pull Latest Images') {
+        // ─────────────────────────────────────────────────
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                sh """
+                    docker pull ${DOCKER_USERNAME}/pidev-eureka-server:latest
+                    docker pull ${DOCKER_USERNAME}/pidev-api-gateway:latest
+                    docker pull ${DOCKER_USERNAME}/pidev-school-service:latest
+                """
+            }
+        }
+
+        // ─────────────────────────────────────────────────
+        stage('Deploy Application Stack') {
+        // ─────────────────────────────────────────────────
+            steps {
+                sh """
+                    cd ${DEPLOY_DIR}
+                    docker-compose down --remove-orphans
+                    docker-compose up -d
+                """
+            }
+        }
+
+        // ─────────────────────────────────────────────────
+        stage('Deploy Monitoring Stack') {
+        // ─────────────────────────────────────────────────
+            steps {
+                sh """
+                    cd ${DEPLOY_DIR}/monitoring
+                    docker-compose -f docker-compose.monitoring.yml up -d
+                """
+            }
+        }
+
+        // ─────────────────────────────────────────────────
+        stage('Health Check') {
+        // ─────────────────────────────────────────────────
+            steps {
+                sh """
+                    echo 'Waiting 40s for services to start...'
+                    sleep 40
+
+                    echo 'Checking Eureka...'
+                    curl -f http://localhost:8761/actuator/health
+
+                    echo 'Checking School Service...'
+                    curl -f http://localhost:8081/actuator/health
+
+                    echo 'All services healthy!'
+                """
+            }
+        }
+
+    }
+
+    post {
+        always {
+            sh 'docker logout || true'
+        }
+        success {
+            echo 'CD deployment #${BUILD_NUMBER} completed successfully.'
+        }
+        failure {
+            echo 'CD deployment FAILED. Check logs above.'
+        }
+    }
+}

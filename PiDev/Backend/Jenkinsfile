@@ -35,12 +35,32 @@ pipeline {
         }
 
         // ─────────────────────────────────────────────────
+        stage('Test - JUnit + JaCoCo') {
+        // ─────────────────────────────────────────────────
+            steps {
+                dir('PiDev/Backend/school-service') {
+                    sh 'mvn verify'
+                }
+            }
+            post {
+                always {
+                    junit 'PiDev/Backend/school-service/target/surefire-reports/*.xml'
+                    jacoco(
+                        execPattern: 'PiDev/Backend/school-service/target/jacoco.exec',
+                        classPattern:  'PiDev/Backend/school-service/target/classes',
+                        sourcePattern: 'PiDev/Backend/school-service/src/main/java'
+                    )
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────────
         stage('SonarQube Analysis') {
         // ─────────────────────────────────────────────────
             steps {
                 dir('PiDev/Backend/school-service') {
                     withSonarQubeEnv('SonarQube') {
-                        sh "mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.projectName='PiDev School Service' -Dsonar.java.binaries=target/classes"
+                        sh "mvn sonar:sonar -Dsonar.projectKey=${SONAR_PROJECT_KEY} -Dsonar.projectName='PiDev School Service' -Dsonar.java.binaries=target/classes -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml -Dsonar.junit.reportPaths=target/surefire-reports"
                     }
                 }
             }
