@@ -1,0 +1,160 @@
+<section class="kanban-page">
+  <header class="kanban-hero">
+    <div class="kanban-hero__text">
+      <p class="kanban-hero__eyebrow">Tableau personnel</p>
+      <h2 class="kanban-hero__title">Mon Kanban</h2>
+      <p class="kanban-hero__sub">Glissez-déposez vos tâches — les priorités fortes restent en tête de liste.</p>
+    </div>
+    <div class="kanban-hero__accent" aria-hidden="true"></div>
+  </header>
+
+  <div class="create-panel">
+    <div class="create-panel__title">
+      <span class="create-panel__dot"></span>
+      <span>Nouvelle tâche</span>
+    </div>
+    <div class="create-task-form">
+      <input
+        type="text"
+        class="create-input"
+        placeholder="Titre de la tâche"
+        [(ngModel)]="newTitle"
+        [disabled]="creating"
+      />
+      <input
+        type="text"
+        class="create-input"
+        placeholder="Description (optionnelle)"
+        [(ngModel)]="newDescription"
+        [disabled]="creating"
+      />
+      <select class="create-select" [(ngModel)]="newImportance" [disabled]="creating">
+        <option *ngFor="let option of importanceOptions" [ngValue]="option.value">
+          {{ option.label }}
+        </option>
+      </select>
+      <button type="button" class="create-btn" (click)="createTask()" [disabled]="creating || !newTitle.trim()">
+        <span class="create-btn__label">{{ creating ? '…' : '+ Ajouter' }}</span>
+      </button>
+    </div>
+  </div>
+
+  <p class="error" *ngIf="error">{{ error }}</p>
+  <div class="loading" *ngIf="loading">
+    <span class="loading__pulse"></span>
+    Chargement du tableau…
+  </div>
+
+  <div class="kanban-board" *ngIf="!loading">
+    <div class="kanban-column column--todo">
+      <div class="column-head">
+        <h3 class="column-title">
+          <span class="column-title__icon" aria-hidden="true">📋</span>
+          To Do
+        </h3>
+        <span class="column-count">{{ toDo.length }}</span>
+      </div>
+      <div
+        cdkDropList
+        id="todo-list"
+        [cdkDropListData]="toDo"
+        [cdkDropListConnectedTo]="['doing-list', 'done-list']"
+        class="drop-zone"
+        (cdkDropListDropped)="drop($event, 'TODO')">
+        <article class="task-card" *ngFor="let task of toDo" cdkDrag>
+          <div class="task-card__accent"></div>
+          <div class="task-card__body">
+            <div class="task-head">
+              <h4>{{ task.title }}</h4>
+              <button type="button" class="delete-btn" (click)="deleteTask(task.id)" title="Supprimer">✕</button>
+            </div>
+            <p class="task-desc" *ngIf="task.description">{{ task.description }}</p>
+            <div class="task-foot">
+              <select class="task-select" [ngModel]="task.importance" (ngModelChange)="updateImportance(task, $event)">
+                <option *ngFor="let option of importanceOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+              <span class="badge" [ngClass]="importanceBadgeClass(task.importance)">{{ importanceLabel(task.importance) }}</span>
+            </div>
+          </div>
+        </article>
+        <p class="drop-zone__empty" *ngIf="toDo.length === 0">Déposez ou créez une tâche ici</p>
+      </div>
+    </div>
+
+    <div class="kanban-column column--doing">
+      <div class="column-head">
+        <h3 class="column-title">
+          <span class="column-title__icon" aria-hidden="true">⚡</span>
+          Doing
+        </h3>
+        <span class="column-count">{{ doing.length }}</span>
+      </div>
+      <div
+        cdkDropList
+        id="doing-list"
+        [cdkDropListData]="doing"
+        [cdkDropListConnectedTo]="['todo-list', 'done-list']"
+        class="drop-zone"
+        (cdkDropListDropped)="drop($event, 'DOING')">
+        <article class="task-card" *ngFor="let task of doing" cdkDrag>
+          <div class="task-card__accent"></div>
+          <div class="task-card__body">
+            <div class="task-head">
+              <h4>{{ task.title }}</h4>
+              <button type="button" class="delete-btn" (click)="deleteTask(task.id)" title="Supprimer">✕</button>
+            </div>
+            <p class="task-desc" *ngIf="task.description">{{ task.description }}</p>
+            <div class="task-foot">
+              <select class="task-select" [ngModel]="task.importance" (ngModelChange)="updateImportance(task, $event)">
+                <option *ngFor="let option of importanceOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+              <span class="badge" [ngClass]="importanceBadgeClass(task.importance)">{{ importanceLabel(task.importance) }}</span>
+            </div>
+          </div>
+        </article>
+        <p class="drop-zone__empty" *ngIf="doing.length === 0">Glissez une tâche pour la mettre en cours</p>
+      </div>
+    </div>
+
+    <div class="kanban-column column--done">
+      <div class="column-head">
+        <h3 class="column-title">
+          <span class="column-title__icon" aria-hidden="true">✓</span>
+          Done
+        </h3>
+        <span class="column-count">{{ done.length }}</span>
+      </div>
+      <div
+        cdkDropList
+        id="done-list"
+        [cdkDropListData]="done"
+        [cdkDropListConnectedTo]="['todo-list', 'doing-list']"
+        class="drop-zone"
+        (cdkDropListDropped)="drop($event, 'DONE')">
+        <article class="task-card" *ngFor="let task of done" cdkDrag>
+          <div class="task-card__accent"></div>
+          <div class="task-card__body">
+            <div class="task-head">
+              <h4>{{ task.title }}</h4>
+              <button type="button" class="delete-btn" (click)="deleteTask(task.id)" title="Supprimer">✕</button>
+            </div>
+            <p class="task-desc" *ngIf="task.description">{{ task.description }}</p>
+            <div class="task-foot">
+              <select class="task-select" [ngModel]="task.importance" (ngModelChange)="updateImportance(task, $event)">
+                <option *ngFor="let option of importanceOptions" [ngValue]="option.value">
+                  {{ option.label }}
+                </option>
+              </select>
+              <span class="badge" [ngClass]="importanceBadgeClass(task.importance)">{{ importanceLabel(task.importance) }}</span>
+            </div>
+          </div>
+        </article>
+        <p class="drop-zone__empty" *ngIf="done.length === 0">Les tâches terminées apparaissent ici</p>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,54 @@
+<div class="offer-detail-container">
+    <div class="back-link" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Back to Offers</span>
+    </div>
+
+    <div *ngIf="loading" class="loading-state">
+        <mat-spinner diameter="50"></mat-spinner>
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+    <div *ngIf="success" class="alert alert-success">{{ success }}</div>
+
+    <div class="detail-card" *ngIf="plan && !loading">
+        <div class="detail-grid">
+            <div class="image-section">
+                <img [src]="getPlanImage(plan)" [alt]="plan.planType">
+            </div>
+
+            <div class="info-section">
+                <div class="plan-badge">{{ plan.planType }}</div>
+                <h1>{{ plan.name || plan.planType }}</h1>
+
+                <div class="price-display">
+                    <span class="currency">{{ plan.currency || 'TND' }}</span>
+                    <span class="amount">{{ plan.price || 0 }}</span>
+                    <span class="period">/ {{ plan.durationDays || 0 }} days</span>
+                </div>
+
+                <p class="description">{{ plan.description || 'Start your learning journey with our dedicated ' +
+                    plan.planType + ' plan.' }}</p>
+
+                <div class="feature-highlights">
+                    <h3>What's included:</h3>
+                    <ul>
+                        <li><mat-icon>check_circle</mat-icon> Full access to Course #{{ plan.courseId }}</li>
+                        <li><mat-icon>check_circle</mat-icon> Interactive Forum Community</li>
+                        <li><mat-icon>check_circle</mat-icon> Professional Certification</li>
+                        <li><mat-icon>check_circle</mat-icon> Offline Learning Resources</li>
+                    </ul>
+                </div>
+
+                <div class="action-buttons">
+                    <button mat-raised-button color="primary" class="choose-btn" (click)='chooseOffer()'>
+                        Choose this Offer
+                    </button>
+                    <div class="validity-info">
+                        Available since {{ plan.date | date }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

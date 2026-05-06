@@ -1,0 +1,93 @@
+<div class="courses-management">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Course Management</h1>
+      <p class="header-subtitle">Manage all courses on the platform</p>
+    </div>
+    <div class="header-actions">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search</mat-label>
+        <input
+          matInput
+          placeholder="Search by name or description"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onSearchChange()"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="sort-field">
+        <mat-label>Sort by level</mat-label>
+        <mat-select (selectionChange)="sortByLevel($event.value)" [value]="'asc'">
+          <mat-option value="asc">A1 → C2</mat-option>
+          <mat-option value="desc">C2 → A1</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-raised-button class="action-btn primary" (click)="addCourse()">
+        <mat-icon>add_circle</mat-icon>
+        <span>Create Course</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Course Form (Create / Edit) -->
+  <app-course-form
+    *ngIf="formCourse"
+    [course]="formCourse"
+    [isCreating]="isCreating"
+    (save)="handleSave($event)"
+    (cancel)="cancelForm()">
+  </app-course-form>
+
+  <!-- Courses Grid -->
+  <div class="courses-grid">
+    <div class="course-card" *ngFor="let course of filteredCourses">
+      <div class="course-header">
+        <span class="course-description">{{ course.description }}</span>
+        <span class="course-level">{{ course.level }}</span>
+      </div>
+      <div class="course-image">
+        <img
+          *ngIf="course.imageUrl"
+          [src]="course.imageUrl"
+          [alt]="course.name"
+          class="course-img"
+        />
+        <div class="course-actions">
+          <button mat-icon-button class="action-icon edit" (click)="editCourse(course)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button class="action-icon delete" (click)="deleteCourse(course)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+          <button mat-icon-button class="action-icon chapters" (click)="openChapters(course)" matTooltip="Chapters">
+            <mat-icon>menu_book</mat-icon>
+          </button>
+        </div>
+      </div>
+      <div class="course-content">
+        <h3>{{ course.name }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <app-course-chapters
+    *ngIf="selectedCourseForChapters"
+    [courseId]="selectedCourseForChapters?.idCourse!"
+    [courseName]="selectedCourseForChapters?.name!"
+    (close)="closeChapters()">
+  </app-course-chapters>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <mat-icon>hourglass_top</mat-icon>
+    <h3>Loading courses...</h3>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && filteredCourses.length === 0">
+    <mat-icon>school</mat-icon>
+    <h3>No courses found</h3>
+  </div>
+</div>

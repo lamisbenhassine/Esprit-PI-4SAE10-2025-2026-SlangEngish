@@ -1,0 +1,155 @@
+<div class="dm-page dm-page--li">
+  <header class="dm-hero">
+    <h1>Messagerie</h1>
+    <p class="dm-tagline">Messages privés avec les tuteurs de la plateforme.</p>
+    <div class="dm-profile-row">
+      <label class="dm-profile-label">Profil actif</label>
+      <select class="dm-input dm-input--profile" [ngModel]="currentUserId" (ngModelChange)="setCurrentUserId($event)">
+        <option *ngFor="let u of availableUsers" [ngValue]="u.id">
+          {{ u.firstName }} {{ u.lastName }}
+        </option>
+      </select>
+    </div>
+  </header>
+
+  <div class="dm-shell">
+    <aside class="dm-aside">
+      <div class="dm-tab-inner">
+        <h3 class="dm-side-title">Tuteurs</h3>
+        <input class="dm-input dm-search" [(ngModel)]="tutorSearch" placeholder="Rechercher un tuteur…" />
+        <div class="dm-list">
+          <button
+            type="button"
+            class="dm-row"
+            *ngFor="let t of filteredTutors()"
+            (click)="openTutorConversation(t)"
+            [disabled]="loading">
+            <span class="dm-row-user">
+              {{ t.firstName }} {{ t.lastName }}
+              <span class="dm-role-badge tutor">Tuteur</span>
+              <span class="dm-status online" *ngIf="tutorOnline(t)">En ligne</span>
+              <span class="dm-status away" *ngIf="!tutorOnline(t)">Hors ligne</span>
+            </span>
+          </button>
+          <p class="dm-empty" *ngIf="!filteredTutors().length">Aucun tuteur disponible.</p>
+        </div>
+
+        <h3 class="dm-side-title secondary">Conversations</h3>
+        <div class="dm-list dm-list-tight">
+          <ng-container *ngIf="inboxTutor.length; else quickOnlineTutors">
+            <button
+              type="button"
+              class="dm-row"
+              *ngFor="let row of inboxTutor"
+              [class.active]="selected?.id === row.id"
+              (click)="openSummary(row)">
+              <span class="dm-row-user">
+                {{ userName(row.otherUserId) }}
+                <span class="dm-role-badge student" *ngIf="userRole(row.otherUserId) === 'Student'">Étudiant</span>
+                <span class="dm-role-badge tutor" *ngIf="userRole(row.otherUserId) === 'Tutor'">Tuteur</span>
+                <span class="dm-role-badge admin" *ngIf="userRole(row.otherUserId) === 'Team'">Équipe</span>
+              </span>
+              <span class="dm-row-preview">{{ row.lastMessagePreview || '…' }}</span>
+            </button>
+          </ng-container>
+
+          <ng-template #quickOnlineTutors>
+            <button
+              type="button"
+              class="dm-row"
+              *ngFor="let t of onlineTutorsForQuickOpen()"
+              (click)="openTutorConversation(t)"
+              [disabled]="loading">
+              <span class="dm-row-user">
+                {{ t.firstName }} {{ t.lastName }}
+                <span class="dm-role-badge tutor">Tuteur</span>
+                <span class="dm-status online">En ligne</span>
+              </span>
+              <span class="dm-row-preview">Ouvrir la discussion</span>
+            </button>
+            <p class="dm-empty" *ngIf="!onlineTutorsForQuickOpen().length">Aucun tuteur en ligne.</p>
+          </ng-template>
+        </div>
+      </div>
+    </aside>
+
+    <section class="dm-thread" *ngIf="selected">
+      <div class="dm-thread-head">
+        <span class="dm-thread-title">{{ userName(selected.otherUserId) }}</span>
+        <span class="dm-role-badge tutor" *ngIf="userRole(selected.otherUserId) === 'Tutor'">Tuteur</span>
+        <span class="dm-role-badge student" *ngIf="userRole(selected.otherUserId) === 'Student'">Étudiant</span>
+        <span class="dm-thread-spacer"></span>
+        <button
+          mat-stroked-button
+          [color]="vapiCallActive ? 'warn' : 'primary'"
+          type="button"
+          *ngIf="selected && userRole(selected.otherUserId) === 'Tutor'"
+          (click)="requestTutorCallFromDiscussion()"
+          [disabled]="tutorAssistBusy"
+          matTooltip="Démarrer / arrêter l'appel vocal VAPI">
+          <mat-icon>{{ vapiCallActive ? 'call_end' : 'support_agent' }}</mat-icon>
+          {{
+            tutorAssistBusy
+              ? (vapiCallActive ? 'Ending call...' : 'Connecting...')
+              : (vapiCallActive ? 'End Call' : 'Call Tutor')
+          }}
+        </button>
+      </div>
+      <div class="dm-bubbles">
+        <div *ngFor="let m of thread" class="dm-bubble-wrap" [class.own]="isOwn(m)">
+          <div class="dm-bubble">
+            <span class="dm-meta" *ngIf="!isOwn(m)">
+              {{ userName(m.senderId) }}
+            </span>
+            <p class="dm-text">{{ m.content }}</p>
+            <span class="dm-time">{{ m.createdAt | date : 'short' }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="dm-compose">
+        <textarea
+          class="dm-textarea"
+          rows="2"
+          [(ngModel)]="draft"
+          placeholder="Écrire un message…"
+          spellcheck="true"
+          lang="en"
+          composeWordSuggest
+          #dmSuggest="composeWordSuggest"
+          (keydown.control.enter)="send()"
+          (keydown.meta.enter)="send()"></textarea>
+        <div class="compose-suggest-row" *ngIf="dmSuggest.suggestions?.length">
+          <button
+            type="button"
+            mat-stroked-button
+            *ngFor="let w of dmSuggest.suggestions"
+            (click)="dmSuggest.applySuggestion(w)">
+            {{ w }}
+          </button>
+        </div>
+        <div class="dm-compose-actions">
+          <button mat-stroked-button type="button" (click)="polishDraft()" matTooltip="Orthographe et style (Gemini si configuré)">
+            Améliorer (IA)
+          </button>
+          <button mat-flat-button color="primary" type="button" (click)="send()" [disabled]="!draft.trim()">
+            Envoyer
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="dm-thread dm-placeholder" *ngIf="!selected">
+      <p>Sélectionnez une conversation ou un tuteur.</p>
+      <button
+        mat-stroked-button
+        color="primary"
+        type="button"
+        class="dm-call-empty"
+        [disabled]="tutorAssistBusy"
+        (click)="requestTutorCallFromDiscussion()">
+        <mat-icon>support_agent</mat-icon>
+        {{ tutorAssistBusy ? 'Connecting...' : 'Call Tutor' }}
+      </button>
+    </section>
+  </div>
+</div>

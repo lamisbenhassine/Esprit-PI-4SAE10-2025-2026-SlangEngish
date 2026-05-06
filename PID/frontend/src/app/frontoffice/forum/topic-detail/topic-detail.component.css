@@ -1,0 +1,417 @@
+.topic-shell {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 3rem;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.crumb {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 1.25rem;
+}
+
+.crumb a {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.crumb a:hover {
+  text-decoration: underline;
+}
+
+.crumb .sep {
+  margin: 0 0.35rem;
+  opacity: 0.6;
+}
+
+.crumb .current {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.locked-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.hero-card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+  margin-bottom: 2rem;
+}
+
+.hero-cover {
+  max-height: 280px;
+  overflow: hidden;
+  background: linear-gradient(120deg, #312e81, #5b21b6);
+}
+
+.hero-cover img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.hero-body {
+  padding: 1.5rem 1.75rem 1.75rem;
+}
+
+.hero-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pill.cat {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.pill.pinned {
+  background: #fef08a;
+  color: #713f12;
+}
+
+.pill.pinned mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.hero-date {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.hero-body h1 {
+  margin: 0 0 1rem;
+  font-size: 1.75rem;
+  line-height: 1.25;
+  color: #0f172a;
+}
+
+.hero-author-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.role {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.desc {
+  color: #475569;
+  line-height: 1.65;
+  margin: 0 0 1rem;
+  white-space: pre-wrap;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 1.25rem;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.hero-stats mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  vertical-align: -4px;
+  margin-right: 0.25rem;
+}
+
+.thread-section h2 {
+  font-size: 1.25rem;
+  margin: 0;
+  color: #0f172a;
+}
+
+.discussion-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 0.9rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.post {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.post-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: #3730a3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.post-main {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+}
+
+.post-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 0.75rem;
+}
+
+.post-head strong {
+  color: #0f172a;
+}
+
+.post-head .role-mini {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #ad1457;
+  background: #fce4ec;
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+}
+
+.post-body p {
+  margin: 0 0 0.75rem;
+  color: #334155;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.media-row {
+  margin-bottom: 0.75rem;
+}
+
+.embed-img {
+  max-width: 100%;
+  max-height: 360px;
+  border-radius: 10px;
+  display: block;
+}
+
+.embed-img.sm {
+  max-height: 200px;
+}
+
+.embed-video {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 10px;
+}
+
+.yt-wrap {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #000;
+}
+
+.yt-wrap iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.yt-wrap.sm {
+  max-width: 420px;
+}
+
+.edit-box textarea {
+  width: 100%;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-family: inherit;
+}
+
+.edit-box .mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.hint {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0.35rem 0;
+}
+
+.post-actions,
+.row-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.replies {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.reply {
+  display: flex;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.reply-av {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.reply-body {
+  flex: 1;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.92rem;
+}
+
+.reply-body header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+  color: #64748b;
+}
+
+.reply-composer,
+.composer-card {
+  margin-top: 0.75rem;
+}
+
+.reply-composer textarea,
+.composer-card textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.65rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.media-helpers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin: 0.75rem 0;
+}
+
+.media-helpers .fuse {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.composer-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+}
+
+.composer-card h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.composer-card .composer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.composer-card .composer-actions .send {
+  margin-top: 0;
+}

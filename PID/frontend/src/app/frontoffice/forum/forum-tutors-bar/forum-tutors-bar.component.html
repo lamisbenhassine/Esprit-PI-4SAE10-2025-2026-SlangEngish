@@ -1,0 +1,56 @@
+<section class="ftb" *ngIf="!loading && (tutors.length || showStaffForumQueue)">
+  <div class="ftb-staff" *ngIf="showStaffForumQueue">
+    <a
+      mat-stroked-button
+      color="accent"
+      class="ftb-queue"
+      routerLink="/frontoffice/forum/unanswered"
+      matTooltip="Sujets où aucun message n’a encore été posté dans le fil (pas seulement l’absence de tuteur).">
+      <mat-icon>forum</mat-icon>
+      Sujets sans réponse
+      <span class="ftb-count" *ngIf="unansweredCount > 0">{{ unansweredCount }}</span>
+      <span class="ftb-count ftb-zero" *ngIf="!loadingUnanswered && unansweredCount === 0">0</span>
+    </a>
+    <span class="ftb-queue-hint" *ngIf="!loadingUnanswered && unansweredCount === 0">
+      Aucune discussion sans <strong>premier message</strong> dans le fil.
+    </span>
+  </div>
+
+  <div class="ftb-header">
+    <mat-icon class="ftb-icon">forum</mat-icon>
+    <div class="ftb-titles">
+      <h2 class="ftb-title">Tuteurs</h2>
+      <p class="ftb-sub">Contactez un tuteur pour un échange privé.</p>
+    </div>
+    <a mat-stroked-button color="primary" class="ftb-switch" routerLink="/frontoffice/messages" matTooltip="Ouvrir la messagerie">
+      <mat-icon>chat</mat-icon>
+      Messagerie
+    </a>
+  </div>
+
+  <div class="ftb-scroll" role="list" *ngIf="tutors.length">
+    <button
+      type="button"
+      class="ftb-card"
+      *ngFor="let t of tutors"
+      (click)="openPrivateChat(t, $event)"
+      [matTooltip]="
+        (isOnline(t) ? 'En ligne — ' : 'Hors ligne — ') + 'Message privé avec ' + displayName(t)
+      ">
+      <span class="ftb-avatar">
+        <span class="ftb-initials">{{ initials(t) }}</span>
+        <span class="ftb-dot" [class.ftb-on]="isOnline(t)" aria-hidden="true"></span>
+      </span>
+      <span class="ftb-name">{{ t.firstName }}</span>
+      <span class="ftb-last">{{ t.lastName }}</span>
+      <span class="ftb-chat">
+        <mat-icon>chat</mat-icon>
+      </span>
+    </button>
+  </div>
+</section>
+
+<div class="ftb-loading" *ngIf="loading">
+  <mat-spinner diameter="28"></mat-spinner>
+  <span>Chargement des tuteurs…</span>
+</div>

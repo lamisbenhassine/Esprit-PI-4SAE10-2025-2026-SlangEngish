@@ -1,0 +1,83 @@
+<div class="course-form" *ngIf="course">
+  <h2>{{ isCreating ? 'Create Course' : 'Edit Course' }}</h2>
+
+  <form #courseForm="ngForm" (ngSubmit)="onSubmit()">
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Course name</mat-label>
+        <input
+          matInput
+          name="name"
+          [(ngModel)]="course.name"
+          #nameModel="ngModel"
+          required
+          minlength="3"
+          maxlength="50"
+        />
+        <mat-error *ngIf="nameModel.invalid && (nameModel.dirty || nameModel.touched)">
+          Name must be between 3 and 50 characters.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Level</mat-label>
+        <mat-select
+          name="level"
+          [(ngModel)]="course.level"
+          required
+        >
+          <mat-option *ngFor="let level of levels" [value]="level">
+            {{ level }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="form-field full-width">
+      <mat-label>Description</mat-label>
+      <textarea
+        matInput
+        name="description"
+        rows="3"
+        [(ngModel)]="course.description"
+        #descModel="ngModel"
+        required
+        minlength="10"
+      ></textarea>
+      <mat-error *ngIf="descModel.invalid && (descModel.dirty || descModel.touched)">
+        Description must be at least 10 characters.
+      </mat-error>
+    </mat-form-field>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label class="image-upload-label">
+          Image
+          <input
+            type="file"
+            accept="image/*"
+            (change)="onFileSelected($event)"
+          />
+        </label>
+      </div>
+      <div class="form-field" *ngIf="course.imageUrl">
+        <img [src]="course.imageUrl" alt="Preview" class="image-preview" />
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        [disabled]="courseForm.invalid"
+      >
+        {{ isCreating ? 'Create' : 'Save changes' }}
+      </button>
+      <button mat-button type="button" (click)="onCancel()">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>
+

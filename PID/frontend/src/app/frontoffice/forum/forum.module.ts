@@ -1,0 +1,55 @@
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule, Routes } from '@angular/router';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
+import { ForumGeneralComponent } from './forum-general/forum-general.component';
+import { ForumLevelsComponent } from './forum-levels/forum-levels.component';
+import { TopicDetailComponent } from './topic-detail/topic-detail.component';
+import { ForumCoursesComponent } from './forum-courses/forum-courses.component';
+import { ForumTutorsBarComponent } from './forum-tutors-bar/forum-tutors-bar.component';
+import { ForumUnansweredListComponent } from './forum-unanswered-list/forum-unanswered-list.component';
+import { SharedModule } from '../../shared/shared.module';
+
+const routes: Routes = [
+    { path: 'general', component: ForumGeneralComponent },
+    { path: 'levels', component: ForumLevelsComponent },
+    { path: 'courses', component: ForumCoursesComponent },
+    { path: 'courses/:courseKey', component: ForumCoursesComponent },
+    { path: 'unanswered', component: ForumUnansweredListComponent },
+    { path: 'topic/:id', component: TopicDetailComponent }
+];
+
+@NgModule({
+    declarations: [
+        ForumGeneralComponent,
+        ForumLevelsComponent,
+        ForumCoursesComponent,
+        TopicDetailComponent,
+        ForumTutorsBarComponent,
+        ForumUnansweredListComponent
+    ],
+    imports: [
+        CommonModule,
+        FormsModule,
+        SharedModule,
+        RouterModule.forChild(routes),
+        MatFormFieldModule,
+        MatInputModule,
+        MatSelectModule,
+        MatIconModule,
+        MatButtonModule,
+        MatTooltipModule,
+        MatSnackBarModule,
+        MatProgressSpinnerModule
+    ]
+})
+export class ForumModule { }

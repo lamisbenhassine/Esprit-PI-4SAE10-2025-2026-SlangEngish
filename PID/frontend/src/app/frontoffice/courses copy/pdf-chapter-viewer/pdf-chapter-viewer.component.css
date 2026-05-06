@@ -1,0 +1,168 @@
+.viewer-page {
+  padding: 1rem 1.25rem 2rem;
+  max-width: min(100%, 1680px);
+  margin: 0 auto;
+}
+
+.viewer-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.viewer-title-block {
+  flex: 1;
+  min-width: 200px;
+}
+
+.viewer-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.viewer-subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: #616161;
+}
+
+.state-message {
+  padding: 2rem 1rem;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.loading-state {
+  background: #f5f5f5;
+  color: #616161;
+}
+
+.error-state {
+  color: var(--mat-sys-error, #b71c1c);
+  background: #ffebee;
+}
+
+/* PDF puis carnet en colonne : lisible sur la plupart des écrans (sidebar app + largeur limitée). */
+.chapter-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.workspace-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.workspace-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(180deg, #fafafa 0%, #f5f5f5 100%);
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.panel-icon {
+  color: #c62828;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.notes-panel-icon {
+  color: #3949ab;
+}
+
+.notes-panel-header {
+  align-items: flex-start;
+}
+
+.notes-panel-heading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.notes-panel-subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #757575;
+  line-height: 1.35;
+}
+
+.workspace-panel-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #424242;
+}
+
+.workspace-panel-body {
+  flex: 1;
+  padding: 1rem;
+  min-height: 0;
+}
+
+.document-panel .workspace-panel-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: min(52vh, 640px);
+}
+
+.workspace-panel-body-flush {
+  padding: 0;
+}
+
+.notes-panel .workspace-panel-body-flush {
+  background: #fafafa;
+}
+
+/* Carnet pleine largeur sous le PDF : pas de max-height global, zone d’édition plus haute */
+.notes-panel .notebook {
+  max-height: none;
+  min-height: min(44vh, 520px);
+}
+
+.notes-panel .notebook .editor {
+  min-height: 220px;
+  max-height: min(42vh, 520px);
+}
+
+.notes-panel .notebook-main {
+  min-height: 280px;
+}
+
+.embed-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #757575;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.embed-placeholder-ssr {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+

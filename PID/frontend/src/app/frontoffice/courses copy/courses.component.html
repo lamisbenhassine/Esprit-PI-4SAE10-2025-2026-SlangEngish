@@ -1,0 +1,72 @@
+<div class="courses-container">
+  <div class="courses-header">
+    <div class="header-content">
+      <h1>Courses</h1>
+      <p class="header-subtitle">Consult available courses and their chapters</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading courses...</div>
+
+  <div class="courses-grid" *ngIf="!loading && courses.length > 0">
+    <div class="course-card" *ngFor="let course of courses">
+      <div class="course-image" (click)="viewDetails(course)">
+        <img [src]="getCourseImage(course)" [alt]="course.name">
+        <span class="course-level">{{ course.level }}</span>
+      </div>
+      <div class="course-content">
+        <h3>{{ course.name }}</h3>
+        <p class="course-desc">{{ course.description }}</p>
+        <div class="course-actions">
+          <button mat-raised-button color="primary" (click)="viewDetails(course)">
+            Voir les chapitres
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && courses.length === 0">
+    <p>Aucun cours disponible pour le moment.</p>
+  </div>
+
+  <!-- Course details (chapters) panel -->
+  <div class="details-panel" *ngIf="selectedCourse">
+    <div class="details-header">
+      <h2>{{ selectedCourse.name }} – Chapitres</h2>
+      <button mat-icon-button (click)="closeDetails()" matTooltip="Fermer">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="course-progress" *ngIf="selectedCourse.idCourse != null">
+      <div class="progress-label">Progression du cours</div>
+      <mat-progress-bar
+        mode="determinate"
+        [value]="courseProgress"
+        color="primary">
+      </mat-progress-bar>
+      <div class="progress-value">{{ courseProgress | number:'1.0-0' }} %</div>
+    </div>
+
+    <div class="chapters-list" *ngIf="chapters.length > 0">
+      <div class="chapter-item" *ngFor="let ch of chapters">
+        <div class="chapter-main">
+          <h4>{{ ch.name }}</h4>
+          <p>{{ ch.description }}</p>
+          <button
+            *ngIf="ch.pdfSupport"
+            mat-stroked-button
+            color="primary"
+            (click)="openPdf(ch)">
+            <mat-icon>picture_as_pdf</mat-icon>
+            Ouvrir le PDF
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="chapters-empty" *ngIf="chapters.length === 0">
+      <p>Aucun chapitre pour ce cours.</p>
+    </div>
+  </div>
+</div>

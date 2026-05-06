@@ -1,0 +1,9 @@
+# Copiez ce fichier vers application-local.properties (non versionné) et renseignez la clé,
+# ou définissez la variable d'environnement FORUM_AI_API_KEY.
+#
+# forum.ai.api-key=AIzaSyB91imsi3efCUBXYqFHRQyTscFYAiLnjC0
+
+# Optional local n8n tutor-assist integration (forum -> n8n webhooks)
+# forum.tutor-assist.base-url=http://localhost:5678/webhook
+# forum.tutor-assist.api-key=change-me
+# forum.tutor-assist.callback-key=change-me-callback

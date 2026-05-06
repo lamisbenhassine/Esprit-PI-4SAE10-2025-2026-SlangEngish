@@ -1,0 +1,51 @@
+.cm-page {
+  max-width: 1200px;
+}
+
+.cm-head {
+  margin-bottom: 1.5rem;
+}
+
+.cm-head h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.cm-lead {
+  margin: 0 0 1rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.cm-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.cm-table-wrap {
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.cm-table {
+  width: 100%;
+}
+
+.cm-topic {
+  display: block;
+  font-weight: 600;
+}
+
+.cm-topic-id {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.cm-empty {
+  padding: 1.5rem;
+  color: #64748b;
+  margin: 0;
+}

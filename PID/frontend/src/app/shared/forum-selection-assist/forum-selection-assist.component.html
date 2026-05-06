@@ -1,0 +1,60 @@
+<div class="fsa-host" #hostRef (mouseup)="onHostMouseUp()" (keyup)="onHostKeyUp()">
+  <ng-content></ng-content>
+</div>
+
+<div
+  class="fsa-toolbar"
+  *ngIf="barVisible && selectedText"
+  [style.top.px]="barTop"
+  [style.left.px]="barLeft"
+  (mousedown)="$event.stopPropagation()"
+>
+  <mat-select
+    [(ngModel)]="ttsTargetLang"
+    class="fsa-lang-sel"
+    panelClass="fsa-lang-panel"
+    (click)="$event.stopPropagation()"
+    [disabled]="translating"
+    aria-label="Langue de traduction pour la lecture">
+    <mat-option *ngFor="let l of readLanguages" [value]="l.code">{{ l.label }}</mat-option>
+  </mat-select>
+  <button
+    mat-icon-button
+    type="button"
+    class="fsa-btn"
+    matTooltip="Traduire vers la langue choisie puis lire à voix haute"
+    [disabled]="translating"
+    (click)="readAloud($event)"
+  >
+    <mat-icon>{{ translating ? 'hourglass_empty' : 'volume_up' }}</mat-icon>
+  </button>
+  <button
+    *ngIf="canSummarize()"
+    mat-icon-button
+    type="button"
+    class="fsa-btn fsa-ai"
+    matTooltip="Résumer le texte sélectionné (IA)"
+    [disabled]="summarizing"
+    (click)="summarize($event)"
+  >
+    <mat-icon>auto_awesome</mat-icon>
+  </button>
+  <button mat-icon-button type="button" class="fsa-btn" matTooltip="Fermer" (click)="closeBar(); $event.stopPropagation()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<div class="fsa-summary" *ngIf="summaryOpen">
+  <div class="fsa-summary-head">
+    <span>Résumé</span>
+    <button mat-icon-button type="button" (click)="closeSummary()" aria-label="Fermer le résumé">
+      <mat-icon>expand_more</mat-icon>
+    </button>
+  </div>
+  <div class="fsa-summary-body">
+    <mat-spinner *ngIf="summarizing" diameter="28"></mat-spinner>
+    <p *ngIf="!summarizing && generatedSummary">{{ generatedSummary }}</p>
+    <p class="fsa-source" *ngIf="!summarizing && summarySource === 'ai'">IA (backend)</p>
+    <p class="fsa-source" *ngIf="!summarizing && summarySource === 'fallback'">Mode local</p>
+  </div>
+</div>

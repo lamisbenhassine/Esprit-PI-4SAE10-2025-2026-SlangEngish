@@ -1,0 +1,74 @@
+<section class="ppp" aria-labelledby="ppp-title">
+  <div class="ppp-header">
+    <h2 id="ppp-title" class="ppp-title">
+      <span class="ppp-title-icon" aria-hidden="true">🎬</span>
+      Présentation expliquée (PDF)
+    </h2>
+  </div>
+
+  <div class="ppp-loading" *ngIf="loadingCache">Chargement…</div>
+
+  <div class="ppp-error" *ngIf="error">{{ error }}</div>
+
+  <div class="ppp-progress-wrap" *ngIf="generating">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <span class="ppp-progress-label">Génération des slides…</span>
+  </div>
+
+  <div class="ppp-upload" *ngIf="!loadingCache && !generating && !presentation">
+    <label class="ppp-drop" (dragover)="onDragOver($event)" (drop)="onDrop($event)">
+      <input
+        type="file"
+        accept="application/pdf,.pdf"
+        class="ppp-file-input"
+        (change)="onFilePicked($event)"
+        [disabled]="generating" />
+      <mat-icon class="ppp-drop-icon" aria-hidden="true">upload_file</mat-icon>
+      <span class="ppp-drop-text">Glissez-déposez un PDF ou cliquez pour choisir</span>
+      <span class="ppp-drop-hint">Un seul fichier — la première génération peut prendre une minute.</span>
+    </label>
+  </div>
+
+  <div class="ppp-body" *ngIf="presentation && !generating">
+    <div class="ppp-toolbar">
+      <button mat-stroked-button color="primary" type="button" (click)="startPresentation()" *ngIf="!playing">
+        Lancer la présentation
+      </button>
+      <button mat-stroked-button type="button" (click)="pausePresentation()" *ngIf="playing">Pause</button>
+      <button mat-stroked-button type="button" (click)="regenerate()" [disabled]="generating">Régénérer (nouveau PDF)</button>
+    </div>
+
+    <div class="ppp-progress-row">
+      <mat-progress-bar mode="determinate" [value]="progress * 100"></mat-progress-bar>
+      <span class="ppp-progress-meta"
+        >Slide {{ currentSlideIndex + 1 }} / {{ slideCount }} — {{ (progress * 100) | number : '1.0-0' }} %</span
+      >
+    </div>
+
+    <div class="ppp-slide-wrap" *ngIf="currentSlide as slide">
+      <article class="ppp-slide" [@fadeSlide]="currentSlideIndex">
+        <h3 class="ppp-slide-title">{{ slide.title }}</h3>
+        <ul class="ppp-bullets">
+          <li *ngFor="let b of slide.bullets">{{ b }}</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="ppp-nav">
+      <button mat-stroked-button type="button" (click)="prevSlide()" [disabled]="currentSlideIndex <= 0">
+        <mat-icon>chevron_left</mat-icon>
+        Précédent
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="nextSlide()"
+        [disabled]="currentSlideIndex >= slideCount - 1">
+        Suivant
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+
+  </div>
+</section>
+

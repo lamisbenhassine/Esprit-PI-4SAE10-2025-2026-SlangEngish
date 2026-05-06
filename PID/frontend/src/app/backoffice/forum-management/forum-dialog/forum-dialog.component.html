@@ -1,0 +1,53 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Edit Forum Topic' : 'Create New Topic' }}</h2>
+<mat-dialog-content>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="dialog-form">
+        <mat-form-field appearance="outline">
+            <mat-label>Topic Title</mat-label>
+            <input matInput formControlName="title" placeholder="e.g. Tips for learning English">
+            <mat-error *ngIf="form.get('title')?.hasError('required')">Title is required</mat-error>
+            <mat-error *ngIf="form.get('title')?.hasError('minlength')">Title must be at least 5 characters</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" rows="4"
+                placeholder="Describe the topic contents..."></textarea>
+            <mat-error *ngIf="form.get('description')?.hasError('required')">Description is required</mat-error>
+        </mat-form-field>
+
+        <div class="row">
+            <mat-form-field appearance="outline" class="half">
+                <mat-label>Category</mat-label>
+                <mat-select formControlName="category">
+                    <mat-option *ngFor="let cat of categories" [value]="cat">{{ cat }}</mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <div class="half toggle-container">
+                <mat-checkbox formControlName="isPublic">Public Topic</mat-checkbox>
+            </div>
+        </div>
+
+        <mat-form-field appearance="outline" class="w100">
+            <mat-label>Cover image URL (optional)</mat-label>
+            <input matInput formControlName="coverImageUrl" placeholder="https://… or upload">
+        </mat-form-field>
+        <div class="upload-row">
+            <input type="file" accept="image/*" #cov hidden (change)="onCoverSelected($event)">
+            <button mat-stroked-button type="button" (click)="cov.click()" [disabled]="uploadBusy">
+                Upload cover image
+            </button>
+        </div>
+
+        <div class="mod-row" *ngIf="isEditMode">
+            <mat-checkbox formControlName="pinned">Pinned (à la une)</mat-checkbox>
+            <mat-checkbox formControlName="locked">Locked (no new posts)</mat-checkbox>
+        </div>
+    </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="form.invalid">
+        {{ isEditMode ? 'Save Changes' : 'Create Topic' }}
+    </button>
+</mat-dialog-actions>

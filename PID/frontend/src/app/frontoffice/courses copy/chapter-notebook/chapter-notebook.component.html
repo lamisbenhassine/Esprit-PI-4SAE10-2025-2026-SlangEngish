@@ -1,0 +1,128 @@
+<ng-container *ngIf="isBrowser; else notebookSsr">
+  <div class="notebook">
+    <aside class="notebook-sidebar" aria-label="Liste des notes">
+      <div class="sidebar-head">
+        <button mat-stroked-button color="primary" type="button" class="new-note-btn" (click)="newNote()">
+          <mat-icon>note_add</mat-icon>
+          Nouvelle note
+        </button>
+      </div>
+      <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+        <mat-label>Rechercher une note</mat-label>
+        <input
+          matInput
+          [value]="searchText"
+          (input)="onSearchInput($any($event.target).value)"
+          placeholder="Titre ou contenu…"
+          autocomplete="off" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <div class="notes-list" *ngIf="!loading">
+        <button
+          type="button"
+          class="note-item"
+          *ngFor="let note of notes"
+          [class.active]="selectedNoteId === note.id"
+          (click)="selectNote(note)">
+          <span class="note-item-title">{{ note.title || 'Sans titre' }}</span>
+          <span class="note-item-meta">
+            <span class="tag-pill" [ngClass]="tagClass(note.tag)">{{ tagLabel(note.tag) }}</span>
+            <span class="note-date">{{ formatNoteDate(note.updatedAt) }}</span>
+          </span>
+        </button>
+        <p class="empty-hint" *ngIf="notes.length === 0">Aucune note pour ce chapitre.</p>
+      </div>
+      <div class="notes-loading" *ngIf="loading">Chargement des notes…</div>
+    </aside>
+
+    <main class="notebook-main">
+      <div class="error-banner" *ngIf="error" role="alert">{{ error }}</div>
+
+      <div class="editor-header">
+        <mat-form-field appearance="outline" class="title-field" subscriptSizing="dynamic">
+          <mat-label>Titre de la note</mat-label>
+          <input matInput [(ngModel)]="draftTitle" placeholder="Ex. Règle du subjonctif" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="tag-field" subscriptSizing="dynamic">
+          <mat-label>Étiquette</mat-label>
+          <mat-select [(ngModel)]="draftTag">
+            <mat-option *ngFor="let opt of tagOptions" [value]="opt.value">{{ opt.label }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <p class="analyze-hint" *ngIf="selectedNoteId != null">
+        L’analyse IA utilise la <strong>dernière version enregistrée</strong> de cette note. Enregistrez vos brouillons
+        avant d’analyser.
+      </p>
+
+      <div class="toolbar" aria-label="Mise en forme">
+        <span class="toolbar-label">Format</span>
+        <button mat-icon-button type="button" matTooltip="Gras" (click)="format('bold')">
+          <mat-icon>format_bold</mat-icon>
+        </button>
+        <button mat-icon-button type="button" matTooltip="Italique" (click)="format('italic')">
+          <mat-icon>format_italic</mat-icon>
+        </button>
+        <button mat-icon-button type="button" matTooltip="Souligné" (click)="format('underline')">
+          <mat-icon>format_underlined</mat-icon>
+        </button>
+        <span class="toolbar-sep"></span>
+        <span class="toolbar-label">Insérer</span>
+        <button mat-icon-button type="button" matTooltip="Liste à puces" (click)="insertBulletList()">
+          <mat-icon>format_list_bulleted</mat-icon>
+        </button>
+        <button mat-icon-button type="button" matTooltip="Flèche →" (click)="insertArrow()">
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+        <button mat-icon-button type="button" matTooltip="Préfixe « Ex. »" (click)="insertExampleLabel()">
+          <mat-icon>label_outline</mat-icon>
+        </button>
+      </div>
+
+      <div
+        #editor
+        class="editor"
+        contenteditable="true"
+        spellcheck="true"
+        data-placeholder="Écrivez vos notes ici…"
+        role="textbox"
+        aria-multiline="true"></div>
+
+      <div class="actions">
+        <button
+          mat-stroked-button
+          color="primary"
+          type="button"
+          (click)="openAnalyzeDialog()"
+          [disabled]="selectedNoteId == null || saving || analyzeDialogOpen"
+          matTooltip="Analyse orthographe, structure et titre (note déjà enregistrée)"
+          matTooltipPosition="above">
+          <mat-icon>auto_awesome</mat-icon>
+          Analyser (IA)
+        </button>
+        <button mat-flat-button color="primary" type="button" (click)="saveNote()" [disabled]="saving">
+          {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+        <button
+          mat-stroked-button
+          color="warn"
+          type="button"
+          (click)="deleteNote()"
+          [disabled]="selectedNoteId == null || saving">
+          Supprimer
+        </button>
+      </div>
+    </main>
+  </div>
+</ng-container>
+
+<ng-template #notebookSsr>
+  <div class="notebook-ssr-hint">
+    <mat-icon aria-hidden="true">edit_note</mat-icon>
+    <p>
+      Le carnet personnel (recherche, édition et sauvegarde des notes) s’active dans le navigateur après le chargement de
+      la page.
+    </p>
+  </div>
+</ng-template>

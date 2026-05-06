@@ -1,0 +1,271 @@
+<div class="pricing-container">
+    <div class="step-indicator">
+        <div class="step"><span>1</span> Personal Info</div>
+        <div class="step-line active"></div>
+        <div class="step active"><span>2</span> Choose Plan</div>
+        <div class="step-line"></div>
+        <div class="step"><span>3</span> Checkout</div>
+    </div>
+    <div class="pricing-header">
+        <h1>Our Subscription Plans</h1>
+        <p class="subtitle">Choose the level that matches your learning goals</p>
+    </div>
+
+    <!-- Pricing highlights: annual savings, family pack -->
+    <section class="pricing-highlights" *ngIf="!loading && plans.length > 0">
+        <div class="annual-comparison-banner" *ngIf="annualComparison">
+            <span class="banner-label">Save with annual</span>
+            <span class="banner-detail">{{ annualComparison.currency }} {{ annualComparison.savingsAmount | number:'1.2-2' }} saved ({{ annualComparison.savingsPercent | number:'1.0-0' }}%) — {{ annualComparison.currency }} {{ annualComparison.yearlyCostPerMonth | number:'1.2-2' }}/month</span>
+        </div>
+        <div class="family-price-banner" *ngIf="familyPriceExample">
+            <span class="banner-label">Family pack ({{ familyPriceExample.numberOfUsers }} people)</span>
+            <span class="banner-detail">e.g. {{ familyPriceExample.planName }}: {{ familyPriceExample.currency }} {{ familyPriceExample.pricePerUser | number:'1.2-2' }} per person</span>
+        </div>
+        <div class="sibling-discount-banner" *ngIf="siblingDiscountExample">
+            <span class="banner-label">Family pack ({{ siblingDiscountExample.numberOfSiblings }} members)</span>
+            <span class="banner-detail">−{{ siblingDiscountExample.discountPercent | number:'1.0-0' }}% — {{ siblingDiscountExample.currency }} {{ siblingDiscountExample.pricePerPersonAfterDiscount | number:'1.2-2' }} per person (total {{ siblingDiscountExample.currency }} {{ siblingDiscountExample.totalAfterDiscount | number:'1.2-2' }})</span>
+        </div>
+    </section>
+
+    <!-- Family pack: single block, English only -->
+    <section class="family-pack-card" *ngIf="!loading && plans.length > 0">
+        <h3 class="family-pack-title">Family pack</h3>
+        <p class="family-pack-desc">Register 2 to 6 family members on the same plan and get 10–15% off. Choose a plan, set the number of members, then add to cart.</p>
+        <div class="family-pack-form">
+            <div class="form-row-inline">
+                <label>Plan</label>
+                <select [(ngModel)]="siblingSelectedPlanId" (ngModelChange)="siblingComputeResult = null">
+                    <option [ngValue]="null">Choose a plan</option>
+                    <option *ngFor="let p of plans" [ngValue]="p.id">{{ p.name || p.planType }}</option>
+                </select>
+            </div>
+            <div class="form-row-inline">
+                <label>Number of family members (2–6)</label>
+                <input type="number" [(ngModel)]="siblingNumberOfSiblings" min="2" max="6" (ngModelChange)="siblingComputeResult = null" placeholder="e.g. 2">
+            </div>
+            <button mat-raised-button color="primary" class="calc-btn" (click)="computeSiblingDiscount()">Calculate discount</button>
+            <div class="result-box" *ngIf="siblingComputeResult">
+                <strong>−{{ siblingComputeResult.discountPercent | number:'1.0-0' }}%</strong> — {{ siblingComputeResult.currency }} {{ siblingComputeResult.pricePerPersonAfterDiscount | number:'1.2-2' }} per person (total {{ siblingComputeResult.currency }} {{ siblingComputeResult.totalAfterDiscount | number:'1.2-2' }})
+            </div>
+            <div class="add-cart-block" *ngIf="siblingComputeResult">
+                <button mat-raised-button color="primary" class="add-cart-btn" (click)="addToCartWithSiblingDiscount()">Add to cart with this discount</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Prorata upgrade/downgrade: credit for remaining time, amount to pay or refund -->
+    <section class="prorata-card" *ngIf="!loading && plans.length > 0">
+        <h3 class="prorata-title">Change plan (prorata)</h3>
+        <p class="prorata-desc">Upgrade or downgrade during your subscription. We credit your remaining time and show the amount to pay or the refund.</p>
+        <div class="prorata-form">
+            <div class="form-row-inline">
+                <label>Current plan</label>
+                <select [(ngModel)]="prorataCurrentPlanId" (ngModelChange)="prorataResult = null">
+                    <option [ngValue]="null">Choose current plan</option>
+                    <option *ngFor="let p of plans" [ngValue]="p.id">{{ p.name || p.planType }}</option>
+                </select>
+            </div>
+            <div class="form-row-inline">
+                <label>New plan</label>
+                <select [(ngModel)]="prorataNewPlanId" (ngModelChange)="prorataResult = null">
+                    <option [ngValue]="null">Choose new plan</option>
+                    <option *ngFor="let p of plans" [ngValue]="p.id">{{ p.name || p.planType }}</option>
+                </select>
+            </div>
+            <div class="form-row-inline">
+                <label>Subscription start date</label>
+                <input type="date" [(ngModel)]="prorataStartDate" (ngModelChange)="prorataResult = null">
+            </div>
+            <div class="form-row-inline">
+                <label>Duration (days)</label>
+                <input type="number" [(ngModel)]="prorataDurationDays" min="1" (ngModelChange)="prorataResult = null" placeholder="e.g. 30">
+            </div>
+            <div class="form-row-inline">
+                <label>Price paid (current plan)</label>
+                <input type="number" [(ngModel)]="prorataPricePaid" min="0" step="0.01" (ngModelChange)="prorataResult = null" placeholder="e.g. 79">
+            </div>
+            <button mat-raised-button color="primary" class="calc-btn" (click)="computeProrata()">Calculate</button>
+            <div class="prorata-result" *ngIf="prorataResult">
+                <p><strong>Credit for {{ prorataResult.daysRemaining }} days remaining:</strong> {{ prorataResult.currency }} {{ prorataResult.credits | number:'1.2-2' }}</p>
+                <p><strong>New plan (prorata):</strong> {{ prorataResult.currency }} {{ prorataResult.newPlanProrataPrice | number:'1.2-2' }}</p>
+                <p *ngIf="prorataResult.amountToPay > 0" class="amount-to-pay"><strong>Amount to pay:</strong> {{ prorataResult.currency }} {{ prorataResult.amountToPay | number:'1.2-2' }}</p>
+                <p *ngIf="prorataResult.refund > 0" class="refund"><strong>Refund / credit:</strong> {{ prorataResult.currency }} {{ prorataResult.refund | number:'1.2-2' }}</p>
+            </div>
+        </div>
+    </section>
+
+    <div *ngIf="loading" class="loading-state">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+
+    <div *ngIf="success" class="alert alert-success">
+        {{ success }}
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="filter-section" *ngIf="!loading && plans.length > 0">
+        <div class="search-box">
+            <mat-form-field appearance="outline" class="search-field">
+                <mat-label>Search plans</mat-label>
+                <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+                    placeholder="Search by plan type or date">
+                <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+        </div>
+        <div class="sort-controls">
+            <mat-form-field appearance="outline" class="sort-field">
+                <mat-label>Sort by</mat-label>
+                <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
+                    <mat-option value="date">Date</mat-option>
+                    <mat-option value="planType">Plan Type</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <button mat-icon-button [class.active]="sortOrder === 'asc'"
+                (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()"
+                matTooltip="Toggle sort order">
+                <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Profession Category Filter Chips -->
+    <div class="category-filter" *ngIf="!loading && plans.length > 0">
+        <span class="category-label">📚 Filter by Specialty:</span>
+        <div class="category-chips">
+            <button class="chip" [class.active]="selectedCategory === ''" (click)="selectCategory('')">
+                🌍 All Plans
+            </button>
+            <button class="chip" [class.active]="selectedCategory === 'general'" (click)="selectCategory('general')">
+                🎓 General English
+            </button>
+            <button class="chip medical" [class.active]="selectedCategory === 'medical'"
+                (click)="selectCategory('medical')">
+                🏥 Medical
+            </button>
+            <button class="chip engineering" [class.active]="selectedCategory === 'engineering'"
+                (click)="selectCategory('engineering')">
+                ⚙️ Engineering
+            </button>
+            <button class="chip business" [class.active]="selectedCategory === 'business'"
+                (click)="selectCategory('business')">
+                💼 Business
+            </button>
+        </div>
+    </div>
+
+    <!-- Recommended Plan Header -->
+    <div class="recommended-section" *ngIf="recommendedPlan && !loading">
+        <div class="section-badge">✨ Best Match for Your Level</div>
+        <div class="pricing-card recommended" (click)="viewDetails(recommendedPlan)">
+            <div class="card-ribbon">Recommended</div>
+            <div class="recommended-layout">
+                <div class="card-image" *ngIf="getPlanImage(recommendedPlan)">
+                    <img [src]="getPlanImage(recommendedPlan)" [alt]="recommendedPlan.planType">
+                </div>
+                <div class="card-content-wrap">
+                    <div class="card-header">
+                        <span class="plan-name">{{ recommendedPlan.name || recommendedPlan.planType }}</span>
+                        <div class="plan-price">
+                            <span class="currency">{{ recommendedPlan.currency || 'TND' }}</span>
+                            <span class="amount">{{ recommendedPlan.price || 0 }}</span>
+                            <span class="period">/ {{ recommendedPlan.durationDays || 0 }} days</span>
+                        </div>
+                        <div class="cost-per-month" *ngIf="getCostPerMonthDisplay(recommendedPlan) as cpm">
+                            <span class="cost-per-month-label">Soit {{ cpm.currency }} {{ cpm.costPerMonth | number:'1.2-2' }}/mois</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="description">{{ recommendedPlan.description }}</p>
+                        <ul class="features-list">
+                            <li><mat-icon>verified</mat-icon> Best for your level ({{ searchQuery }})</li>
+                            <li><mat-icon>check_circle</mat-icon> Full Course Access</li>
+                            <li><mat-icon>stars</mat-icon> Priority Support</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer-recommended">
+                        <button class="cta-button-large"
+                            (click)="$event.stopPropagation(); viewDetails(recommendedPlan)">
+                            Add to Cart & Start Now
+                            <mat-icon>arrow_forward</mat-icon>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Divider for other plans -->
+    <div class="others-divider" *ngIf="recommendedPlan && !loading && filteredPlans.length > 0">
+        <h3>Explore Other Plans</h3>
+        <div class="line"></div>
+    </div>
+
+    <div class="pricing-grid" *ngIf="!loading">
+        <div class="pricing-card" *ngFor="let plan of filteredPlans" [class.featured]="plan.planType === 'B2'">
+            <div class="card-image" *ngIf="getPlanImage(plan)">
+                <img [src]="getPlanImage(plan)" [alt]="plan.planType + ' plan image'">
+            </div>
+            <div class="card-header">
+                <span class="plan-name">{{ plan.name || plan.planType }}</span>
+                <div class="plan-price">
+                    <span class="currency">{{ plan.currency || 'TND' }}</span>
+                    <span class="amount">{{ plan.price || 0 }}</span>
+                    <span class="period">/ {{ plan.durationDays || 0 }} days</span>
+                </div>
+                <!-- Métier avancé 1 : coût par mois (backend ou calcul local) -->
+                <div class="cost-per-month" *ngIf="getCostPerMonthDisplay(plan) as cpm">
+                    <span class="cost-per-month-label">Soit {{ cpm.currency }} {{ cpm.costPerMonth | number:'1.2-2' }}/mois</span>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <p *ngIf="plan.description" style="margin:0 0 16px; color:#4a5568;">
+                    {{ plan.description }}
+                </p>
+                <ul class="features-list">
+                    <li><i class="fas fa-check"></i> Course: #{{ plan.courseId }}</li>
+                    <li><i class="fas fa-check"></i> Dedicated Forum Access</li>
+                    <li><i class="fas fa-check"></i> Priority Support</li>
+                    <li><i class="fas fa-check"></i> Certificate of Completion</li>
+                </ul>
+
+                <button class="cta-button" (click)="viewDetails(plan)">
+                    Start Now
+                </button>
+
+                <div class="plan-date">
+                    Available since {{ plan.date | date }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State for Search -->
+    <div *ngIf="filteredPlans.length === 0 && !loading && plans.length > 0" class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h3>No plans match your search criteria</h3>
+        <button mat-button (click)="searchQuery = ''; onSearchChange()">Clear filters</button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-section" *ngIf="totalPages > 1 && !loading">
+        <div class="pagination-info">
+            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} -
+            {{ currentPage * itemsPerPage < plans.length ? currentPage * itemsPerPage : plans.length }} of {{
+                plans.length }} plans </div>
+                <div class="pagination-controls">
+                    <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                    <button *ngFor="let page of getPageNumbers()" mat-button [class.active]="page === currentPage"
+                        (click)="goToPage(page)">
+                        {{ page }}
+                    </button>
+                    <button mat-icon-button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                </div>
+        </div>
+    </div>

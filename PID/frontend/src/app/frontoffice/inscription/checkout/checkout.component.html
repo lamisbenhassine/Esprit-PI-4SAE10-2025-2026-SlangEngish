@@ -1,0 +1,160 @@
+<div class="checkout-container">
+
+    <!-- Step indicator -->
+    <div class="checkout-steps">
+        <div class="step" [class.active]="step >= 1" [class.completed]="step > 1">
+            <div class="step-circle">1</div>
+            <span>Cart</span>
+        </div>
+        <div class="step-line" [class.active]="step > 1"></div>
+        <div class="step" [class.active]="step >= 2" [class.completed]="step > 2">
+            <div class="step-circle">2</div>
+            <span>Payment</span>
+        </div>
+        <div class="step-line" [class.active]="step > 2"></div>
+        <div class="step" [class.active]="step >= 3">
+            <div class="step-circle">3</div>
+            <span>Confirmation</span>
+        </div>
+    </div>
+
+    <!-- STEP 1: Cart Review & Method Selection -->
+    <div class="checkout-content" *ngIf="step === 1">
+        <!-- Cart Loading -->
+        <div class="loading-state" *ngIf="cartLoading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading your cart...</p>
+        </div>
+
+        <!-- Empty Cart Warning -->
+        <div class="empty-cart-warning"
+            *ngIf="!cartLoading && (!cart || !cart.cartItems || cart.cartItems.length === 0)">
+            <i class="fas fa-shopping-cart"></i>
+            <h3>Your cart is empty</h3>
+            <p>Please add a subscription plan before proceeding to checkout.</p>
+            <button class="btn-next" routerLink="/frontoffice/inscription">
+                Browse Plans
+            </button>
+        </div>
+
+        <!-- Cart has items -->
+        <div *ngIf="!cartLoading && cart && cart.cartItems && cart.cartItems.length > 0">
+            <!-- Cart Summary -->
+            <div class="cart-summary-block">
+                <h3><i class="fas fa-shopping-cart"></i> Order Summary</h3>
+                <div class="cart-items-list">
+                    <div class="cart-item-row" *ngFor="let item of cart.cartItems">
+                        <span class="item-name">{{ item.planName }}</span>
+                        <span class="item-price">{{ item.unitPrice | number:'1.2-2' }} €</span>
+                    </div>
+                </div>
+                <div class="cart-total-row" *ngIf="appliedPromo?.valid && appliedPromo?.discountAmount">
+                    <span>Réduction ({{ appliedPromo?.code }})</span>
+                    <strong class="discount">-{{ appliedPromo?.discountAmount | number:'1.2-2' }} €</strong>
+                </div>
+                <div class="cart-total-row">
+                    <span>Total</span>
+                    <strong>{{ displayTotal | number:'1.2-2' }} €</strong>
+                </div>
+            </div>
+
+            <!-- Code promo -->
+            <div class="card-checkout promo-block">
+                <h3><i class="fas fa-tag"></i> Code promo</h3>
+                <div class="promo-row" *ngIf="!appliedPromo?.valid">
+                    <input type="text" [(ngModel)]="promoCodeInput" placeholder="Entrez votre code"
+                        (keyup.enter)="applyPromo()" class="promo-input">
+                    <button type="button" class="btn-promo" (click)="applyPromo()" [disabled]="promoApplying || !promoCodeInput.trim()">
+                        <span *ngIf="!promoApplying">Appliquer</span>
+                        <span *ngIf="promoApplying"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </div>
+                <div class="promo-applied" *ngIf="appliedPromo?.valid">
+                    <span><i class="fas fa-check-circle"></i> {{ appliedPromo?.code }} appliqué (-{{ appliedPromo?.discountAmount | number:'1.2-2' }} €)</span>
+                    <button type="button" class="btn-remove-promo" (click)="removePromo()">Retirer</button>
+                </div>
+            </div>
+
+            <!-- Loyalty points (Métier 6) -->
+            <div class="card-checkout loyalty-checkout-card">
+                <h3><i class="fas fa-gift"></i> Loyalty Points</h3>
+                <div *ngIf="loyaltyLoading" class="loyalty-loading-inline">
+                    <i class="fas fa-spinner fa-spin"></i> Chargement de vos points...
+                </div>
+                <div *ngIf="!loyaltyLoading && !loyaltySummary" class="loyalty-unavailable-inline">
+                    <i class="fas fa-info-circle"></i>
+                    Le service fidélité est temporairement indisponible. Assurez-vous que le backend Inscription (port 8030) est démarré.
+                </div>
+                <ng-container *ngIf="!loyaltyLoading && loyaltySummary">
+                    <div class="loyalty-summary-row">
+                        <span class="loyalty-balance-badge">{{ loyaltySummary.balancePoints }} pts</span>
+                        <span class="loyalty-tier-badge" [class]="'tier-' + (loyaltySummary.tier || 'BRONZE').toLowerCase()">{{ loyaltySummary.tier || 'BRONZE' }}</span>
+                        <span class="loyalty-max-discount">Réduction max: {{ loyaltySummary.maxDiscountAmount | number:'1.2-2' }} €</span>
+                    </div>
+                    <div class="loyalty-row">
+                        <label>Points à utiliser</label>
+                        <input type="number" min="0" [max]="loyaltySummary.balancePoints"
+                               [(ngModel)]="loyaltyPointsToUse" (ngModelChange)="previewLoyalty()"
+                               placeholder="0" class="loyalty-input">
+                    </div>
+                    <div class="loyalty-preview" *ngIf="loyaltyPreview">
+                        <div class="preview-line">Réduction: <strong>-{{ loyaltyPreview.discountAmount | number:'1.2-2' }} €</strong></div>
+                        <div class="preview-line total">Nouveau total: <strong>{{ loyaltyPreview.finalTotal | number:'1.2-2' }} €</strong></div>
+                    </div>
+                </ng-container>
+            </div>
+
+            <!-- Confirm Order: directly creates order then redirects to Stripe Checkout -->
+            <div class="card-checkout">
+                <h2>Payment</h2>
+                <p class="text-muted">
+                    When you confirm, you will be redirected to our secure Stripe payment page.
+                    The loyalty discount shown above is a simulation; the charged amount remains the cart total for now.
+                </p>
+
+                <div class="action-footer">
+                    <button class="btn-next" (click)="createOrder()" [disabled]="isProcessing">
+                        <span *ngIf="!isProcessing">Confirm Order &nbsp;<i class="fas fa-arrow-right"></i></span>
+                        <span *ngIf="isProcessing"><i class="fas fa-spinner fa-spin"></i> Processing...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- STEP 3: Payment successful -->
+    <div class="checkout-content step-success" *ngIf="step === 3">
+        <div class="success-card">
+            <div class="success-badge">
+                <i class="fas fa-check"></i>
+            </div>
+            <h1 class="success-title">Payment successful</h1>
+            <p class="success-message">Your order has been confirmed and your payment is complete. You now have full access to your subscription.</p>
+
+            <div class="success-details" *ngIf="orderNumber || transactionId">
+                <div class="detail-row" *ngIf="orderNumber">
+                    <span class="detail-label">Order</span>
+                    <span class="detail-value">{{ orderNumber }}</span>
+                </div>
+                <div class="detail-row" *ngIf="transactionId">
+                    <span class="detail-label">Transaction</span>
+                    <code class="detail-value">{{ transactionId }}</code>
+                </div>
+                <div class="detail-row" *ngIf="orderAmount > 0">
+                    <span class="detail-label">Amount paid</span>
+                    <span class="detail-value">{{ orderAmount | number:'1.2-2' }} TND</span>
+                </div>
+            </div>
+
+            <div class="success-actions">
+                <button class="btn-home" routerLink="/frontoffice/dashboard">
+                    <i class="fas fa-home"></i> Go to Dashboard
+                </button>
+                <button class="btn-courses" routerLink="/frontoffice/courses">
+                    <i class="fas fa-play"></i> Start Learning
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,92 @@
+<section class="clc" aria-labelledby="clc-title">
+  <div class="clc-sheen" aria-hidden="true"></div>
+  <div class="clc-header">
+    <h2 id="clc-title" class="clc-title">
+      <span class="clc-title-badge" aria-hidden="true">✨</span>
+      <span class="clc-title-text">AI learning content</span>
+    </h2>
+    <div class="clc-actions">
+      <button
+        mat-stroked-button
+        color="primary"
+        type="button"
+        (click)="generate()"
+        [disabled]="generating || loadingCache"
+        *ngIf="!content">
+        Generate learning content
+      </button>
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="regenerate()"
+        [disabled]="generating || loadingCache"
+        *ngIf="content">
+        Regenerate
+      </button>
+    </div>
+  </div>
+
+  <p class="clc-hint" *ngIf="!content && !loadingCache && !generating">
+    <span class="clc-hint-dot"></span>
+    Get a short summary in simple English and 8-10 flashcards tailored to this chapter.
+  </p>
+
+  <div class="clc-loading" *ngIf="loadingCache">
+    <span class="clc-loading-pulse"></span>
+    Loading saved content...
+  </div>
+  <div class="clc-progress-wrap" *ngIf="generating">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <span class="clc-progress-label">Creating your study pack...</span>
+  </div>
+
+  <p class="clc-error" *ngIf="error">{{ error }}</p>
+
+  <div class="clc-body" *ngIf="content && !generating">
+    <p class="clc-cache-tag" *ngIf="content.fromCache">
+      <mat-icon class="clc-cache-icon" aria-hidden="true">cloud_done</mat-icon>
+      Loaded from saved content
+    </p>
+
+    <article class="clc-summary" aria-labelledby="clc-summary-title">
+      <div class="clc-summary-head">
+        <span class="clc-summary-icon" aria-hidden="true">📖</span>
+        <h3 id="clc-summary-title">Summary</h3>
+      </div>
+      <div class="clc-summary-text">{{ content.summaryEnglish }}</div>
+    </article>
+
+    <article class="clc-flashcards" aria-labelledby="clc-flash-title">
+      <div class="clc-flash-head">
+        <span class="clc-flash-deco" aria-hidden="true">🎴</span>
+        <div>
+          <h3 id="clc-flash-title">Flashcards</h3>
+          <p class="clc-flash-hint">Tap a card to reveal the answer.</p>
+        </div>
+      </div>
+      <div class="clc-flash-grid">
+        <button
+          type="button"
+          class="clc-flip-scene"
+          *ngFor="let card of content.flashcards; let i = index; trackBy: trackByIndex"
+          [ngClass]="cardPaletteClass(i)"
+          (click)="toggleCard(i)"
+          [attr.aria-pressed]="isFlipped(i)"
+          [attr.aria-label]="'Flashcard ' + (i + 1) + ', click to flip'">
+          <span class="clc-card-num" aria-hidden="true">{{ i + 1 }}</span>
+          <div class="clc-flip-inner" [class.clc-flip-inner--flipped]="isFlipped(i)">
+            <div class="clc-flip-face clc-flip-front">
+              <span class="clc-flip-label">Question</span>
+              <p>{{ card.front }}</p>
+            </div>
+            <div class="clc-flip-face clc-flip-back">
+              <span class="clc-flip-label">Answer</span>
+              <p>{{ card.back }}</p>
+            </div>
+          </div>
+        </button>
+      </div>
+    </article>
+  </div>
+</section>
+

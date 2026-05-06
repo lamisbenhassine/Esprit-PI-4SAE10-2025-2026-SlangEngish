@@ -1,0 +1,54 @@
+<app-forum-selection-assist>
+<div class="fu-page">
+  <nav class="fu-crumb">
+    <a routerLink="/frontoffice/feed">Fil</a>
+    <span class="fu-sep">/</span>
+    <a routerLink="/frontoffice/forum/general">Forum</a>
+    <span class="fu-sep">/</span>
+    <span class="fu-current">Sujets sans réponse</span>
+  </nav>
+
+  <section class="fu-hero">
+    <h1>Sujets sans réponse</h1>
+    <p class="fu-lead">
+      Ici figurent uniquement les sujets où <strong>personne n’a encore écrit un message dans le fil de discussion</strong>
+      (en base : aucune ligne <code>forum_message</code> pour ce sujet). Ce n’est pas la « pub » du fil d’actualité seule :
+      dès qu’un étudiant (ou quelqu’un d’autre) poste <strong>un premier commentaire</strong> sur la page du sujet, celui-ci
+      <strong>disparaît</strong> de cette liste — même si aucun tuteur n’a encore répondu.
+    </p>
+    <p class="fu-lead fu-muted">
+      Intérêt pour les tuteurs : repérer rapidement les discussions encore « muettes » pour lancer la conversation.
+      Si la liste est vide, soit tout le monde a déjà reçu au moins une réponse dans le fil, soit les sujets viennent d’ailleurs (autre flux).
+    </p>
+    <button mat-stroked-button type="button" (click)="refresh()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon>
+      Actualiser
+    </button>
+  </section>
+
+  <div class="fu-loading" *ngIf="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div class="fu-empty" *ngIf="!loading && !topics.length">
+    <mat-icon>check_circle</mat-icon>
+    <p>Aucun sujet dans cette file pour l’instant.</p>
+    <p class="fu-test-hint">
+      <strong>Test rapide :</strong> créez un nouveau sujet, allez sur sa page et <strong>ne envoyez pas</strong> de message
+      dans la zone « Discussion » / commentaires — puis rechargez cette page. Si vous avez déjà commenté partout, la
+      liste reste vide : c’est normal.
+    </p>
+  </div>
+
+  <ul class="fu-list" *ngIf="!loading && topics.length">
+    <li *ngFor="let t of topics" class="fu-row">
+      <div class="fu-meta">
+        <span class="fu-space">{{ spaceLabel(t) }}</span>
+        <span class="fu-date">{{ t.createdAt | date : 'short' }}</span>
+      </div>
+      <a class="fu-title" [routerLink]="['/frontoffice/forum/topic', t.id]">{{ t.title }}</a>
+      <div class="fu-author">Par {{ authorLabel(t.authorId) }}</div>
+    </li>
+  </ul>
+</div>
+</app-forum-selection-assist>

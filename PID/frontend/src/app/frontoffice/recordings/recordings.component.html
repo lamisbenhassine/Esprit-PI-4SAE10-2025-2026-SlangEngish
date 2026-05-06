@@ -1,0 +1,85 @@
+<div class="recordings-page">
+  <h2 class="page-title">Recordings</h2>
+
+  <div *ngIf="loading" class="state-message">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Chargement des enregistrements...</p>
+  </div>
+
+  <div *ngIf="error" class="state-message error">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error && recordings.length === 0" class="state-message">
+    <p>Aucun enregistrement disponible pour le moment.</p>
+  </div>
+
+  <div *ngIf="!loading && !error && recordings.length > 0" class="recordings-grid">
+    <div class="recording-card" *ngFor="let rec of recordings">
+      <div class="recording-header">
+        <h3>{{ rec.title }}</h3>
+        <p class="recorded-at">
+          Enregistré le : {{ rec.recordedAt | date:'short' }}
+        </p>
+      </div>
+
+      <div class="player-wrapper" *ngIf="rec.recordingLink; else noLink">
+        <video
+          [attr.id]="'recording-video-' + rec.id"
+          [src]="rec.recordingLink | safeUrl"
+          controls
+          playsinline
+          #videoPlayer
+          (timeupdate)="onVideoTimeUpdate(rec.id!, videoPlayer.currentTime)">
+        </video>
+      </div>
+
+      <div
+        class="highlights-panel"
+        [attr.id]="'highlights-panel-' + rec.id"
+        *ngIf="rec.id">
+        <div class="highlights-header">
+          <h4>Highlights</h4>
+          <button
+            *ngIf="isProfessor()"
+            class="regenerate-button"
+            type="button"
+            (click)="regenerateHighlights(rec.id)">
+            Regenerate highlights
+          </button>
+        </div>
+
+        <p class="highlights-loading"
+           *ngIf="analysisStatusByRecording[rec.id] === 'PENDING' || analysisStatusByRecording[rec.id] === 'PROCESSING' || regeneratingByRecording[rec.id]">
+          Generating highlights...
+        </p>
+        <p class="highlights-error" *ngIf="analysisStatusByRecording[rec.id] === 'FAILED'">
+          Highlight generation failed. Try regenerating.
+        </p>
+        <p class="highlights-loading" *ngIf="analysisStatusByRecording[rec.id] === 'COMPLETED' && (highlightsByRecording[rec.id]?.length ?? 0) === 0">
+          No highlights found for this recording yet.
+        </p>
+
+        <div
+          class="highlight-item"
+          *ngFor="let item of highlightsByRecording[rec.id]; let i = index"
+          [attr.data-highlight-index]="i"
+          [class.active]="activeHighlightByRecording[rec.id] === i"
+          (click)="seekTo(rec.id, item.seconds)">
+          <span class="highlight-time">{{ formatTimestamp(item.seconds) }}</span>
+          <div class="highlight-content">
+            <p class="highlight-title">{{ item.title }}</p>
+            <p class="highlight-description">{{ item.description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noLink>
+        <p class="no-link">
+          Lien d'enregistrement vidéo non encore disponible. Veuillez réessayer plus tard.
+        </p>
+      </ng-template>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,32 @@
+<div class="tpt-root" [class.tpt-root--hero]="variant === 'hero'" (click)="onContentClick($event)">
+  <ng-container [ngSwitch]="variant">
+    <h1 *ngSwitchCase="'hero'" class="tpt-title tpt-clickable" (click)="onContentClick($event)">{{ displayTitle }}</h1>
+    <h3 *ngSwitchDefault class="tpt-title tpt-title--card tpt-clickable" (click)="onContentClick($event)">{{ displayTitle }}</h3>
+  </ng-container>
+
+  <ng-content></ng-content>
+
+  <p *ngIf="variant === 'hero'" class="desc tpt-clickable" (click)="onContentClick($event)">{{ displayDescription }}</p>
+  <p *ngIf="variant === 'card'" class="tpt-desc tpt-clickable" (click)="onContentClick($event)">{{ displayDescription }}</p>
+
+  <div class="tpt-actions" *ngIf="canTranslate">
+    <mat-spinner *ngIf="busy" diameter="18" class="tpt-spin"></mat-spinner>
+
+    <div class="tpt-lang-list" role="group" aria-label="Langues de traduction">
+      <button
+        type="button"
+        class="tpt-lang-chip"
+        *ngFor="let l of targetLanguages"
+        [class.active]="pickedLang === l.code"
+        [disabled]="busy"
+        (click)="pickLanguage(l.code, $event)">
+        {{ l.label }}
+      </button>
+    </div>
+
+    <span class="tpt-lang-badge" *ngIf="showTranslated && activeLangLabel">{{ activeLangLabel }}</span>
+    <button *ngIf="showTranslated" type="button" mat-button class="tpt-link" (click)="showOriginal($event)">
+      Afficher l'original
+    </button>
+  </div>
+</div>

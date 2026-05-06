@@ -1,0 +1,50 @@
+<h2 mat-dialog-title>Plan de séance</h2>
+
+<mat-dialog-content class="psd-content">
+  <p class="psd-intro" *ngIf="items.length && !data.readOnly">
+    Décrivez le contenu ou les objectifs pour chaque créneau choisi (visible sur le calendrier).
+  </p>
+
+  <p class="psd-locked" *ngIf="data.readOnly">
+    Les créneaux sont verrouillés : vous pouvez consulter les textes mais pas les modifier (utilisez
+    <strong>Reset</strong> pour tout effacer).
+  </p>
+
+  <ng-container *ngIf="items.length; else empty">
+    <div class="psd-block" *ngFor="let item of items">
+      <h3 class="psd-block__title">{{ item.dayLabel }} · {{ item.timeLabel }}</h3>
+      <mat-form-field appearance="outline" class="psd-field">
+        <mat-label>Ce que vous prévoyez pour cette séance</mat-label>
+        <textarea
+          matInput
+          [(ngModel)]="item.description"
+          rows="4"
+          maxlength="2000"
+          [readonly]="data.readOnly"
+          placeholder="Ex. : révision chapitre 3, quiz, soutien projet…"></textarea>
+        <mat-hint align="end">{{ hintLength(item) }}/2000</mat-hint>
+      </mat-form-field>
+      <div class="psd-actions" *ngIf="!data.readOnly">
+        <button mat-button type="button" color="warn" (click)="removeSlot(item)">
+          Retirer ce créneau
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #empty>
+    <p class="psd-empty">Aucun créneau sélectionné pour le moment.</p>
+  </ng-template>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button">Fermer</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="save()"
+    *ngIf="!data.readOnly && items.length">
+    Enregistrer
+  </button>
+</mat-dialog-actions>

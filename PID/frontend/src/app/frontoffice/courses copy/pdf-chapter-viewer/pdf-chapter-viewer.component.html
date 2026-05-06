@@ -1,0 +1,56 @@
+<div class="viewer-page">
+  <header class="viewer-header">
+    <a mat-button [routerLink]="['/frontoffice/courses']" [queryParams]="{ courseId: courseId }">
+      <mat-icon>arrow_back</mat-icon>
+      Retour aux chapitres
+    </a>
+    <div class="viewer-title-block" *ngIf="chapter">
+      <h1 class="viewer-title">{{ chapter.name }}</h1>
+      <p class="viewer-subtitle">Lecture du support et prise de notes</p>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="state-message loading-state">Chargement du chapitre…</div>
+  <div *ngIf="error" class="state-message error-state">{{ error }}</div>
+
+  <app-chapter-learning-content *ngIf="chapter && !loading" [chapterId]="chapterId"></app-chapter-learning-content>
+
+  <app-presentation-player *ngIf="chapter && !loading" [chapterId]="chapterId"></app-presentation-player>
+
+  <div *ngIf="pdfSrc && !loading && !error" class="chapter-workspace">
+    <section class="workspace-panel document-panel" aria-labelledby="document-panel-title">
+      <div class="workspace-panel-header">
+        <mat-icon class="panel-icon" aria-hidden="true">picture_as_pdf</mat-icon>
+        <h2 id="document-panel-title" class="workspace-panel-title">Document PDF</h2>
+      </div>
+      <div class="workspace-panel-body">
+        <ng-container *ngIf="pdfEmbedComponentType; else pdfWaitOrSsr">
+          <ng-container
+            [ngComponentOutlet]="pdfEmbedComponentType"
+            [ngComponentOutletInputs]="pdfEmbedInputs">
+          </ng-container>
+        </ng-container>
+        <ng-template #pdfWaitOrSsr>
+          <div *ngIf="isBrowser" class="embed-placeholder">Préparation du lecteur PDF…</div>
+          <div *ngIf="!isBrowser" class="embed-placeholder embed-placeholder-ssr">
+            Le lecteur PDF n’est pas disponible pendant le rendu serveur. Il s’affichera automatiquement dans votre
+            navigateur.
+          </div>
+        </ng-template>
+      </div>
+    </section>
+
+    <section class="workspace-panel notes-panel" aria-labelledby="notes-panel-title">
+      <div class="workspace-panel-header notes-panel-header">
+        <mat-icon class="panel-icon notes-panel-icon" aria-hidden="true">edit_note</mat-icon>
+        <div class="notes-panel-heading-text">
+          <h2 id="notes-panel-title" class="workspace-panel-title">Carnet personnel</h2>
+          <p class="notes-panel-subtitle">Notes liées à ce chapitre</p>
+        </div>
+      </div>
+      <div class="workspace-panel-body workspace-panel-body-flush">
+        <app-chapter-notebook [chapterId]="chapterId" [userId]="userId"></app-chapter-notebook>
+      </div>
+    </section>
+  </div>
+</div>

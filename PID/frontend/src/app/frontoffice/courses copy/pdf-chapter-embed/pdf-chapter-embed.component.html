@@ -1,0 +1,24 @@
+<div class="pdf-embed">
+  <pdf-viewer
+    [src]="pdfSrc"
+    [page]="currentPage"
+    [render-text]="true"
+    [original-size]="false"
+    [zoom-scale]="'page-width'"
+    [autoresize]="true"
+    (after-load-complete)="onPdfLoaded($event)"
+    (pageChange)="onPageChange($event)"
+    style="display: block;">
+  </pdf-viewer>
+
+  <div class="progress-section">
+    <div class="progress-bar-wrapper">
+      <mat-progress-bar mode="determinate" [value]="progressPercentage" color="primary">
+      </mat-progress-bar>
+    </div>
+    <div class="progress-text">
+      Page {{ currentPage }} / {{ totalPages }}
+      <span class="percent">({{ progressPercentage | number:'1.0-0' }} %)</span>
+    </div>
+  </div>
+</div>

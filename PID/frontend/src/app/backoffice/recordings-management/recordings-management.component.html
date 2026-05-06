@@ -1,0 +1,155 @@
+<div class="recordings-management">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Recordings Management</h1>
+      <p class="header-subtitle">Gérer les enregistrements vidéo des lives</p>
+    </div>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="addRecording()">
+        <mat-icon>add_circle</mat-icon>
+        <span>Ajouter un recording</span>
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="state-message">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Chargement des enregistrements...</p>
+  </div>
+
+  <div *ngIf="error" class="state-message error">
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- Formulaire création / édition -->
+  <div *ngIf="formRecording" class="recording-form-card">
+    <h2>{{ isCreating ? 'Ajouter un recording' : 'Modifier le recording' }}</h2>
+
+    <form (ngSubmit)="saveRecording()" #recForm="ngForm">
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Titre</mat-label>
+          <input
+            matInput
+            name="title"
+            required
+            [(ngModel)]="formRecording.title" />
+        </mat-form-field>
+
+        <div class="form-field file-field">
+          <label class="file-label">
+            <span class="file-label-text">Fichier vidéo (MP4)</span>
+            <span class="file-button">
+              <mat-icon>folder_open</mat-icon>
+              Choisir un fichier MP4
+            </span>
+            <input
+              type="file"
+              accept="video/mp4,.mp4"
+              (change)="onFormFileSelected($event)"
+              #formFileInput />
+            <span class="file-name" *ngIf="selectedRecordingFileName">{{ selectedRecordingFileName }}</span>
+            <span class="file-hint" *ngIf="!selectedRecordingFileName">Choisir un fichier depuis votre PC</span>
+          </label>
+        </div>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Statut</mat-label>
+          <mat-select
+            name="status"
+            required
+            [(ngModel)]="formRecording.status">
+            <mat-option *ngFor="let s of statuses" [value]="s">
+              {{ s }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="form-extra" *ngIf="formRecording.streamLink">
+        <p>
+          <strong>Live original :</strong>
+          {{ formRecording.streamLink }}
+        </p>
+      </div>
+
+      <div class="form-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="!recForm.form.valid">
+          {{ isCreating ? 'Créer' : 'Enregistrer' }}
+        </button>
+        <button mat-button type="button" (click)="cancelForm()">
+          Annuler
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Liste des recordings -->
+  <div class="recordings-grid" *ngIf="!loading && recordings.length > 0">
+    <div class="recording-card" *ngFor="let rec of recordings">
+      <div class="recording-header">
+        <h3>{{ rec.title }}</h3>
+        <span class="status" [ngClass]="rec.status.toLowerCase()">
+          {{ rec.status }}
+        </span>
+      </div>
+
+      <div class="recording-body">
+        <p>
+          <strong>Enregistré le :</strong>
+          {{ rec.recordedAt | date:'short' }}
+        </p>
+        <p *ngIf="rec.recordingLink; else noVideo">
+          <strong>Lien vidéo :</strong>
+          <a [href]="rec.recordingLink" target="_blank" rel="noopener noreferrer">
+            Ouvrir la vidéo
+          </a>
+        </p>
+        <ng-template #noVideo>
+          <p class="no-video">
+            Aucun lien vidéo défini. Ajoutez un lien pour que les étudiants puissent voir l'enregistrement.
+          </p>
+        </ng-template>
+      </div>
+
+      <div class="recording-actions">
+        <button mat-stroked-button color="primary" (click)="editRecording(rec)">
+          <mat-icon>edit</mat-icon>
+          Editer
+        </button>
+
+        <button mat-stroked-button color="warn" (click)="deleteRecording(rec)">
+          <mat-icon>delete</mat-icon>
+          Supprimer
+        </button>
+      </div>
+
+      <div class="upload-section">
+        <label class="upload-button">
+          <input
+            type="file"
+            accept="video/*"
+            (change)="onFileSelected(rec, $event)"
+            hidden>
+          <mat-icon>upload</mat-icon>
+          <span>Uploader une vidéo</span>
+        </label>
+        <mat-progress-bar
+          *ngIf="uploadingId === rec.id"
+          mode="indeterminate">
+        </mat-progress-bar>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && recordings.length === 0">
+    <mat-icon>video_library</mat-icon>
+    <h3>Aucun recording pour le moment</h3>
+    <p>Les recordings sont créés automatiquement à la fin des lives terminés.</p>
+  </div>
+</div>
+

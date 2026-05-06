@@ -1,0 +1,123 @@
+<div class="chapters-panel" *ngIf="courseId">
+  <div class="chapters-header">
+    <div>
+      <h2>Chapters – {{ courseName }}</h2>
+      <p>Manage chapters assigned to this course</p>
+    </div>
+    <button mat-icon-button (click)="closePanel()" matTooltip="Close">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="chapters-actions">
+    <button mat-raised-button color="primary" (click)="startCreate()">
+      <mat-icon>add</mat-icon>
+      Add Chapter
+    </button>
+  </div>
+
+  <div *ngIf="formChapter" class="chapter-form">
+    <h3>{{ isCreating ? 'Create chapter' : 'Edit chapter' }}</h3>
+    <form (ngSubmit)="saveChapter()" #chapterForm="ngForm">
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Title</mat-label>
+          <input
+            matInput
+            name="name"
+                #chapterNameModel="ngModel"
+            [(ngModel)]="formChapter.name"
+                required
+                minlength="3"
+                maxlength="50"
+          />
+              <mat-error *ngIf="chapterNameModel.invalid && (chapterNameModel.dirty || chapterNameModel.touched)">
+                Title must be between 3 and 50 characters.
+              </mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="form-field full-width">
+        <mat-label>Description</mat-label>
+        <textarea
+          matInput
+          name="description"
+          rows="3"
+          [(ngModel)]="formChapter.description"
+              #chapterDescModel="ngModel"
+              required
+              minlength="10"
+        ></textarea>
+            <mat-error *ngIf="chapterDescModel.invalid && (chapterDescModel.dirty || chapterDescModel.touched)">
+              Description must be at least 10 characters.
+            </mat-error>
+      </mat-form-field>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label class="file-upload-label">
+            PDF support
+            <input
+              type="file"
+              accept="application/pdf"
+              (change)="onPdfSelected($event)"
+            />
+          </label>
+          <div class="file-name" *ngIf="selectedPdfName">
+            {{ selectedPdfName }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="chapterForm.invalid"
+        >
+          {{ isCreating ? 'Create' : 'Save changes' }}
+        </button>
+        <button mat-button type="button" (click)="cancelForm()">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <div class="chapters-list" *ngIf="chapters.length > 0">
+    <div class="chapter-item" *ngFor="let chapter of chapters">
+      <div class="chapter-main">
+        <h4>{{ chapter.name }}</h4>
+        <p>{{ chapter.description }}</p>
+        <div class="chapter-meta">
+          <button
+            *ngIf="chapter.pdfSupport"
+            mat-stroked-button
+            type="button"
+            (click)="openPdf(chapter)"
+          >
+            PDF
+          </button>
+        </div>
+      </div>
+      <div class="chapter-actions">
+        <button mat-icon-button (click)="startEdit(chapter)" matTooltip="Edit">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="deleteChapter(chapter)" matTooltip="Delete">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="chapters-empty" *ngIf="chapters.length === 0 && !formChapter">
+    <p>No chapters yet for this course.</p>
+    <button mat-raised-button color="primary" (click)="startCreate()">
+      <mat-icon>add</mat-icon>
+      Create first chapter
+    </button>
+  </div>
+</div>
+

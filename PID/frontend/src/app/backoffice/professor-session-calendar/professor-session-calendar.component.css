@@ -1,0 +1,145 @@
+.psc-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-top: 0.25rem;
+}
+
+.psc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.psc-loading {
+  color: #64748b;
+}
+
+/* Compte à rebours avant verrouillage */
+.psc-countdown {
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(135deg, #fef3c7 0%, #fff7ed 100%);
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12);
+}
+
+.psc-countdown__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.psc-countdown__label {
+  font-size: 0.85rem;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.psc-countdown__time {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #b45309;
+  letter-spacing: 0.04em;
+}
+
+.psc-countdown mat-progress-bar {
+  border-radius: 4px;
+  height: 8px;
+}
+
+/* Bannière verrouillé */
+.psc-locked-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #991b1b;
+}
+
+.psc-locked-banner mat-icon {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  color: #dc2626;
+}
+
+.psc-locked-banner p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* FullCalendar */
+.psc-fc-section {
+  margin-bottom: 1rem;
+  padding: 1.25rem 1.35rem;
+  background: linear-gradient(145deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%);
+  border: 1px solid #c7d2fe;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(79, 70, 229, 0.08);
+}
+
+.psc-fc-head {
+  margin-bottom: 1rem;
+}
+
+.psc-fc-head h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  color: #312e81;
+}
+
+.psc-fc-sub {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.psc-fc-wrap {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+:host ::ng-deep .psc-fc-wrap .fc .fc-toolbar-title {
+  font-size: 1.05rem;
+}
+
+:host ::ng-deep .psc-fc-wrap .psc-fc-slot--blocked {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.psc-rules {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  color: #1e3a8a;
+}
+
+.psc-rules h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.psc-rules ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}

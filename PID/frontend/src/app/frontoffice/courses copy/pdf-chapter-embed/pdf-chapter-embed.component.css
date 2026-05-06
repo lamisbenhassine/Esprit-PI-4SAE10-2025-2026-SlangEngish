@@ -1,0 +1,53 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.pdf-embed {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: min(68vh, 760px);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.pdf-embed pdf-viewer {
+  flex: 1;
+  min-height: min(52vh, 560px);
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+  display: block;
+}
+
+.progress-section {
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border-top: 1px solid #e0e0e0;
+}
+
+.progress-bar-wrapper {
+  margin-bottom: 0.5rem;
+}
+
+.progress-bar-wrapper mat-progress-bar {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.progress-text .percent {
+  font-weight: 600;
+  color: #333;
+}

@@ -1,0 +1,145 @@
+.tpt-root {
+  display: block;
+}
+
+.tpt-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.tpt-title--card {
+  font-size: 1.05rem;
+}
+
+.tpt-root--hero .tpt-title {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.tpt-desc {
+  margin: 0 0 0.35rem;
+  color: rgba(0, 0, 0, 0.72);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.tpt-root--hero .desc {
+  margin: 0 0 0.5rem;
+  white-space: pre-wrap;
+}
+
+.tpt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.tpt-lang-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.tpt-lang-chip {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 999px;
+  padding: 0.24rem 0.62rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.tpt-lang-chip.active {
+  border-color: #3f51b5;
+  background: #e8eaf6;
+  color: #3949ab;
+  font-weight: 600;
+}
+
+.tpt-ico-inline {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+
+.tpt-link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #65676b;
+  text-transform: none;
+  min-width: 0;
+  padding: 0 0.25rem;
+  line-height: 1.3;
+}
+
+.tpt-link:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.tpt-ico {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.2rem;
+  vertical-align: middle;
+  color: #65676b;
+}
+
+.tpt-spin {
+  margin-right: 0.25rem;
+}
+
+.tpt-clickable {
+  cursor: pointer;
+}
+
+.tpt-clickable:hover {
+  opacity: 0.92;
+}
+
+.tpt-lang-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5c6bc0;
+  background: #e8eaf6;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  margin-right: 0.25rem;
+  align-self: center;
+}
+
+/* Aligner avec les cartes forum général / niveaux (titres h3 & extraits avant refactor). */
+:host-context(.fo-card-body) .tpt-title--card {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  color: #0f172a;
+}
+
+:host-context(.fo-card-body) .tpt-desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.5;
+  flex: 1;
+}
+
+:host-context(.fl-card) .tpt-title--card {
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+:host-context(.fl-card) .tpt-desc {
+  margin: 0 0 0.85rem;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: #64748b;
+}

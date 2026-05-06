@@ -1,0 +1,166 @@
+.offer-detail-container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 0 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #718096;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: #4361ee;
+}
+
+.detail-card {
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid #edf2f7;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+}
+
+.image-section img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    min-height: 400px;
+}
+
+.info-section {
+    padding: 60px;
+}
+
+.plan-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #f0f3ff;
+    color: #4361ee;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+h1 {
+    font-size: 42px;
+    font-weight: 800;
+    color: #1a202c;
+    margin: 0 0 24px 0;
+}
+
+.price-display {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 30px;
+}
+
+.currency {
+    font-size: 24px;
+    color: #718096;
+}
+
+.amount {
+    font-size: 48px;
+    font-weight: 800;
+    color: #1a202c;
+}
+
+.period {
+    font-size: 18px;
+    color: #718096;
+}
+
+.description {
+    font-size: 18px;
+    line-height: 1.8;
+    color: #4a5568;
+    margin-bottom: 40px;
+}
+
+.feature-highlights h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.feature-highlights ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 40px 0;
+}
+
+.feature-highlights li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    color: #4a5568;
+}
+
+.feature-highlights mat-icon {
+    color: #48bb78;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.choose-btn {
+    width: 100%;
+    padding: 16px !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    border-radius: 14px !important;
+    background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%) !important;
+    box-shadow: 0 10px 20px rgba(67, 97, 238, 0.3) !important;
+    margin-bottom: 20px;
+}
+
+.validity-info {
+    text-align: center;
+    font-size: 13px;
+    color: #a0aec0;
+}
+
+.loading-state {
+    display: flex;
+    justify-content: center;
+    padding: 60px;
+}
+
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .info-section {
+        padding: 40px 30px;
+    }
+}

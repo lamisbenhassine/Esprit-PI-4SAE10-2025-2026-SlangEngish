@@ -1,0 +1,53 @@
+<div class="live-stream-page">
+  <h2 class="page-title">Live Stream</h2>
+
+  <div *ngIf="loading" class="state-message">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Chargement du live en cours...</p>
+  </div>
+
+  <div *ngIf="error" class="state-message error">
+    <p>{{ error }}</p>
+  </div>
+
+  <ng-container *ngIf="!loading && !error">
+    <ng-container *ngIf="selectedStream; else noLive">
+      <div class="stream-header">
+        <h3>{{ selectedStream.title }}</h3>
+        <p class="start-time">
+          Début : {{ selectedStream.startTime | date:'short' }}
+        </p>
+      </div>
+
+      <div class="iframe-wrapper">
+        <iframe
+          [src]="selectedStream.meetingLink | safeUrl"
+          frameborder="0"
+          allow="camera; microphone; fullscreen; display-capture"
+          allowfullscreen>
+        </iframe>
+      </div>
+
+      <div *ngIf="liveStreams.length > 1" class="other-streams">
+        <h4>Autres lives disponibles</h4>
+        <div class="stream-buttons">
+          <button
+            mat-raised-button
+            color="primary"
+            *ngFor="let stream of liveStreams"
+            [disabled]="stream.id === selectedStream?.id"
+            (click)="selectStream(stream)">
+            {{ stream.title }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #noLive>
+      <div class="state-message">
+        <p>Aucun live n'est disponible pour le moment.</p>
+      </div>
+    </ng-template>
+  </ng-container>
+</div>
+

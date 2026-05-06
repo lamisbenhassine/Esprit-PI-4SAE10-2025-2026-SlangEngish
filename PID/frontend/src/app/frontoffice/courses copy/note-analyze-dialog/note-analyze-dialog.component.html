@@ -1,0 +1,93 @@
+<h2 mat-dialog-title class="dialog-title">
+  <mat-icon aria-hidden="true">auto_awesome</mat-icon>
+  Analyse IA de la note
+</h2>
+
+<mat-dialog-content class="dialog-body">
+  <div *ngIf="loading" class="state-center">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>Analyse de votre note enregistrée…</p>
+  </div>
+
+  <div *ngIf="error" class="error-box" role="alert">{{ error }}</div>
+
+  <ng-container *ngIf="response as r">
+    <mat-card class="feedback-card" appearance="outlined">
+      <mat-card-content>
+        <div class="feedback-label">
+          <mat-icon inline>favorite</mat-icon>
+          Retour sur votre texte
+        </div>
+        <p class="feedback-text">{{ r.feedbackSummary }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <p class="hint-compare">Comparaison avec la <strong>dernière version enregistrée</strong> (les changements non sauvegardés ne sont pas analysés).</p>
+
+    <div class="compare-titles" *ngIf="hasUsefulTitleSuggestion(r)">
+      <div class="title-col">
+        <span class="col-label">Titre actuel</span>
+        <div class="title-box">{{ r.originalTitle || 'Sans titre' }}</div>
+      </div>
+      <mat-icon class="arrow-icon" aria-hidden="true">arrow_forward</mat-icon>
+      <div class="title-col">
+        <span class="col-label">Titre suggéré</span>
+        <div class="title-box suggested">{{ r.suggestedTitle }}</div>
+      </div>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-col">
+        <h3 class="compare-heading">Original</h3>
+        <div class="html-preview" [innerHTML]="trustedHtml(r.originalHtml)"></div>
+      </div>
+      <div class="compare-col improved">
+        <h3 class="compare-heading">Version améliorée (réorganisée)</h3>
+        <div class="html-preview" [innerHTML]="trustedHtml(r.restructuredHtml)"></div>
+      </div>
+    </div>
+
+    <div class="compare-grid grammar-row" *ngIf="r.grammarCorrectedHtml && r.grammarCorrectedHtml !== r.restructuredHtml">
+      <div class="compare-col span-2">
+        <h3 class="compare-heading">Corrections orthographe / grammaire seulement</h3>
+        <div class="html-preview compact" [innerHTML]="trustedHtml(r.grammarCorrectedHtml)"></div>
+      </div>
+    </div>
+
+    <mat-card class="choices-card" appearance="outlined">
+      <mat-card-content>
+        <h4 class="choices-title">Que souhaitez-vous appliquer ?</h4>
+        <p class="choices-hint">Rien n’est enregistré tant que vous n’avez pas cliqué sur <strong>Enregistrer</strong> dans le carnet.</p>
+
+        <mat-checkbox [(ngModel)]="applySuggestedTitle" [disabled]="!hasUsefulTitleSuggestion(r)">
+          Appliquer le titre suggéré
+        </mat-checkbox>
+
+        <div class="body-choice">
+          <span class="body-choice-label">Corps de la note</span>
+          <mat-radio-group [(ngModel)]="bodyMode" class="radio-col">
+            <mat-radio-button value="none">Ne pas modifier le corps</mat-radio-button>
+            <mat-radio-button value="grammar">Corrections orthographe / grammaire uniquement</mat-radio-button>
+            <mat-radio-button value="full">Version réorganisée (recommandé)</mat-radio-button>
+          </mat-radio-group>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </ng-container>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-button type="button" (click)="reject()">Rejeter</button>
+  <button
+    mat-stroked-button
+    color="primary"
+    type="button"
+    *ngIf="response"
+    (click)="applySelection()"
+    [disabled]="!canApplySelection()">
+    Appliquer la sélection
+  </button>
+  <button mat-flat-button color="primary" type="button" *ngIf="response" (click)="applyAll()">
+    Tout appliquer
+  </button>
+</mat-dialog-actions>

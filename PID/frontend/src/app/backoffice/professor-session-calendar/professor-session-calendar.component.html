@@ -1,0 +1,67 @@
+<div class="psc-page">
+  <div class="psc-toolbar">
+    <button
+      mat-stroked-button
+      color="primary"
+      type="button"
+      (click)="openDescriptionsEditor()"
+      [disabled]="loading || saving || !initialLoadDone">
+      Plan de séance (textes)
+    </button>
+    <button
+      mat-stroked-button
+      color="warn"
+      type="button"
+      (click)="resetAll()"
+      [disabled]="loading || saving || !initialLoadDone">
+      Reset
+    </button>
+  </div>
+
+  <p class="psc-loading" *ngIf="loading">Chargement…</p>
+
+  <div class="psc-countdown" *ngIf="showCountdownBar()">
+    <div class="psc-countdown__row">
+      <span class="psc-countdown__label">Modifications encore possibles pendant</span>
+      <span class="psc-countdown__time">{{ countdownLabel }}</span>
+    </div>
+    <mat-progress-bar mode="determinate" [value]="countdownProgress"></mat-progress-bar>
+  </div>
+
+  <div class="psc-locked-banner" *ngIf="!loading && isLocked">
+    <mat-icon aria-hidden="true">lock</mat-icon>
+    <p>
+      Vos 3 séances sont <strong>verrouillées</strong> (délai d’1 minute écoulé). Vous ne pouvez plus les modifier.
+      Utilisez <strong>Reset</strong> pour tout effacer et recommencer.
+    </p>
+  </div>
+
+  <section class="psc-fc-section" *ngIf="!loading" aria-labelledby="psc-fc-title">
+    <div class="psc-fc-head">
+      <h2 id="psc-fc-title">Calendrier des créneaux</h2>
+      <p class="psc-fc-sub">
+        <strong>Clic</strong> sur un créneau libre pour le sélectionner ;
+        <strong>clic</strong> sur un créneau <em>déjà choisi</em> pour ouvrir le texte « plan de séance » (retrait possible dans la fenêtre).
+        Le bouton <strong>Plan de séance</strong> édite tous les créneaux choisis. Enregistrement automatique côté serveur.
+      </p>
+    </div>
+    <div class="psc-fc-wrap">
+      <full-calendar *ngIf="calendarOptions" [options]="calendarOptions"></full-calendar>
+    </div>
+  </section>
+
+  <aside class="psc-rules" *ngIf="!loading">
+    <h3>Rappel</h3>
+    <ul>
+      <li>Mardi &amp; mercredi : 17h–20h et 19h–22h.</li>
+      <li>Samedi &amp; dimanche : 9h–12h, 14h–17h et 17h–20h.</li>
+      <li><strong>Au plus 3 séances</strong> au total, réparties sur des jours différents.</li>
+      <li>Pas deux créneaux le même jour.</li>
+      <li>
+        Une fois <strong>3 séances</strong> choisies, vous avez <strong>1 minute</strong> pour les ajuster ; ensuite elles sont
+        <strong>verrouillées</strong> (barre de décompte ci-dessus).
+      </li>
+      <li>Chaque séance peut avoir un <strong>texte de plan</strong> (objectifs, contenu) — max. 2000 caractères.</li>
+    </ul>
+  </aside>
+</div>

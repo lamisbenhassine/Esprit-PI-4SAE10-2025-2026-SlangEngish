@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: slang-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: slangroot
+      MYSQL_DATABASE: userdbb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pslangroot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  eureka:
+    build:
+      context: ./backend/eureka
+    container_name: slang-eureka
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    depends_on:
+      - mysql
+
+  user:
+    build:
+      context: ./backend/microservices/users
+    container_name: slang-user
+    restart: unless-stopped
+    ports:
+      - "8011:8011"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/userdbb?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: slangroot
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: slangroot
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "true"
+      EUREKA_CLIENT_FETCH_REGISTRY: "true"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+      # Cache de démarrage/Dev: évite les configs “local” manquantes
+      SPRING_CONFIG_IMPORT: optional:classpath:application-local.properties
+
+  gateway:
+    build:
+      context: ./backend/gateway
+    container_name: slang-gateway
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+    depends_on:
+      - user
+    environment:
+      USERS_BASE_URL: http://user:8011
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka
+
+volumes:
+  mysql-data:
+

@@ -1,0 +1,168 @@
+<app-forum-selection-assist>
+<div class="fo-forum">
+  <header class="fo-hero">
+    <div class="fo-hero-inner">
+      <span class="fo-kicker">Slang English · Communauté</span>
+      <h1>Forum</h1>
+      <p>Discuss, share resources (images, videos), and improve with other learners.</p>
+    </div>
+  </header>
+
+  <app-forum-tutors-bar></app-forum-tutors-bar>
+
+  <section class="fo-compose">
+    <h2>New Discussion</h2>
+    <mat-form-field appearance="outline" class="w100">
+      <mat-label>Title</mat-label>
+      <input
+        matInput
+        [(ngModel)]="newTitle"
+        placeholder="Discussion title"
+        spellcheck="true"
+        lang="en"
+        composeWordSuggest
+        #fgTitleSug="composeWordSuggest" />
+      <div class="compose-suggest-row" *ngIf="fgTitleSug.suggestions?.length">
+        <button
+          type="button"
+          mat-stroked-button
+          *ngFor="let w of fgTitleSug.suggestions"
+          (click)="fgTitleSug.applySuggestion(w)">
+          {{ w }}
+        </button>
+      </div>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="w100">
+      <mat-label>Description</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        [(ngModel)]="newDescription"
+        placeholder="Details..."
+        spellcheck="true"
+        lang="en"
+        composeWordSuggest
+        #fgDescSug="composeWordSuggest"></textarea>
+      <div class="compose-suggest-row" *ngIf="fgDescSug.suggestions?.length">
+        <button
+          type="button"
+          mat-stroked-button
+          *ngFor="let w of fgDescSug.suggestions"
+          (click)="fgDescSug.applySuggestion(w)">
+          {{ w }}
+        </button>
+      </div>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="w100">
+      <mat-label>Cover image (optional URL)</mat-label>
+      <input matInput [(ngModel)]="newCoverUrl" />
+    </mat-form-field>
+    <div class="fo-compose-actions">
+      <input type="file" accept="image/*" #coverIn hidden (change)="onCoverFile($event)" />
+      <button mat-stroked-button type="button" (click)="coverIn.click()" [disabled]="coverUploading">
+        <mat-icon>image</mat-icon> Upload an image
+      </button>
+      <button mat-stroked-button type="button" (click)="polishNewTopicFields()" matTooltip="Orthographe et style (Gemini si configuré)">
+        Améliorer (IA)
+      </button>
+      <button mat-flat-button color="primary" type="button"
+        (click)="createTopic()"
+        [disabled]="creating || !newTitle.trim() || !newDescription.trim() || generalSpaceId == null">
+        Publish
+      </button>
+    </div>
+  </section>
+
+  <div *ngIf="loading" class="fo-loading">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+
+  <div *ngIf="filteredTopics.length === 0 && !loading && topics.length === 0" class="fo-empty">
+    <mat-icon>forum</mat-icon>
+    <h3>No topics yet</h3>
+    <p>Start the first discussion above.</p>
+  </div>
+
+  <div *ngIf="filteredTopics.length === 0 && !loading && topics.length > 0" class="fo-empty">
+    <mat-icon>search_off</mat-icon>
+    <h3>No results</h3>
+    <button mat-button (click)="searchQuery = ''; onSearchChange()">Reset</button>
+  </div>
+
+  <section class="fo-filters" *ngIf="!loading && topics.length > 0">
+    <mat-form-field appearance="outline" class="fo-search">
+      <mat-label>Search</mat-label>
+      <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" />
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="fo-sort">
+      <mat-label>Sort</mat-label>
+      <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
+        <mat-option value="createdAt">Date</mat-option>
+        <mat-option value="title">Title</mat-option>
+        <mat-option value="category">Category</mat-option>
+        <mat-option value="views">Views</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button mat-icon-button (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()" matTooltip="Order">
+      <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+    </button>
+  </section>
+
+  <div class="fo-grid" *ngIf="!loading">
+    <div class="fo-card-wrap" *ngFor="let topic of filteredTopics">
+      <a [routerLink]="['/frontoffice/forum/topic', topic.id]" class="fo-card">
+        <div class="fo-card-media" *ngIf="topic.coverImageUrl">
+          <img [src]="topic.coverImageUrl" alt="" />
+        </div>
+        <div class="fo-card-media fo-placeholder" *ngIf="!topic.coverImageUrl">
+          <mat-icon>chat_bubble</mat-icon>
+        </div>
+        <div class="fo-card-body">
+          <div class="fo-card-tags">
+            <span class="tag">{{ topic.category }}</span>
+            <span class="tag pin" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> Pinned</span>
+            <span class="tag soft">{{ topic.createdAt | date : 'mediumDate' }}</span>
+          </div>
+          <app-topic-post-translate-block
+            variant="card"
+            [title]="topic.title"
+            [description]="topic.description || ''"
+            [previewMaxLength]="160"
+          ></app-topic-post-translate-block>
+          <footer>
+            <span class="meta author">
+              <mat-icon>person</mat-icon>{{ authorName(topic.authorId) }}
+            </span>
+            <span class="author-badge student" *ngIf="authorRole(topic.authorId) === 'Student'">Student</span>
+            <span class="author-badge tutor" *ngIf="authorRole(topic.authorId) === 'Tutor'">Tutor</span>
+            <span class="author-badge admin" *ngIf="authorRole(topic.authorId) === 'Team'">Team</span>
+            <span class="meta"><mat-icon>visibility</mat-icon>{{ topic.views }}</span>
+          </footer>
+        </div>
+      </a>
+      <button
+        *ngIf="topic.authorId === currentUserId && topic.id != null"
+        type="button"
+        class="fo-card-delete"
+        mat-icon-button
+        matTooltip="Supprimer mon sujet"
+        (click)="deleteOwnTopic(topic, $event)">
+        <mat-icon>delete_outline</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="fo-pagination" *ngIf="totalPages > 1 && !loading">
+    <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+      <mat-icon>chevron_left</mat-icon>
+    </button>
+    <button *ngFor="let page of getPageNumbers()" mat-button [class.active]="page === currentPage" (click)="goToPage(page)">
+      {{ page }}
+    </button>
+    <button mat-icon-button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+</div>
+</app-forum-selection-assist>

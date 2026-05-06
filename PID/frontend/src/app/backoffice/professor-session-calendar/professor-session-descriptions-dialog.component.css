@@ -1,0 +1,44 @@
+.psd-content {
+  min-width: min(92vw, 480px);
+  max-height: 70vh;
+}
+
+.psd-intro,
+.psd-locked,
+.psd-empty {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.psd-locked {
+  color: #92400e;
+  background: #fffbeb;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #fcd34d;
+}
+
+.psd-block {
+  margin-bottom: 1.25rem;
+}
+
+.psd-block:last-child {
+  margin-bottom: 0;
+}
+
+.psd-block__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.psd-field {
+  width: 100%;
+}
+
+.psd-actions {
+  margin-top: 0.25rem;
+}

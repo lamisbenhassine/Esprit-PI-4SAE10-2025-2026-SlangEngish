@@ -1,0 +1,82 @@
+<div class="placement-container">
+    <div class="step-indicator">
+        <div class="step active"><span>1</span> Personal Info</div>
+        <div class="step-line"></div>
+        <div class="step"><span>2</span> Choose Plan</div>
+        <div class="step-line"></div>
+        <div class="step"><span>3</span> Checkout</div>
+    </div>
+
+    <div class="form-header">
+        <h1>Start Your Adventure</h1>
+        <p>Tell us a bit about yourself so we can suggest the best plan for you.</p>
+    </div>
+
+    <div class="form-card">
+        <form [formGroup]="placementForm" (ngSubmit)="onSubmit()">
+            <div class="form-row">
+                <mat-form-field appearance="outline">
+                    <mat-label>First Name</mat-label>
+                    <input matInput formControlName="firstName" placeholder="John">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                    <mat-label>Last Name</mat-label>
+                    <input matInput formControlName="lastName" placeholder="Doe">
+                </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Email Address</mat-label>
+                <input matInput formControlName="email" placeholder="john.doe@example.com" type="email">
+            </mat-form-field>
+
+            <!-- Manual level selection removed: level will be inferred from certificate -->
+
+            <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Your Learning Goals (Optional)</mat-label>
+                <textarea matInput formControlName="goals" rows="3"
+                    placeholder="I want to improve my speaking skills for work..."></textarea>
+            </mat-form-field>
+
+            <!-- Certificate upload – replaces manual level selection -->
+            <div class="certificate-upload">
+                <h2 class="upload-title">Upload your English certificate</h2>
+                <p class="upload-subtitle">
+                    Drop a PDF or JPG certificate that shows your current level (A2 / B1 / B2 / C1...) and we will
+                    automatically suggest the best subscription plan for you.
+                </p>
+
+                <label class="upload-dropzone">
+                    <input type="file" accept=".pdf,.jpg,.jpeg" (change)="onCertificateSelected($event)" hidden>
+                    <div class="upload-icon">
+                        <mat-icon>cloud_upload</mat-icon>
+                    </div>
+                    <div class="upload-text">
+                        <span class="upload-primary">Click to upload or drag &amp; drop</span>
+                        <span class="upload-secondary">PDF or JPG, up to 5 MB</span>
+                    </div>
+                </label>
+
+                <div class="upload-file-info" *ngIf="placementForm.get('certificate')?.value">
+                    <mat-icon>description</mat-icon>
+                    <div>
+                        <div class="file-name">{{ placementForm.get('certificate')?.value }}</div>
+                        <div class="file-hint">Certificate selected. We will use it to detect your level.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button mat-raised-button color="primary" type="submit" [disabled]="placementForm.invalid"
+                    class="submit-btn">
+                    Find the Best Plan
+                    <mat-icon>arrow_forward</mat-icon>
+                </button>
+                <p class="link-to-offers">
+                    Ou <a routerLink="/frontoffice/inscription/offers">voir tous les plans</a>
+                </p>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,90 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Edit Plan' : 'Add New Plan' }}</h2>
+<mat-dialog-content>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="dialog-form">
+        <mat-form-field appearance="outline">
+            <mat-label>Offer Name</mat-label>
+            <input matInput formControlName="name" placeholder="e.g., Discovery">
+            <mat-error *ngIf="form.get('name')?.invalid">Name is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Plan Type</mat-label>
+            <mat-select formControlName="planType">
+                <mat-option *ngFor="let type of planTypes" [value]="type">{{ type }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.get('planType')?.hasError('required')">Plan type is required</mat-error>
+        </mat-form-field>
+
+        <div style="display:flex; gap:12px;">
+            <mat-form-field appearance="outline" style="flex: 1;">
+                <mat-label>Price</mat-label>
+                <input matInput type="number" formControlName="price" placeholder="29.99">
+                <mat-error *ngIf="form.get('price')?.hasError('required')">Price is required</mat-error>
+                <mat-error *ngIf="form.get('price')?.hasError('min')">Price must be greater than 0</mat-error>
+                <mat-error *ngIf="form.get('price')?.hasError('pattern')">Use max 2 decimals (e.g. 29.99)</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" style="width: 120px;">
+                <mat-label>Currency</mat-label>
+                <input matInput formControlName="currency" placeholder="TND">
+                <mat-error *ngIf="form.get('currency')?.invalid">Currency is required</mat-error>
+            </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Duration (days)</mat-label>
+            <input matInput type="number" formControlName="durationDays" placeholder="30">
+            <mat-error *ngIf="form.get('durationDays')?.invalid">Duration is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Description</mat-label>
+            <textarea matInput rows="3" formControlName="description"
+                placeholder="Start gently with limited access to basic modules"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Valid From Date</mat-label>
+            <input matInput type="date" formControlName="date">
+            <mat-error *ngIf="form.get('date')?.hasError('required')">Date is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>User ID (Optional)</mat-label>
+            <input matInput type="number" formControlName="userId">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+            <mat-label>Course ID (Optional)</mat-label>
+            <input matInput type="number" formControlName="courseId">
+        </mat-form-field>
+
+        <!-- Image Upload Section -->
+        <div class="image-upload-section">
+            <label class="upload-label">Plan Image</label>
+            <div class="image-preview-container">
+                <div class="image-preview" *ngIf="imagePreview">
+                    <img [src]="imagePreview" alt="Plan preview">
+                    <button type="button" mat-icon-button class="remove-image-btn" (click)="removeImage()">
+                        <mat-icon>close</mat-icon>
+                    </button>
+                </div>
+                <div class="upload-placeholder" *ngIf="!imagePreview">
+                    <mat-icon>image</mat-icon>
+                    <span>No image selected</span>
+                </div>
+            </div>
+            <input type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;" #fileInput>
+            <button type="button" mat-stroked-button (click)="fileInput.click()">
+                <mat-icon>upload</mat-icon>
+                {{ imagePreview ? 'Change Image' : 'Upload Image' }}
+            </button>
+        </div>
+    </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="form.invalid">
+        {{ isEditMode ? 'Update' : 'Create' }}
+    </button>
+</mat-dialog-actions>

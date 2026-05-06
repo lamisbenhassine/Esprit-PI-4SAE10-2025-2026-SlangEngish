@@ -1,0 +1,142 @@
+<div class="streams-management">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Live Streams Management</h1>
+      <p class="header-subtitle">Planifier, lancer et gérer les live streams</p>
+    </div>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="addStream()">
+        <mat-icon>add_circle</mat-icon>
+        <span>Planifier un live</span>
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="state-message">
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    <p>Chargement des streams...</p>
+  </div>
+
+  <div *ngIf="error" class="state-message error">
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- Formulaire de création / édition -->
+  <div *ngIf="formStream" class="stream-form-card">
+    <h2>{{ isCreating ? 'Planifier un nouveau live' : 'Modifier le live' }}</h2>
+
+    <form (ngSubmit)="saveStream()" #streamForm="ngForm">
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Titre</mat-label>
+          <input
+            matInput
+            name="title"
+            required
+            [(ngModel)]="formStream.title" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Date / Heure de début</mat-label>
+          <input
+            matInput
+            type="datetime-local"
+            name="startTime"
+            required
+            [(ngModel)]="formStream.startTime" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Statut</mat-label>
+          <mat-select
+            name="status"
+            required
+            [(ngModel)]="formStream.status">
+            <mat-option *ngFor="let s of statuses" [value]="s">
+              {{ s }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="form-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="!streamForm.form.valid">
+          {{ isCreating ? 'Créer' : 'Enregistrer' }}
+        </button>
+        <button mat-button type="button" (click)="cancelForm()">
+          Annuler
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Liste des streams -->
+  <div class="streams-grid" *ngIf="!loading && streams.length > 0">
+    <div class="stream-card" *ngFor="let stream of streams">
+      <div class="stream-header">
+        <h3>{{ stream.title }}</h3>
+        <span class="status" [ngClass]="stream.status.toLowerCase()">
+          {{ stream.status }}
+        </span>
+      </div>
+
+      <div class="stream-body">
+        <p>
+          <strong>Début :</strong>
+          {{ stream.startTime | date:'short' }}
+        </p>
+
+        <p *ngIf="stream.meetingLink">
+          <strong>Meeting link :</strong>
+          <a
+            [href]="stream.meetingLink"
+            target="_blank"
+            rel="noopener noreferrer">
+            Ouvrir le live
+          </a>
+        </p>
+      </div>
+
+      <div class="stream-actions">
+        <button mat-stroked-button color="primary" (click)="editStream(stream)">
+          <mat-icon>edit</mat-icon>
+          Editer
+        </button>
+
+        <button mat-stroked-button color="warn" (click)="deleteStream(stream)">
+          <mat-icon>delete</mat-icon>
+          Supprimer
+        </button>
+
+        <button
+          mat-raised-button
+          color="accent"
+          *ngIf="stream.status !== 'LIVE'"
+          (click)="setLive(stream)">
+          <mat-icon>play_circle_filled</mat-icon>
+          Démarrer le LIVE
+        </button>
+
+        <button
+          mat-raised-button
+          color="primary"
+          *ngIf="stream.status === 'LIVE'"
+          (click)="setFinished(stream)">
+          <mat-icon>stop_circle</mat-icon>
+          Terminer le LIVE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && streams.length === 0">
+    <mat-icon>live_tv</mat-icon>
+    <h3>Aucun live stream pour le moment</h3>
+    <p>Utilisez le bouton "Planifier un live" pour en créer un.</p>
+  </div>
+</div>
+

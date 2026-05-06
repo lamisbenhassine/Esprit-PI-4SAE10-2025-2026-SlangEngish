@@ -1,0 +1,137 @@
+<div class="courses-management">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1>Subscription Management</h1>
+            <p class="header-subtitle">Manage all subscription offers and plans</p>
+        </div>
+        <div class="header-actions">
+            <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
+                <mat-icon>add_card</mat-icon>
+                <span>Create Offer</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="filter-section">
+        <div class="search-box">
+            <mat-form-field appearance="outline" class="search-field">
+                <mat-label>Search plans</mat-label>
+                <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+                    placeholder="Search by name, type, description or date">
+                <mat-icon matPrefix>search</mat-icon>
+            </mat-form-field>
+        </div>
+        <div class="sort-controls">
+            <mat-form-field appearance="outline" class="sort-field">
+                <mat-label>Sort by</mat-label>
+                <mat-select [(ngModel)]="sortBy" (ngModelChange)="onSortChange()">
+                    <mat-option value="date">Date</mat-option>
+                    <mat-option value="planType">Plan Type</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <button mat-icon-button [class.active]="sortOrder === 'asc'"
+                (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; onSortChange()"
+                matTooltip="Toggle sort order">
+                <mat-icon>{{ sortOrder === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</mat-icon>
+            </button>
+        </div>
+    </div>
+
+    <!-- Subscriptions Grid -->
+    <div class="subscription-grid">
+        <div class="subscription-card" *ngFor="let plan of filteredPlans">
+            <div class="card-header">
+                <div class="plan-badge">{{ plan.planType }}</div>
+                <h3 class="plan-title">{{ plan.name || plan.planType }}</h3>
+            </div>
+
+            <div class="image-wrapper">
+                <img [src]="getPlanImage(plan)" [alt]="plan.planType" (error)="onImageError($event, plan)">
+                <div class="image-overlay">
+                    <div class="price-tag">{{ plan.price }} <span>{{ plan.currency || 'TND' }}</span></div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="info-row">
+                    <mat-icon>schedule</mat-icon>
+                    <span>{{ plan.durationDays || 0 }} Days Duration</span>
+                </div>
+                <div class="info-row">
+                    <mat-icon>event_available</mat-icon>
+                    <span>Valid from: <strong>{{ plan.date | date }}</strong></span>
+                </div>
+
+                <p class="plan-description" *ngIf="plan.description">
+                    {{ plan.description | slice:0:80 }}{{ plan.description.length > 80 ? '...' : '' }}
+                </p>
+
+                <div class="meta-tags" *ngIf="plan.userId || plan.courseId">
+                    <span class="tag user" *ngIf="plan.userId">User #{{plan.userId}}</span>
+                    <span class="tag course" *ngIf="plan.courseId">Course #{{plan.courseId}}</span>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <button mat-button class="edit-btn" (click)="openEditDialog(plan)">
+                    <mat-icon>edit_note</mat-icon>
+                    Edit
+                </button>
+                <button mat-button class="delete-btn" (click)="deletePlan(plan.id!)">
+                    <mat-icon>delete_sweep</mat-icon>
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="filteredPlans.length === 0 && !loading && plans.length === 0">
+        <mat-icon>subscriptions</mat-icon>
+        <h3>No subscription offers found</h3>
+        <p class="empty-hint">Start the Inscription microservice (port 8030), run the app with <strong>ng serve</strong>, then click "Load default offers" or create one.</p>
+        <div class="empty-actions">
+            <button mat-raised-button class="action-btn secondary" (click)="loadDefaultOffers()" [disabled]="loadingSeed">
+                <mat-icon>refresh</mat-icon>
+                {{ loadingSeed ? 'Loading...' : 'Load default offers' }}
+            </button>
+            <button mat-raised-button class="action-btn primary" (click)="openCreateDialog()">
+                <mat-icon>add_card</mat-icon>
+                Create Your First Offer
+            </button>
+        </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredPlans.length === 0 && !loading && plans.length > 0 && searchQuery.trim()">
+        <mat-icon>search_off</mat-icon>
+        <h3>No plans match your search criteria</h3>
+        <button mat-button (click)="searchQuery = ''; onSearchChange()">Clear filters</button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-section" *ngIf="totalPages > 1 && !loading && filteredTotalCount > 0">
+        <div class="pagination-info">
+            Showing {{ (currentPage - 1) * itemsPerPage + 1 }} -
+            {{ Math.min(currentPage * itemsPerPage, filteredTotalCount) }} of {{ filteredTotalCount }} plans
+        </div>
+                <div class="pagination-controls">
+                    <button mat-icon-button [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+                        <mat-icon>chevron_left</mat-icon>
+                    </button>
+                    <button *ngFor="let page of getPageNumbers()" mat-button [class.active]="page === currentPage"
+                        (click)="goToPage(page)">
+                        {{ page }}
+                    </button>
+                    <button mat-icon-button [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+                        <mat-icon>chevron_right</mat-icon>
+                    </button>
+                </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="loading">
+            <mat-spinner diameter="50"></mat-spinner>
+        </div>
+    </div>

@@ -1,0 +1,239 @@
+<div class="topic-shell" *ngIf="topic">
+  <nav class="crumb" aria-label="breadcrumb">
+    <a routerLink="/frontoffice/feed">General Feed</a>
+    <span class="sep">/</span>
+    <span class="current">{{ topic.title }}</span>
+  </nav>
+
+  <app-forum-tutors-bar></app-forum-tutors-bar>
+
+  <div class="locked-ribbon" *ngIf="topic.locked">
+    <mat-icon>lock</mat-icon>
+    Topic locked - no new messages.
+  </div>
+
+  <article class="hero-card">
+    <div class="hero-cover" *ngIf="topic.coverImageUrl as cover">
+      <img [src]="cover" alt="" />
+    </div>
+    <div class="hero-body">
+      <div class="hero-top">
+        <span class="pill cat" [class]="topic.category.toLowerCase()">{{ topic.category }}</span>
+        <span class="pill pinned" *ngIf="topic.pinned"><mat-icon>push_pin</mat-icon> Pinned</span>
+        <span class="hero-date">{{ topic.createdAt | date : 'mediumDate' }}</span>
+      </div>
+      <app-topic-post-translate-block
+        variant="hero"
+        [title]="topic.title"
+        [description]="topic.description || ''"
+        [previewMaxLength]="0"
+      >
+        <div class="hero-author-row">
+          <div class="avatar">{{ initials(topic.authorId) }}</div>
+          <div>
+            <div class="name">{{ displayName(topic.authorId) }}</div>
+            <div class="role">{{ userRoleLabel(topic.authorId) || 'Member' }}</div>
+          </div>
+          <span class="spacer"></span>
+        <button mat-stroked-button color="warn" type="button" (click)="deleteTopic()" *ngIf="canDeleteTopic()">
+          <mat-icon>delete_outline</mat-icon> Delete topic
+        </button>
+        <button mat-stroked-button color="warn" type="button" (click)="reportTopic()" *ngIf="canReportTopic()">
+          <mat-icon>flag</mat-icon> Report
+        </button>
+        </div>
+      </app-topic-post-translate-block>
+      <div class="hero-stats">
+        <span><mat-icon>visibility</mat-icon> {{ topic.views }} views</span>
+        <span><mat-icon>chat_bubble</mat-icon> {{ messages.length }} messages</span>
+      </div>
+    </div>
+  </article>
+
+  <section class="thread-section">
+    <div class="discussion-head">
+      <h2>Discussion</h2>
+      <button
+        mat-stroked-button
+        color="primary"
+        type="button"
+        (click)="requestTutorCall()"
+        [disabled]="tutorAssistBusy"
+        matTooltip="Start tutor call via VAPI/n8n">
+        <mat-icon>support_agent</mat-icon>
+        {{ tutorAssistBusy ? 'Checking slots...' : 'Call Tutor (VAPI)' }}
+      </button>
+    </div>
+
+    <div class="thread-list">
+      <div class="post" *ngFor="let message of messages">
+        <div class="post-avatar">{{ initials(message.authorId) }}</div>
+        <div class="post-main">
+          <header class="post-head">
+            <strong>{{ displayName(message.authorId) }}</strong>
+            <span class="role-mini" *ngIf="userRoleLabel(message.authorId)">{{ userRoleLabel(message.authorId) }}</span>
+            <time>{{ message.createdAt | date : 'short' }}</time>
+            <span class="spacer"></span>
+            <button mat-button color="warn" type="button" (click)="reportMessage(message)" *ngIf="canReportMessage(message)">Report</button>
+          </header>
+
+          <div class="post-body" *ngIf="editingMessageId !== message.id">
+            <p>{{ message.content }}</p>
+            <div class="media-row" *ngFor="let a of parseAttachments(message)">
+              <img *ngIf="a.type === 'image'" [src]="a.url" class="embed-img" alt="" />
+              <audio *ngIf="a.type === 'audio'" [src]="a.url" controls class="embed-audio"></audio>
+              <video *ngIf="a.type === 'video' && !isYoutube(a.url)" [src]="a.url" class="embed-video" controls></video>
+              <div class="yt-wrap" *ngIf="a.type === 'video' && isYoutube(a.url)">
+                <iframe
+                  *ngIf="safeYoutube(a.url) as safe"
+                  [src]="safe"
+                  title="video"
+                  allowfullscreen
+                  loading="lazy"></iframe>
+              </div>
+            </div>
+          </div>
+
+          <div class="edit-box" *ngIf="editingMessageId === message.id">
+            <textarea
+              [(ngModel)]="editContent"
+              rows="3"
+              spellcheck="true"
+              lang="en"
+              composeWordSuggest
+              #editSuggest="composeWordSuggest"></textarea>
+            <div class="compose-suggest-row" *ngIf="editSuggest.suggestions?.length">
+              <button
+                type="button"
+                mat-stroked-button
+                *ngFor="let w of editSuggest.suggestions"
+                (click)="editSuggest.applySuggestion(w)">
+                {{ w }}
+              </button>
+            </div>
+            <label class="hint">Attachments (JSON or leave empty)</label>
+            <textarea [(ngModel)]="editAttachmentsJson" rows="2" class="mono"></textarea>
+            <div class="row-btns">
+              <button mat-stroked-button type="button" (click)="polishEdit()" matTooltip="Orthographe et style (Gemini si configuré)">
+                Améliorer (IA)
+              </button>
+              <button mat-button type="button" (click)="editingMessageId = null">Cancel</button>
+              <button mat-flat-button color="primary" type="button" (click)="saveEdit(message.id!)">Save</button>
+            </div>
+          </div>
+
+          <footer class="post-actions" *ngIf="editingMessageId !== message.id">
+            <button mat-button type="button" (click)="replyTo(message.id!)" [disabled]="topic.locked">
+              <mat-icon>reply</mat-icon> Reply
+            </button>
+            <ng-container *ngIf="message.authorId === currentUserId">
+              <button mat-button (click)="startEdit(message)">Edit</button>
+              <button mat-button color="warn" (click)="deleteMessage(message.id!)">Delete</button>
+            </ng-container>
+          </footer>
+
+          <div class="replies" *ngIf="messageReplies[message.id!]?.length">
+            <div class="reply" *ngFor="let reply of messageReplies[message.id!]">
+              <div class="reply-av">{{ initials(reply.authorId) }}</div>
+              <div class="reply-body">
+                <header>
+                  <strong>{{ displayName(reply.authorId) }}</strong>
+                  <time>{{ reply.createdAt | date : 'short' }}</time>
+                </header>
+                <p>{{ reply.content }}</p>
+                <div class="media-row" *ngFor="let a of parseAttachments(reply)">
+                  <img *ngIf="a.type === 'image'" [src]="a.url" class="embed-img sm" alt="" />
+                  <audio *ngIf="a.type === 'audio'" [src]="a.url" controls class="embed-audio sm"></audio>
+                  <div class="yt-wrap sm" *ngIf="a.type === 'video' && isYoutube(a.url)">
+                    <iframe *ngIf="safeYoutube(a.url) as safe" [src]="safe" title="video" allowfullscreen></iframe>
+                  </div>
+                  <video *ngIf="a.type === 'video' && !isYoutube(a.url)" [src]="a.url" class="embed-video sm" controls></video>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="reply-composer" *ngIf="replyingTo === message.id && !topic.locked">
+            <textarea
+              [(ngModel)]="replyContent"
+              placeholder="Your reply..."
+              rows="2"
+              spellcheck="true"
+              lang="en"
+              composeWordSuggest
+              #replySuggest="composeWordSuggest"></textarea>
+            <div class="compose-suggest-row" *ngIf="replySuggest.suggestions?.length">
+              <button
+                type="button"
+                mat-stroked-button
+                *ngFor="let w of replySuggest.suggestions"
+                (click)="replySuggest.applySuggestion(w)">
+                {{ w }}
+              </button>
+            </div>
+            <div class="media-helpers">
+              <input type="file" accept="image/*,video/*" (change)="onComposeFile($event)" #replyFile hidden />
+              <button mat-stroked-button type="button" (click)="replyFile.click()" [disabled]="composeUploading">Attach file</button>
+              <mat-form-field appearance="outline" class="fuse">
+                <mat-label>Image (URL)</mat-label>
+                <input matInput [(ngModel)]="composeImageUrl" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="fuse">
+                <mat-label>Video (URL or YouTube)</mat-label>
+                <input matInput [(ngModel)]="composeVideoUrl" />
+              </mat-form-field>
+            </div>
+            <div class="row-btns">
+              <button mat-stroked-button type="button" (click)="polishReply()" matTooltip="Orthographe et style (Gemini si configuré)">
+                Améliorer (IA)
+              </button>
+              <button mat-button type="button" (click)="replyingTo = null">Cancel</button>
+              <button mat-flat-button color="primary" type="button" (click)="submitReply(message.id!)">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="composer-card" *ngIf="!topic.locked">
+      <h3>Join the conversation</h3>
+      <textarea
+        [(ngModel)]="newMessageContent"
+        rows="4"
+        placeholder="Your message..."
+        spellcheck="true"
+        lang="en"
+        composeWordSuggest
+        #mainSuggest="composeWordSuggest"></textarea>
+      <div class="compose-suggest-row" *ngIf="mainSuggest.suggestions?.length">
+        <button
+          type="button"
+          mat-stroked-button
+          *ngFor="let w of mainSuggest.suggestions"
+          (click)="mainSuggest.applySuggestion(w)">
+          {{ w }}
+        </button>
+      </div>
+      <div class="media-helpers">
+        <input type="file" accept="image/*,video/*" (change)="onComposeFile($event)" #mainFile hidden />
+        <button mat-stroked-button type="button" (click)="mainFile.click()" [disabled]="composeUploading">Attach media</button>
+        <mat-form-field appearance="outline" class="fuse">
+          <mat-label>Image (URL)</mat-label>
+          <input matInput [(ngModel)]="composeImageUrl" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="fuse">
+          <mat-label>Video / YouTube (URL)</mat-label>
+          <input matInput [(ngModel)]="composeVideoUrl" />
+        </mat-form-field>
+      </div>
+      <div class="row-btns composer-actions">
+        <button mat-stroked-button type="button" (click)="polishNewMessage()" matTooltip="Orthographe et style (Gemini si configuré)">
+          Améliorer (IA)
+        </button>
+        <button mat-flat-button color="primary" class="send" (click)="postMessage()" [disabled]="!newMessageContent.trim()">
+          Post
+        </button>
+      </div>
+    </div>
+  </section>
+</div>
