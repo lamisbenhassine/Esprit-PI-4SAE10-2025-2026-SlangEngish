@@ -80,10 +80,10 @@ pipeline {
                     usernameVariable: 'USER',
                     passwordVariable: 'PASS'
                 )]) {
-                    sh """
+                    sh '''
                         echo "$PASS" | docker login -u "$USER" --password-stdin
-                        docker push ${IMAGE_NAME}:${TAG}
-                    """
+                        docker push saifdenden/saifpidev:'${TAG}'
+                    '''
                 }
             }
         }
