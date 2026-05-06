@@ -2,7 +2,7 @@ pipeline {
     agent any
     tools {
         maven 'Maven3'
-        jdk 'JDK21'
+        jdk 'JDK17'
     }
     environment {
         DOCKERHUB_USER = "amounboukhris"
