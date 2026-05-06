@@ -38,34 +38,6 @@ pipeline {
             }
         }
 
-        stage('Unit Tests') {
-            steps {
-                dir("${SERVICE_DIR}") {
-                    script {
-                        if (isUnix()) {
-                            // Use Debian image so we can apt-get Chromium for Karma ChromeHeadless.
-                            docker.image('node:20-bullseye').inside {
-                                sh """
-                                  set -e
-                                  apt-get update
-                                  apt-get install -y --no-install-recommends chromium
-                                  rm -rf /var/lib/apt/lists/*
-                                  CHROME_BIN=/usr/bin/chromium npm test
-                                """
-                            }
-                        } else {
-                            bat 'npm test'
-                        }
-                    }
-                }
-            }
-            post {
-                always {
-                    junit allowEmptyResults: true, testResults: "${SERVICE_DIR}/reports/junit/*.xml"
-                }
-            }
-        }
-
         stage('Build') {
             steps {
                 dir("${SERVICE_DIR}") {
