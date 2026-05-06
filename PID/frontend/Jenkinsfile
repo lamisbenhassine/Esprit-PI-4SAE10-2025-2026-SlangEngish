@@ -27,7 +27,7 @@ pipeline {
                 dir("${SERVICE_DIR}") {
                     script {
                         if (isUnix()) {
-                            docker.image('node:20-alpine').inside {
+                            docker.image('cypress/browsers:node20.14.0-chrome125-ff126').inside {
                                 sh 'npm ci'
                             }
                         } else {
@@ -38,12 +38,33 @@ pipeline {
             }
         }
 
+        stage('Unit Tests') {
+            steps {
+                dir("${SERVICE_DIR}") {
+                    script {
+                        if (isUnix()) {
+                            docker.image('cypress/browsers:node20.14.0-chrome125-ff126').inside {
+                                sh 'npm test'
+                            }
+                        } else {
+                            bat 'npm test'
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: "${SERVICE_DIR}/reports/junit/*.xml"
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 dir("${SERVICE_DIR}") {
                     script {
                         if (isUnix()) {
-                            docker.image('node:20-alpine').inside {
+                            docker.image('cypress/browsers:node20.14.0-chrome125-ff126').inside {
                                 sh 'npm run build -- --configuration production'
                             }
                         } else {
