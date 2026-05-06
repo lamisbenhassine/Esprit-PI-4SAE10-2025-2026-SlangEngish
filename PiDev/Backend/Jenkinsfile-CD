@@ -40,7 +40,7 @@ pipeline {
             steps {
                 sh """
                     cd ${DEPLOY_DIR}/monitoring
-                    docker compose -f docker compose.monitoring.yml up -d
+                    docker compose -f docker-compose.monitoring.yml up -d
                 """
             }
         }
