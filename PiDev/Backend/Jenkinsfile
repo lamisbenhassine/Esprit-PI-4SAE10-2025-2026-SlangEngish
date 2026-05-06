@@ -113,9 +113,9 @@ pipeline {
         // ─────────────────────────────────────────────────
             steps {
                 sh """
-                    trivy image --exit-code 0 --severity HIGH,CRITICAL --format table --output trivy-report.txt ${DOCKER_USERNAME}/pidev-school-service:${IMAGE_TAG}
-                    trivy image --exit-code 0 --severity HIGH,CRITICAL --format table ${DOCKER_USERNAME}/pidev-eureka-server:${IMAGE_TAG}
-                    trivy image --exit-code 0 --severity HIGH,CRITICAL --format table ${DOCKER_USERNAME}/pidev-api-gateway:${IMAGE_TAG}
+                    trivy image --exit-code 0 --severity HIGH,CRITICAL --scanners vuln --vuln-type os,library --format table --output trivy-report.txt ${DOCKER_USERNAME}/pidev-school-service:${IMAGE_TAG}
+                    trivy image --exit-code 0 --severity HIGH,CRITICAL --scanners vuln --vuln-type os,library --format table ${DOCKER_USERNAME}/pidev-eureka-server:${IMAGE_TAG}
+                    trivy image --exit-code 0 --severity HIGH,CRITICAL --scanners vuln --vuln-type os,library --format table ${DOCKER_USERNAME}/pidev-api-gateway:${IMAGE_TAG}
                 """
             }
             post {
