@@ -1,42 +1,33 @@
 pipeline {
     agent any
+
     tools {
         maven 'Maven3'
         jdk 'JDK17'
     }
+
     environment {
-        DOCKERHUB_USER = "amounboukhris"
-        IMAGE_NAME = "amounboukhris/pedianephro-forum"
+        DOCKERHUB_USER = "saifdenden"
+        IMAGE_NAME = "saifdenden/saifpidev"
         TAG = "${BUILD_NUMBER}"
-        SERVICE_PATH = "BackEnd/Microservices/forum"
+        SERVICE_PATH = "backend/microservices/cours/GestionCours"
+        GIT_REPO = "https://github.com/lamisbenhassine/Esprit-PI-4SAE10-2025-2026-SlangEngish.git"
+        BRANCH = "gestion_cours"
     }
 
     stages {
 
-        /* ===================== CHECKOUT ===================== */
-
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
-                    branches: [[name: 'gestion_forum']],
-                    extensions: [
-                        [$class: 'CloneOption',
-                            shallow: true,
-                            depth: 1,
-                            noTags: true,
-                            timeout: 60
-                        ]
-                    ],
+                    branches: [[name: "*/${BRANCH}"]],
                     userRemoteConfigs: [[
-                        url: 'https://github.com/Manel-Elj/Esprit-PIDEV-4SAE10-2026-PediaNephro.git',
-                        credentialsId: 'git-token',
-                        refspec: '+refs/heads/gestion_forum:refs/remotes/origin/gestion_forum'
+                        url: "${GIT_REPO}",
+                        credentialsId: 'github-token'
                     ]]
                 ])
             }
         }
-
-        /* ===================== BUILD ===================== */
 
         stage('Clean Install') {
             steps {
@@ -46,8 +37,6 @@ pipeline {
             }
         }
 
-        /* ===================== TESTS ===================== */
-
         stage('Tests + Coverage') {
             steps {
                 dir("${SERVICE_PATH}") {
@@ -56,8 +45,6 @@ pipeline {
             }
         }
 
-        /* ===================== SONARQUBE ===================== */
-
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
@@ -65,16 +52,13 @@ pipeline {
                         dir("${SERVICE_PATH}") {
                             sh """
                                 mvn sonar:sonar \
-                                -Dsonar.login=$SONAR_TOKEN \
-                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+                                -Dsonar.login=$SONAR_TOKEN
                             """
                         }
                     }
                 }
             }
         }
-
-        /* ===================== DOCKER BUILD ===================== */
 
         stage('Build Docker Image') {
             steps {
@@ -84,8 +68,6 @@ pipeline {
             }
         }
 
-        /* ===================== DOCKER LOGIN + PUSH ===================== */
-
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
@@ -93,15 +75,13 @@ pipeline {
                     usernameVariable: 'USER',
                     passwordVariable: 'PASS'
                 )]) {
-                    sh '''
+                    sh """
                         echo "$PASS" | docker login -u "$USER" --password-stdin
                         docker push ${IMAGE_NAME}:${TAG}
-                    '''
+                    """
                 }
             }
         }
-
-        /* ===================== TRIGGER CD ===================== */
 
         stage('Trigger CD Pipeline') {
             steps {
