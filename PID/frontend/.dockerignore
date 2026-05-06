@@ -1,6 +1,10 @@
 node_modules
 npm-debug.log
 dist
+!dist/my-project/
+dist/my-project/*
+!dist/my-project/browser/
+!dist/my-project/browser/**
 .angular
 .git
 .vscode
