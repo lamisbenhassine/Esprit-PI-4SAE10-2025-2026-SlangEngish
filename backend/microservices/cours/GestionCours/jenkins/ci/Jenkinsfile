@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         SONAR_PROJECT_KEY = 'microservice-cours'
-        DOCKER_IMAGE = 'saifdenden/microservice-cours'
+        DOCKER_IMAGE = 'ferveex/microservice-cours'
         DOCKER_TAG = "${BUILD_NUMBER}"
     }
 
