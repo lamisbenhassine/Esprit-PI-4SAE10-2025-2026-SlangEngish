@@ -1,8 +1,18 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+        timeout(time: 60, unit: 'MINUTES')
+        ansiColor('xterm')
+    }
+
     parameters {
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag')
+        string(
+            name: 'IMAGE_TAG',
+            defaultValue: 'latest',
+            description: 'Docker image tag'
+        )
     }
 
     environment {
@@ -16,18 +26,34 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM',
-                    branches: [[name: 'gestion_cours']],
-                    extensions: [[$class: 'CloneOption',
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/gestion_cours']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/lamisbenhassine/Esprit-PI-4SAE10-2025-2026-SlangEngish.git',
+                        credentialsId: 'github-token'
+                    ]],
+                    extensions: [[
+                        $class: 'CloneOption',
                         shallow: true,
                         depth: 1,
                         noTags: true,
                         timeout: 60
-                    ]],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/lamisbenhassine/Esprit-PI-4SAE10-2025-2026-SlangEngish.git'
                     ]]
                 ])
+            }
+        }
+
+        stage('Check Tools') {
+            steps {
+                sh '''
+                    echo "=== Checking tools ==="
+
+                    docker --version || true
+                    kubectl version --client || true
+                    helm version || true
+                    minikube version || true
+                '''
             }
         }
 
@@ -36,6 +62,7 @@ pipeline {
                 sh """
                     echo "=== Current directory ==="
                     pwd
+
                     echo "=== Project structure ==="
                     ls -R ${SERVICE_PATH}/k8s
                 """
@@ -45,7 +72,8 @@ pipeline {
         stage('Prepare Namespace') {
             steps {
                 sh """
-                    kubectl get namespace ${NAMESPACE} || kubectl create namespace ${NAMESPACE}
+                    kubectl get namespace ${NAMESPACE} || \
+                    kubectl create namespace ${NAMESPACE}
                 """
             }
         }
@@ -54,10 +82,17 @@ pipeline {
             steps {
                 dir("${SERVICE_PATH}/k8s") {
                     sh """
+                        echo "=== Deploying MySQL ==="
+
                         kubectl apply -f mysql-deployment.yaml -n ${NAMESPACE}
                         kubectl apply -f mysql-service.yaml -n ${NAMESPACE}
-                        echo "Waiting for MySQL..."
-                        kubectl rollout status deployment/mysql -n ${NAMESPACE} --timeout=300s
+
+                        echo "Waiting for MySQL startup..."
+                        sleep 20
+
+                        kubectl rollout status deployment/mysql \
+                            -n ${NAMESPACE} \
+                            --timeout=300s
                     """
                 }
             }
@@ -67,13 +102,18 @@ pipeline {
             steps {
                 dir("${SERVICE_PATH}/k8s") {
                     sh """
+                        echo "=== Deploying Application ==="
+
                         kubectl apply -f deployment.yaml -n ${NAMESPACE}
                         kubectl apply -f service.yaml -n ${NAMESPACE}
+
                         kubectl set image deployment/gestion-cours \
                             gestion-cours=${IMAGE_NAME}:${params.IMAGE_TAG} \
                             -n ${NAMESPACE}
+
                         kubectl rollout status deployment/gestion-cours \
-                            -n ${NAMESPACE} --timeout=300s
+                            -n ${NAMESPACE} \
+                            --timeout=300s
                     """
                 }
             }
@@ -82,11 +122,19 @@ pipeline {
         stage('Deploy Monitoring') {
             steps {
                 sh '''
-                    kubectl get namespace monitoring || kubectl create namespace monitoring
-                    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+                    echo "=== Deploying Monitoring Stack ==="
+
+                    kubectl get namespace monitoring || \
+                    kubectl create namespace monitoring
+
+                    helm repo add prometheus-community \
+                        https://prometheus-community.github.io/helm-charts || true
+
                     helm repo update
+
                     helm status prometheus -n monitoring > /dev/null 2>&1 || \
-                    helm install prometheus prometheus-community/kube-prometheus-stack \
+                    helm install prometheus \
+                        prometheus-community/kube-prometheus-stack \
                         --namespace monitoring \
                         --set grafana.service.type=NodePort \
                         --set grafana.service.nodePort=32000 \
@@ -100,40 +148,86 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 sh """
-                    echo "=== Pods ==="
+                    echo "=== Application Pods ==="
                     kubectl get pods -n ${NAMESPACE}
-                    echo "=== Services ==="
+
+                    echo "=== Application Services ==="
                     kubectl get svc -n ${NAMESPACE}
-                    echo "=== Monitoring ==="
+
+                    echo "=== Monitoring Pods ==="
                     kubectl get pods -n monitoring
+
+                    echo "=== Monitoring Services ==="
+                    kubectl get svc -n monitoring
                 """
             }
         }
     }
 
     post {
+
         success {
             sh '''
-                echo "=================================="
+                echo ""
+                echo "======================================="
                 echo "DEPLOYMENT SUCCESS"
-                echo "=================================="
-                echo "Grafana:"
+                echo "======================================="
+
                 MINIKUBE_IP=$(minikube ip)
+
+                echo ""
+                echo "Application:"
+                echo "http://${MINIKUBE_IP}"
+
+                echo ""
+                echo "Grafana:"
                 echo "http://${MINIKUBE_IP}:32000"
+
+                echo ""
                 echo "Prometheus:"
                 echo "http://${MINIKUBE_IP}:32001"
+
+                echo "======================================="
             '''
         }
 
         failure {
             sh """
+                echo ""
+                echo "======================================="
+                echo "DEPLOYMENT FAILED"
+                echo "======================================="
+
+                echo ""
                 echo "=== EVENTS ==="
-                kubectl get events -n ${NAMESPACE} --sort-by=.lastTimestamp | tail -20 || true
+                kubectl get events -n ${NAMESPACE} \
+                    --sort-by=.lastTimestamp | tail -20 || true
+
+                echo ""
                 echo "=== PODS ==="
-                kubectl get pods -n ${NAMESPACE}
-                echo "=== DESCRIBE PODS ==="
+                kubectl get pods -n ${NAMESPACE} || true
+
+                echo ""
+                echo "=== SERVICES ==="
+                kubectl get svc -n ${NAMESPACE} || true
+
+                echo ""
+                echo "=== POD DETAILS ==="
                 kubectl describe pods -n ${NAMESPACE} || true
+
+                echo ""
+                echo "=== POD LOGS ==="
+
+                for pod in \$(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
+                    echo ""
+                    echo "Logs for pod: \$pod"
+                    kubectl logs \$pod -n ${NAMESPACE} --tail=50 || true
+                done
             """
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
