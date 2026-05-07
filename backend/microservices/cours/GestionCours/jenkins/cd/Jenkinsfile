@@ -1,58 +1,163 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag')
+    }
+
     environment {
-        DOCKER_IMAGE = 'ferveex/microservice-cours'
-        CONTAINER_NAME = 'microservice-cours'
-        APP_PORT = '9090'
+        IMAGE_NAME   = "saifdenden/saifpidev"
+        NAMESPACE    = "gestion-cours"
+        SERVICE_PATH = "backend/microservices/cours/GestionCours"
+        KUBECONFIG   = "/var/jenkins_home/.kube/config"
     }
 
     stages {
-        stage('Pull Image') {
+
+        /* ===================== CHECKOUT ===================== */
+        stage('Checkout') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-token',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                    sh "docker pull ${DOCKER_IMAGE}:latest"
-                }
+                checkout([$class: 'GitSCM',
+                    branches: [[name: 'gestion_cours']],
+                    extensions: [[$class: 'CloneOption',
+                        shallow: true,
+                        depth: 1,
+                        noTags: true,
+                        timeout: 60
+                    ]],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/lamisbenhassine/Esprit-PI-4SAE10-2025-2026-SlangEngish.git'
+                    ]]
+                ])
             }
         }
 
-        stage('Deploy') {
+        /* ===================== VERIFY ===================== */
+        stage('Verify Files') {
             steps {
-                sh "docker stop ${CONTAINER_NAME} || true"
-                sh "docker rm ${CONTAINER_NAME} || true"
                 sh """
-                    docker run -d \
-                    --name ${CONTAINER_NAME} \
-                    -p ${APP_PORT}:${APP_PORT} \
-                    --restart unless-stopped \
-                    ${DOCKER_IMAGE}:latest
+                    echo "=== Current directory ==="
+                    pwd
+
+                    echo "=== Project structure ==="
+                    ls -R ${SERVICE_PATH}/k8s
                 """
             }
         }
 
-        stage('Health Check') {
+        /* ===================== NAMESPACE ===================== */
+        stage('Prepare Namespace') {
             steps {
-                sh "sleep 15"
                 sh """
-                    curl -f http://localhost:${APP_PORT}/actuator/health || \
-                    (echo ' Health check échoué' && exit 1)
+                    kubectl get namespace ${NAMESPACE} || kubectl create namespace ${NAMESPACE}
+                """
+            }
+        }
+
+        /* ===================== DEPLOY MYSQL ===================== */
+        stage('Deploy MySQL') {
+            steps {
+                dir("${SERVICE_PATH}/k8s") {
+                    sh """
+                        kubectl apply -f mysql-deployment.yaml -n ${NAMESPACE}
+                        kubectl apply -f mysql-service.yaml -n ${NAMESPACE}
+
+                        echo "Waiting for MySQL..."
+                        kubectl rollout status deployment/mysql -n ${NAMESPACE} --timeout=300s
+                    """
+                }
+            }
+        }
+
+        /* ===================== DEPLOY APP ===================== */
+        stage('Deploy Application') {
+            steps {
+                dir("${SERVICE_PATH}/k8s") {
+                    sh """
+                        kubectl apply -f deployment.yaml -n ${NAMESPACE}
+                        kubectl apply -f service.yaml -n ${NAMESPACE}
+
+                        kubectl set image deployment/gestion-cours \
+                            gestion-cours=${IMAGE_NAME}:${params.IMAGE_TAG} \
+                            -n ${NAMESPACE}
+
+                        kubectl rollout status deployment/gestion-cours \
+                            -n ${NAMESPACE} --timeout=300s
+                    """
+                }
+            }
+        }
+
+        /* ===================== MONITORING ===================== */
+        stage('Deploy Monitoring') {
+            steps {
+                sh """
+                    kubectl get namespace monitoring || kubectl create namespace monitoring
+
+                    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+                    helm repo update
+
+                    helm status prometheus -n monitoring > /dev/null 2>&1 || \
+                    helm install prometheus prometheus-community/kube-prometheus-stack \
+                        --namespace monitoring \
+                        --set grafana.service.type=NodePort \
+                        --set grafana.service.nodePort=32000 \
+                        --set prometheus.prometheusSpec.service.type=NodePort \
+                        --set prometheus.prometheusSpec.service.nodePort=32001 \
+                        --timeout 10m
+                """
+            }
+        }
+
+        /* ===================== VERIFY ===================== */
+        stage('Verify Deployment') {
+            steps {
+                sh """
+                    echo "=== Pods ==="
+                    kubectl get pods -n ${NAMESPACE}
+
+                    echo "=== Services ==="
+                    kubectl get svc -n ${NAMESPACE}
+
+                    echo "=== Monitoring ==="
+                    kubectl get pods -n monitoring
                 """
             }
         }
     }
 
     post {
+
         success {
-            echo ' CD Cours déployé et opérationnel !'
+            sh """
+                echo "=================================="
+                echo "DEPLOYMENT SUCCESS"
+                echo "=================================="
+
+                echo "Application URL:"
+                minikube service service --url -n ${NAMESPACE}
+
+                echo ""
+                echo "Grafana:"
+                echo "http://$(minikube ip):32000"
+
+                echo ""
+                echo "Prometheus:"
+                echo "http://$(minikube ip):32001"
+            """
         }
+
         failure {
-            echo ' CD Cours échoué !'
-            sh "docker logs ${CONTAINER_NAME} || true"
+            sh """
+                echo "=== EVENTS ==="
+                kubectl get events -n ${NAMESPACE} --sort-by=.lastTimestamp | tail -20 || true
+
+                echo "=== PODS ==="
+                kubectl get pods -n ${NAMESPACE}
+
+                echo "=== DESCRIBE PODS ==="
+                kubectl describe pods -n ${NAMESPACE} || true
+            """
         }
     }
 }
