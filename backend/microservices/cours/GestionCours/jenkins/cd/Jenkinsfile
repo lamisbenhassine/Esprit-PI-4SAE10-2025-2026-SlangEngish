@@ -2,9 +2,8 @@ pipeline {
     agent any
 
     options {
-        skipDefaultCheckout(true)
-        timeout(time: 60, unit: 'MINUTES')
-        ansiColor('xterm')
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
     }
 
     parameters {
@@ -26,34 +25,8 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/gestion_cours']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/lamisbenhassine/Esprit-PI-4SAE10-2025-2026-SlangEngish.git',
-                        credentialsId: 'github-token'
-                    ]],
-                    extensions: [[
-                        $class: 'CloneOption',
-                        shallow: true,
-                        depth: 1,
-                        noTags: true,
-                        timeout: 60
-                    ]]
-                ])
-            }
-        }
-
-        stage('Check Tools') {
-            steps {
-                sh '''
-                    echo "=== Checking tools ==="
-
-                    docker --version || true
-                    kubectl version --client || true
-                    helm version || true
-                    minikube version || true
-                '''
+                git branch: 'gestion_cours',
+                    url: 'https://github.com/lamisbenhassine/Esprit-PI-4SAE10-2025-2026-SlangEngish.git'
             }
         }
 
@@ -63,7 +36,10 @@ pipeline {
                     echo "=== Current directory ==="
                     pwd
 
-                    echo "=== Project structure ==="
+                    echo "=== Verify service path ==="
+                    ls -la
+
+                    echo "=== K8S files ==="
                     ls -R ${SERVICE_PATH}/k8s
                 """
             }
@@ -87,8 +63,7 @@ pipeline {
                         kubectl apply -f mysql-deployment.yaml -n ${NAMESPACE}
                         kubectl apply -f mysql-service.yaml -n ${NAMESPACE}
 
-                        echo "Waiting for MySQL startup..."
-                        sleep 20
+                        echo "=== Waiting for MySQL ==="
 
                         kubectl rollout status deployment/mysql \
                             -n ${NAMESPACE} \
@@ -107,13 +82,17 @@ pipeline {
                         kubectl apply -f deployment.yaml -n ${NAMESPACE}
                         kubectl apply -f service.yaml -n ${NAMESPACE}
 
+                        echo "=== Updating image ==="
+
                         kubectl set image deployment/gestion-cours \
-                            gestion-cours=${IMAGE_NAME}:${params.IMAGE_TAG} \
-                            -n ${NAMESPACE}
+                        gestion-cours=${IMAGE_NAME}:${IMAGE_TAG} \
+                        -n ${NAMESPACE}
+
+                        echo "=== Waiting for rollout ==="
 
                         kubectl rollout status deployment/gestion-cours \
-                            -n ${NAMESPACE} \
-                            --timeout=300s
+                        -n ${NAMESPACE} \
+                        --timeout=300s
                     """
                 }
             }
@@ -121,27 +100,23 @@ pipeline {
 
         stage('Deploy Monitoring') {
             steps {
-                sh '''
-                    echo "=== Deploying Monitoring Stack ==="
-
+                sh """
                     kubectl get namespace monitoring || \
                     kubectl create namespace monitoring
 
                     helm repo add prometheus-community \
-                        https://prometheus-community.github.io/helm-charts || true
+                    https://prometheus-community.github.io/helm-charts || true
 
                     helm repo update
 
                     helm status prometheus -n monitoring > /dev/null 2>&1 || \
-                    helm install prometheus \
-                        prometheus-community/kube-prometheus-stack \
+                    helm install prometheus prometheus-community/kube-prometheus-stack \
                         --namespace monitoring \
                         --set grafana.service.type=NodePort \
                         --set grafana.service.nodePort=32000 \
                         --set prometheus.prometheusSpec.service.type=NodePort \
-                        --set prometheus.prometheusSpec.service.nodePort=32001 \
                         --timeout 10m
-                '''
+                """
             }
         }
 
@@ -156,9 +131,6 @@ pipeline {
 
                     echo "=== Monitoring Pods ==="
                     kubectl get pods -n monitoring
-
-                    echo "=== Monitoring Services ==="
-                    kubectl get svc -n monitoring
                 """
             }
         }
@@ -167,67 +139,37 @@ pipeline {
     post {
 
         success {
-            sh '''
-                echo ""
-                echo "======================================="
+            sh """
+                echo "=================================="
                 echo "DEPLOYMENT SUCCESS"
-                echo "======================================="
+                echo "=================================="
 
-                MINIKUBE_IP=$(minikube ip)
+                MINIKUBE_IP=\$(minikube ip)
 
-                echo ""
-                echo "Application:"
-                echo "http://${MINIKUBE_IP}"
-
-                echo ""
                 echo "Grafana:"
-                echo "http://${MINIKUBE_IP}:32000"
+                echo "http://\${MINIKUBE_IP}:32000"
 
-                echo ""
                 echo "Prometheus:"
-                echo "http://${MINIKUBE_IP}:32001"
-
-                echo "======================================="
-            '''
+                echo "http://\${MINIKUBE_IP}:9090"
+            """
         }
 
         failure {
             sh """
-                echo ""
-                echo "======================================="
+                echo "=================================="
                 echo "DEPLOYMENT FAILED"
-                echo "======================================="
+                echo "=================================="
 
-                echo ""
                 echo "=== EVENTS ==="
                 kubectl get events -n ${NAMESPACE} \
-                    --sort-by=.lastTimestamp | tail -20 || true
+                --sort-by=.lastTimestamp | tail -20 || true
 
-                echo ""
                 echo "=== PODS ==="
                 kubectl get pods -n ${NAMESPACE} || true
 
-                echo ""
-                echo "=== SERVICES ==="
-                kubectl get svc -n ${NAMESPACE} || true
-
-                echo ""
-                echo "=== POD DETAILS ==="
+                echo "=== DESCRIBE PODS ==="
                 kubectl describe pods -n ${NAMESPACE} || true
-
-                echo ""
-                echo "=== POD LOGS ==="
-
-                for pod in \$(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
-                    echo ""
-                    echo "Logs for pod: \$pod"
-                    kubectl logs \$pod -n ${NAMESPACE} --tail=50 || true
-                done
             """
-        }
-
-        always {
-            cleanWs()
         }
     }
 }
