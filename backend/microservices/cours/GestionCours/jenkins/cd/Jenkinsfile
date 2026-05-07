@@ -14,7 +14,6 @@ pipeline {
 
     stages {
 
-        /* ===================== CHECKOUT ===================== */
         stage('Checkout') {
             steps {
                 checkout([$class: 'GitSCM',
@@ -32,20 +31,17 @@ pipeline {
             }
         }
 
-        /* ===================== VERIFY ===================== */
         stage('Verify Files') {
             steps {
                 sh """
                     echo "=== Current directory ==="
                     pwd
-
                     echo "=== Project structure ==="
                     ls -R ${SERVICE_PATH}/k8s
                 """
             }
         }
 
-        /* ===================== NAMESPACE ===================== */
         stage('Prepare Namespace') {
             steps {
                 sh """
@@ -54,14 +50,12 @@ pipeline {
             }
         }
 
-        /* ===================== DEPLOY MYSQL ===================== */
         stage('Deploy MySQL') {
             steps {
                 dir("${SERVICE_PATH}/k8s") {
                     sh """
                         kubectl apply -f mysql-deployment.yaml -n ${NAMESPACE}
                         kubectl apply -f mysql-service.yaml -n ${NAMESPACE}
-
                         echo "Waiting for MySQL..."
                         kubectl rollout status deployment/mysql -n ${NAMESPACE} --timeout=300s
                     """
@@ -69,18 +63,15 @@ pipeline {
             }
         }
 
-        /* ===================== DEPLOY APP ===================== */
         stage('Deploy Application') {
             steps {
                 dir("${SERVICE_PATH}/k8s") {
                     sh """
                         kubectl apply -f deployment.yaml -n ${NAMESPACE}
                         kubectl apply -f service.yaml -n ${NAMESPACE}
-
                         kubectl set image deployment/gestion-cours \
                             gestion-cours=${IMAGE_NAME}:${params.IMAGE_TAG} \
                             -n ${NAMESPACE}
-
                         kubectl rollout status deployment/gestion-cours \
                             -n ${NAMESPACE} --timeout=300s
                     """
@@ -88,15 +79,12 @@ pipeline {
             }
         }
 
-        /* ===================== MONITORING ===================== */
         stage('Deploy Monitoring') {
             steps {
-                sh """
+                sh '''
                     kubectl get namespace monitoring || kubectl create namespace monitoring
-
                     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
                     helm repo update
-
                     helm status prometheus -n monitoring > /dev/null 2>&1 || \
                     helm install prometheus prometheus-community/kube-prometheus-stack \
                         --namespace monitoring \
@@ -105,20 +93,17 @@ pipeline {
                         --set prometheus.prometheusSpec.service.type=NodePort \
                         --set prometheus.prometheusSpec.service.nodePort=32001 \
                         --timeout 10m
-                """
+                '''
             }
         }
 
-        /* ===================== VERIFY ===================== */
         stage('Verify Deployment') {
             steps {
                 sh """
                     echo "=== Pods ==="
                     kubectl get pods -n ${NAMESPACE}
-
                     echo "=== Services ==="
                     kubectl get svc -n ${NAMESPACE}
-
                     echo "=== Monitoring ==="
                     kubectl get pods -n monitoring
                 """
@@ -127,34 +112,25 @@ pipeline {
     }
 
     post {
-
         success {
-            sh """
+            sh '''
                 echo "=================================="
                 echo "DEPLOYMENT SUCCESS"
                 echo "=================================="
-
-                echo "Application URL:"
-                minikube service service --url -n ${NAMESPACE}
-
-                echo ""
                 echo "Grafana:"
-                echo "http://$(minikube ip):32000"
-
-                echo ""
+                MINIKUBE_IP=$(minikube ip)
+                echo "http://${MINIKUBE_IP}:32000"
                 echo "Prometheus:"
-                echo "http://$(minikube ip):32001"
-            """
+                echo "http://${MINIKUBE_IP}:32001"
+            '''
         }
 
         failure {
             sh """
                 echo "=== EVENTS ==="
                 kubectl get events -n ${NAMESPACE} --sort-by=.lastTimestamp | tail -20 || true
-
                 echo "=== PODS ==="
                 kubectl get pods -n ${NAMESPACE}
-
                 echo "=== DESCRIBE PODS ==="
                 kubectl describe pods -n ${NAMESPACE} || true
             """
